@@ -1,0 +1,150 @@
+::-webkit-scrollbar {
+    height: 16px;
+    overflow: visible;
+    width: 16px;
+}
+
+::-webkit-scrollbar-button {
+    height: 0;
+    width: 0;
+}
+
+::-webkit-scrollbar-corner {
+    background: transparent;
+}
+
+.docs-gm ::-webkit-scrollbar-thumb {
+    border-style: solid;
+    border-color: transparent;
+    border-width: 4px;
+    background-color: #dadce0;
+    border-radius: 0px;
+    box-shadow: none;
+}
+
+::-webkit-scrollbar-thumb {
+    background-color: rgba(0, 0, 0, .2);
+    background-clip: padding-box;
+    border: solid transparent;
+    border-width: 1px 1px 1px 6px;
+    min-height: 28px;
+    padding: 100px 0 0;
+    box-shadow: inset 1px 1px 0 rgba(0, 0, 0, .1), inset 0 -1px 0 rgba(0, 0, 0, .07);
+}
+
+.docs-gm ::-webkit-scrollbar-track {
+    box-shadow: none;
+    margin: 0 4px;
+}
+
+::-webkit-scrollbar-track {
+    background-clip: padding-box;
+    border: solid transparent;
+    border-width: 0 0 0 4px;
+}
+
+
+.spreadsheet-container {
+    margin:10px;
+    padding: 0px;
+
+    overflow: auto;
+    width: calc(100vw - 20px);
+    height: calc(100vh - 105px);
+    border: 1px solid #ccc;
+}
+
+.spreadsheet {
+    border-spacing: 0;
+    border-collapse: collapse;
+    box-shadow: 0 0 5px rgba(96, 96, 96, .5);
+    margin: 0px;
+    min-width: 1000px;
+    width: auto;
+    table-layout: fixed; /* Forces the table to respect set column widths */
+}
+
+.spreadsheet th {
+    background-color: rgb(240, 240, 240);
+    font-size: .66rem;
+    min-width: 2rem;
+    padding: 5px;
+    user-select: none;
+    border: 1px solid rgb(192, 192, 192);
+}
+
+.top-corner-cell {
+    position: sticky;
+    top: 0;
+    background: #f0f0f0;
+    z-index: 2;
+    border: 1px solid rgb(192, 192, 192);
+    width: 50px !important;
+    max-width: 50px !important;
+    padding: 0;
+}
+
+.letter-cell {
+    position: sticky;
+    top: 0;
+    background: #f0f0f0;
+    z-index: 2;
+    border: 1px solid rgb(192, 192, 192);
+    padding: 0;
+    width: 200px;
+    min-width: 50px;
+    text-align: center;
+}
+
+.counter-cell {
+    position: sticky;
+    left: 0;
+    background: #f0f0f0;
+    z-index: 1; /* Less than header cells to prevent overlap */
+    border: 1px solid rgb(192, 192, 192);
+    width: 50px;
+    max-width: 50px !important;
+    vertical-align: middle;
+    text-align: center;
+    padding: 0;
+}
+
+.text-cell {
+    border: 1px solid rgb(192, 192, 192);
+    width: 200px;
+    vertical-align: top;
+}
+
+.letter-cell, .text-cell {
+    width: 200px; /* Force width */
+    min-width: 200px; /* Ensure minimum width is respected */
+}
+
+.edit-cell {
+    background-color: #e9ecef;
+    outline: none;
+}
+
+.highlight {
+    background-color: #ccc !important; /* Highlights background */
+}
+
+.selected-cell {
+    border: 2px solid red !important; /* Thicker border for the selected cell */
+}
+
+.area-selected-cell {
+    background-color: rgb(14, 101, 235);
+    opacity: 0.1 !important; /* Blue background for the selected area */
+}
+
+[contenteditable="true"] {
+    border: none; /* Removes the border */
+    outline: none; /* Removes the outline that might appear during focus */
+}
+
+/* Additional styles for better visual feedback */
+[contenteditable="true"]:focus {
+    box-shadow: 0 0 2px #000000; /* Optional: Adds a subtle shadow for better focus indication */
+    background-color: #fff; /* Optional: Changes background color to indicate editable state */
+}
