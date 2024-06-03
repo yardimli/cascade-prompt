@@ -33,17 +33,19 @@
 	<link rel="icon" href="images/apple-touch-icon.png" type="image/x-icon">
 
 	<link rel="stylesheet" href="css/bootstrap-icons.min.css">
-	<link rel="stylesheet" href="css/prompt-cascade.css">
+	<link rel="stylesheet" href="css/cascade-prompt.css">
 
 	<link href="css/bootstrap.min.css" rel="stylesheet">
 	<script src="js/bootstrap.min.js"></script>
 	<script src="js/jquery-3.7.0.min.js"></script>
 
-	<script src="js/prompt-cascade.js"></script>
+	<script src="js/cascade-prompt.js"></script>
+	<script src="js/cascade-prompt-keypress.js"></script>
+	<script src="js/cascade-prompt-ui.js"></script>
 
 </head>
 
-<body class="bg-light" style="margin-left: 0px; padding-left: 0px;">
+<body class="bg-light" style="margin-left: 0px; padding-left: 0px; overflow: hidden;">
 <h5 style="margin:10px;"><img src="images/android-chrome-192x192.png" style="height: 32px;"> Cascade Prompt</h5>
 <div style="margin-left: 10px; margin-right: 10px; margin-top:10px;">
 	<div style="background-color: #eeeeff; border-radius: 10px; padding:5px; padding-left: 20px;">
@@ -76,8 +78,8 @@
 </div>
 
 <div class="spreadsheet-container" id="spreadsheet-container">
-
-	<table class="spreadsheet">
+	<div id="selection-helper" class="active-animation no-select"></div>
+	<table class="spreadsheet no-select">
 		<thead>
 		<tr>
 			<th class="top-corner-cell"></th>
