@@ -5,12 +5,15 @@ var startCell = null;
 var endCell = null;
 
 let draggingEdge = null;
-let initialMousePos = { top: 0, left: 0 };
-let initialHelperPos = { top: 0, left: 0 };
+let initialMousePos = {top: 0, left: 0};
+let initialHelperPos = {top: 0, left: 0};
+
+let initialStartCellIndex = {row: 0, col: 0};
+let initialEndCellIndex = {row: 0, col: 0};
 
 
 //--------------------------------------------------//
-function higlightCell(cell) {
+function highlightCell(cell) {
 	var $this = cell;
 	var cellIndex = $this.index(); // Get the index of the clicked cell
 	var rowIndex = $this.parent().index(); // Get the index of the row
@@ -75,12 +78,14 @@ function getRowHeights() {
 }
 
 //--------------------------------------------------//
-function snapToCell(position, dimensionArray, offset = 0) {
-	let cumulativeDimension = offset;
+function snapToCell(position, dimensionArray) {
+	let cumulativeDimension = 0;
+	let previousCumulativeDimension = cumulativeDimension;
 	for (let i = 0; i < dimensionArray.length; i++) {
 		if (position <= cumulativeDimension) {
-			return cumulativeDimension;
+			return previousCumulativeDimension;
 		}
+		previousCumulativeDimension = cumulativeDimension;
 		cumulativeDimension += dimensionArray[i];
 	}
 	return cumulativeDimension; // Fallback to the last cell boundary
@@ -137,18 +142,16 @@ function updateSelection() {
 	
 	// Add edge elements
 	let edgeElements = [
-		$("<div class='selection-helper-edge top'></div>").css({ "top": -3, "left": 0, "width": "100%" }),
-		$("<div class='selection-helper-edge right'></div>").css({ "top": 0, "right": -3, "height": "100%" }),
-		$("<div class='selection-helper-edge bottom'></div>").css({ "bottom": -3, "left": 0, "width": "100%" }),
-		$("<div class='selection-helper-edge left'></div>").css({ "top": 0, "left": -3, "height": "100%" })
+		$("<div class='selection-helper-edge top'></div>").css({"top": -3, "left": 0, "width": "100%"}),
+		$("<div class='selection-helper-edge right'></div>").css({"top": 0, "right": -3, "height": "100%"}),
+		$("<div class='selection-helper-edge bottom'></div>").css({"bottom": -3, "left": 0, "width": "100%"}),
+		$("<div class='selection-helper-edge left'></div>").css({"top": 0, "left": -3, "height": "100%"})
 	];
 	
 	edgeElements.forEach(function (edge) {
 		helperDiv.append(edge);
 	});
 }
-
-
 
 
 //--------------------------------------------------//
@@ -184,7 +187,7 @@ $(document).ready(function () {
 		
 		stopEditing(); // Stop editing any cell before highlighting a new cell
 		if (!$(this).hasClass("selected-cell")) {
-			higlightCell($(this));
+			highlightCell($(this));
 		}
 		startCell = null;
 		endCell = null;
@@ -219,8 +222,18 @@ $(document).ready(function () {
 	// Handle dragging edges
 	$(document).off('mousedown', '.selection-helper-edge').on('mousedown', '.selection-helper-edge', function (e) {
 		draggingEdge = $(this);
-		initialMousePos = { top: e.pageY, left: e.pageX };
+		initialMousePos = {top: e.pageY, left: e.pageX};
 		initialHelperPos = $("#selection-helper").position();
+		
+		// Save the initial start and end cell indices for column and row counts
+		initialStartCellIndex = {
+			row: startCell.parent().index(),
+			col: startCell.index()
+		};
+		initialEndCellIndex = {
+			row: endCell.parent().index(),
+			col: endCell.index()
+		};
 	});
 	
 	$(document).off('mousemove.edgeDrag').on('mousemove.edgeDrag', function (e) {
@@ -230,20 +243,55 @@ $(document).ready(function () {
 			
 			var scrollLeft = $(".spreadsheet-container").scrollLeft();
 			var scrollTop = $(".spreadsheet-container").scrollTop();
-			
+			let containerOffset = $(".spreadsheet-container").offset();
 			let delta = {
-				top: e.pageY - initialMousePos.top + scrollTop - $(".top-corner-cell").outerHeight(),
-				left: e.pageX - initialMousePos.left + scrollLeft -  $(".top-corner-cell").outerWidth()
+				top: e.pageY - containerOffset.top + scrollTop - $(".top-corner-cell").outerHeight(),
+				left: e.pageX - containerOffset.left + scrollLeft - $(".top-corner-cell").outerWidth()
 			};
+			console.log("Delta: ", delta);
 			
 			let columnWidths = getColumnWidths();
 			let rowHeights = getRowHeights();
+			
 			let newPos = {
-				top: snapToCell(initialHelperPos.top + delta.top, rowHeights, $(".top-corner-cell").outerHeight()),
-				left: snapToCell(initialHelperPos.left + delta.left, columnWidths, $(".top-corner-cell").outerWidth())
+				top: snapToCell(delta.top, rowHeights) + $(".top-corner-cell").outerHeight(),
+				left: snapToCell(delta.left, columnWidths) + $(".top-corner-cell").outerWidth()
 			};
 			
-			$("#selection-helper").css(newPos);
+			//get the top and left cell numbers being snapped to
+			let topCellIndex = 0;
+			let leftCellIndex = 0;
+			let topPos = newPos.top;
+			let leftPos = newPos.left;
+			
+			for (let i = 0; i < rowHeights.length; i++) {
+				if (topPos <= rowHeights[i]) {
+					topCellIndex = i;
+					break;
+				}
+				topPos -= rowHeights[i];
+			}
+			for (let i = 0; i < columnWidths.length; i++) {
+				if (leftPos <= columnWidths[i]) {
+					leftCellIndex = i;
+					break;
+				}
+				leftPos -= columnWidths[i];
+			}
+
+			console.log("Snapped to: ", topCellIndex, leftCellIndex, delta.left, delta.top);
+			
+			// Ensure the selection rectangle resizes proportionally to the initial selection size
+			let newWidth = getColumnWidthRange(leftCellIndex+1, leftCellIndex + (initialEndCellIndex.col - initialStartCellIndex.col)+1);
+			
+			let newHeight = getRowHeightRange(topCellIndex+1, topCellIndex + (initialEndCellIndex.row - initialStartCellIndex.row)+1);
+			
+			$("#selection-helper").css({
+				"top": newPos.top,
+				"left": newPos.left,
+				"width": newWidth,
+				"height": newHeight
+			});
 		}
 	});
 	
