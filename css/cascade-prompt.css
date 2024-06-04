@@ -158,15 +158,18 @@
     opacity: 0.5;
 }
 
+#selection-helper {
+    display:none;
+    position: absolute;
+    z-index: 10;
+}
+
 .active-animation {
     background-image: linear-gradient(90deg, silver 50%, transparent 50%), linear-gradient(90deg, silver 50%, transparent 50%), linear-gradient(0deg, silver 50%, transparent 50%), linear-gradient(0deg, silver 50%, transparent 50%);
     background-repeat: repeat-x, repeat-x, repeat-y, repeat-y;
     background-size: 15px 2px, 15px 2px, 2px 15px, 2px 15px;
     background-position: left top, right bottom, left bottom, right top;
     animation: border-dance 1s infinite linear;
-    display:none;
-    position: absolute;
-    z-index: 10;
 }
 
 @keyframes border-dance {
@@ -184,4 +187,29 @@
     -webkit-user-select: none; /* For WebKit browsers (Chrome, Safari, etc.) */
     -moz-user-select: none; /* For Firefox */
     -ms-user-select: none; /* For Internet Explorer/Edge */
+}
+
+.selection-helper-edge {
+    position: absolute;
+    background: transparent;
+    pointer-events: auto;
+}
+
+.selection-helper-edge.top,
+.selection-helper-edge.bottom {
+    height: 5px;
+    cursor: move;
+}
+
+.selection-helper-edge.left,
+.selection-helper-edge.right {
+    width: 5px;
+    cursor: move;
+}
+
+.selection-helper-edge.top,
+.selection-helper-edge.bottom,
+.selection-helper-edge.left,
+.selection-helper-edge.right {
+    pointer-events: auto;
 }

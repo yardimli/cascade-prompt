@@ -1,3 +1,5 @@
+var isChangingTableCellWidth = false;
+
 //--------------------------------------------------//
 function scrollToViewWithOffsets(cell) {
 	var $container = $('.spreadsheet-container');
@@ -71,7 +73,6 @@ function stopEditing() {
 	}
 }
 
-
 //--------------------------------------------------//
 function addNewRow() {
 	var columnCount = $('.spreadsheet tr:first th').length;
@@ -121,18 +122,19 @@ $(document).ready(function () {
 			"cursor": "row-resize",
 			// "background-color": "#f4f4f4", // just to make the handle more visible
 		}
-	})).on("mousedown", function (e) {
+	})).on("mousedown.resizeRow", function (e) {
 		var th = $(this).parent();
 		var startHeight = th.height();
 		var startY = e.pageY;
 		
-		$(document).mousemove(function (e) {
+		$(document).on("mousemove.resizeRow", function (e) {
 			var newHeight = startHeight + (e.pageY - startY);
 			th.height(newHeight);
 		});
 		
-		$(document).on("mouseup", function () {
-			$(document).off("mousemove");
+		$(document).on("mouseup.resizeRow", function () {
+			$(document).off("mousemove.resizeRow");
+			$(document).off("mouseup.resizeRow");
 		});
 		
 		e.preventDefault(); // prevents text selection
@@ -154,7 +156,7 @@ $(document).ready(function () {
 			"cursor": "col-resize",
 			// "background-color": "#f4f4f4", // just to make the handle more visible
 		}
-	})).on("mousedown", function (e) {
+	})).on("mousedown.resizeCol", function (e) {
 		var cell = $(this);
 		console.log("Cell: ", cell);
 		var startWidth = cell.width();
@@ -162,15 +164,16 @@ $(document).ready(function () {
 		var table = $(".spreadsheet"); // Assuming your table has the class .spreadsheet
 		var startTableWidth = table.outerWidth();
 		
-		$(document).mousemove(function (e) {
+		$(document).on("mousemove.resizeCol", function (e) {
 			var newWidth = startWidth + (e.pageX - startX);
 			var newTableWidth = startTableWidth + (e.pageX - startX);
 			cell.width(newWidth);
 			table.width(newTableWidth); // Adjust the table width as the column width is adjusted
 		});
 		
-		$(document).on("mouseup", function () {
-			$(document).off("mousemove");
+		$(document).on("mouseup.resizeCol", function () {
+			$(document).off("mousemove.resizeCol");
+			$(document).off("mouseup.resizeCol");
 		});
 		
 		e.preventDefault(); // prevents text selection
