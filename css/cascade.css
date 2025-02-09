@@ -1,0 +1,13 @@
+#grid-container {
+    position: relative;
+    border: 1px solid #ccc;
+    overflow: auto;
+}
+.grid-cell {
+    position: absolute;
+    border: 1px solid #ccc;
+    overflow: hidden;
+    white-space: nowrap;
+    box-sizing: border-box;
+    padding: 2px;
+}
