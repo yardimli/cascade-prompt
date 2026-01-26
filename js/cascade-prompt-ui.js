@@ -1,7 +1,7 @@
 var isChangingTableCellWidth = false;
 
 //--------------------------------------------------//
-function scrollToViewWithOffsets (cell) {
+function scrollToViewWithOffsets(cell) {
 	var $container = $('.spreadsheet-container');
 	var containerRect = $container[0].getBoundingClientRect();
 	var cellRect = cell.getBoundingClientRect();
@@ -29,7 +29,7 @@ function scrollToViewWithOffsets (cell) {
 }
 
 //--------------------------------------------------//
-function makeCellEditable ($cell) {
+function makeCellEditable($cell) {
 	if (!$cell.hasClass('selected-cell')) {
 		highlightCell($cell);
 	}
@@ -94,7 +94,7 @@ function makeCellEditable ($cell) {
 }
 
 //--------------------------------------------------//
-function stopEditing () {
+function stopEditing() {
 	if (!isEditing) return;
 	
 	var $editingCell = $('.edit-cell');
@@ -121,26 +121,28 @@ function stopEditing () {
 }
 
 //--------------------------------------------------//
-function addNewRow () {
+function addNewRow() {
 	var columnCount = $('.spreadsheet tr:first th').length;
 	var rowCount = $('.spreadsheet tr').length;
 	
 	var newRow = '<tr><th class="counter-cell">' + (rowCount) + '</th>';
 	for (var i = 1; i < columnCount; i++) {
-		newRow += '<td class="text-cell"><div class="content-cut"></div></td>';
+		// Note: New rows need data-col
+		newRow += '<td class="text-cell" data-col="'+(i-1)+'"><div class="content-cut"></div></td>';
 	}
 	newRow += '</tr>';
 	$('.spreadsheet').append(newRow);
 }
 
 //--------------------------------------------------//
-function addNewColumn () {
-	var letter = String.fromCharCode('A'.charCodeAt(0) + $('.letter-cell').length); // Next letter
-	$('.spreadsheet tr:first').append('<th class="letter-cell">' + letter + '</th>');
+function addNewColumn() {
+	var colIndex = $('.letter-cell').length;
+	var letter = String.fromCharCode('A'.charCodeAt(0) + colIndex); // Next letter
+	$('.spreadsheet tr:first').append('<th class="letter-cell" data-col="'+colIndex+'">' + letter + '</th>');
 	var rowCount = $('.spreadsheet tr').length;
 	
 	for (var i = 1; i < rowCount; i++) {
-		$('.spreadsheet tr').eq(i).append('<td class="text-cell"><div class="content-cut"></div></td>');
+		$('.spreadsheet tr').eq(i).append('<td class="text-cell" data-col="'+colIndex+'"><div class="content-cut"></div></td>');
 	}
 	
 	var table = $('.spreadsheet'); // Assuming your table has the class .spreadsheet
@@ -150,8 +152,135 @@ function addNewColumn () {
 }
 
 //--------------------------------------------------//
+function mergeCells() {
+	if (!startCell || !endCell || startCell.is(endCell)) return;
+	
+	var startRow = Math.min(startCell.parent().index(), endCell.parent().index());
+	var endRow = Math.max(startCell.parent().index(), endCell.parent().index());
+	var startCol = Math.min(parseInt(startCell.attr('data-col')), parseInt(endCell.attr('data-col')));
+	var endCol = Math.max(parseInt(startCell.attr('data-col')), parseInt(endCell.attr('data-col')));
+	
+	// Calculate spans
+	var rowspan = endRow - startRow + 1;
+	var colspan = endCol - startCol + 1;
+	
+	// Top Left Cell (Target)
+	var $topLeft = $('.spreadsheet tr').eq(startRow + 1).find('td[data-col="' + startCol + '"]');
+	var mergedContent = [];
+	
+	// Iterate through range
+	for (var r = startRow; r <= endRow; r++) {
+		for (var c = startCol; c <= endCol; c++) {
+			// Skip the top-left cell in the loop for removal, but read its content
+			var $cell = $('.spreadsheet tr').eq(r + 1).find('td[data-col="' + c + '"]');
+			
+			if ($cell.length) {
+				var text = $cell.find('.content-cut').text().trim();
+				if (text) {
+					mergedContent.push(text);
+				}
+				
+				if (r === startRow && c === startCol) {
+					continue; // Don't remove the top-left cell
+				}
+				
+				// Remove other cells
+				$cell.remove();
+			}
+		}
+	}
+	
+	// Apply changes to top-left cell
+	$topLeft.attr('rowspan', rowspan);
+	$topLeft.attr('colspan', colspan);
+	$topLeft.find('.content-cut').text(mergedContent.join(' '));
+	
+	// Update width of the merged cell content
+	var totalWidth = getColumnWidthRange(startCol, endCol);
+	$topLeft.find('.content-cut').css('width', totalWidth + 'px');
+	
+	// Reset selection
+	startCell = null;
+	endCell = null;
+	isSelecting = false;
+	
+	// Highlight the merged cell
+	highlightCell($topLeft);
+	updateSelection(); // Clears the selection box
+	saveState();
+}
+
+//--------------------------------------------------//
+function unmergeCells() {
+	var $cell = $('.selected-cell');
+	if (!$cell.length) return;
+	
+	var rowspan = parseInt($cell.attr('rowspan')) || 1;
+	var colspan = parseInt($cell.attr('colspan')) || 1;
+	
+	if (rowspan === 1 && colspan === 1) return; // Not merged
+	
+	var startRow = $cell.parent().index();
+	var startCol = parseInt($cell.attr('data-col'));
+	
+	// Iterate through the range covered by the merge
+	for (var r = startRow; r < startRow + rowspan; r++) {
+		for (var c = startCol; c < startCol + colspan; c++) {
+			if (r === startRow && c === startCol) continue;
+			
+			// Create new cell
+			var newCell = $('<td class="text-cell" data-col="' + c + '"><div class="content-cut"></div></td>');
+			
+			// Set width based on column width
+			var colWidth = $('.letter-cell[data-col="' + c + '"]').outerWidth();
+			newCell.find('.content-cut').css('width', colWidth + 'px');
+			
+			// Set height based on row height
+			var rowHeight = $('.counter-cell').eq(r).outerHeight();
+			newCell.find('.content-cut').css('height', rowHeight + 'px');
+			
+			// Insert cell at correct position
+			var $row = $('.spreadsheet tr').eq(r + 1);
+			
+			// Find the insertion point: after the cell with data-col < c
+			var $prev = $row.find('td').filter(function() {
+				return parseInt($(this).attr('data-col')) < c;
+			}).last();
+			
+			if ($prev.length) {
+				$prev.after(newCell);
+			} else {
+				$row.prepend(newCell);
+			}
+		}
+	}
+	
+	// Remove attributes from top-left cell
+	$cell.removeAttr('rowspan');
+	$cell.removeAttr('colspan');
+	
+	// Reset width of top-left cell to single column width
+	var singleColWidth = $('.letter-cell[data-col="' + startCol + '"]').outerWidth();
+	$cell.find('.content-cut').css('width', singleColWidth + 'px');
+	
+	// Re-highlight to update UI state
+	highlightCell($cell);
+	saveState();
+}
+
+//--------------------------------------------------//
 //----------------- Document Ready -----------------//
 $(document).ready(function () {
+	
+	// Merge Button Listener
+	$('#merge-btn').on('click', function () {
+		mergeCells();
+	});
+	
+	// Unmerge Button Listener
+	$('#unmerge-btn').on('click', function () {
+		unmergeCells();
+	});
 	
 	//--------------------------------------------------//
 	
@@ -218,7 +347,7 @@ $(document).ready(function () {
 		var startTableWidth = table.outerWidth();
 		
 		// Get column index to update specific cells
-		var colIndex = cell.index();
+		var colIndex = parseInt(cell.attr('data-col'));
 		
 		$(document).on('mousemove.resizeCol', function (e) {
 			var newWidth = startWidth + (e.pageX - startX);
@@ -226,12 +355,15 @@ $(document).ready(function () {
 			cell.width(newWidth);
 			table.width(newTableWidth); // Adjust the table width as the column width is adjusted
 			
-			// NEW: Apply width to all .content-cut divs in this column
-			// Iterate through all rows in tbody
-			$('.spreadsheet tbody tr').each(function () {
-				// Find the td at the corresponding index (colIndex - 1 because of row header)
-				$(this).find('td').eq(colIndex - 1).find('.content-cut').css('width', newWidth + 'px');
-			});
+			// Update column width using helper in cascade-prompt.js (if available) or inline logic
+			if (typeof updateColumnWidth === 'function') {
+				updateColumnWidth(colIndex, newWidth);
+			} else {
+				// Fallback if helper not found (though it should be)
+				$('.spreadsheet tbody tr').each(function () {
+					$(this).find('td[data-col="' + colIndex + '"]').find('.content-cut').css('width', newWidth + 'px');
+				});
+			}
 		});
 		
 		$(document).on('mouseup.resizeCol', function () {
@@ -261,8 +393,8 @@ $(document).ready(function () {
 			if (touchCurrentX > touchStartX && scrollableDiv.scrollLeft === 0) {
 				e.preventDefault(); // Prevent navigation swipe when at the start of the scroll
 			}
-		}, { passive: false });
-	}, { passive: false });
+		}, {passive: false});
+	}, {passive: false});
 
 //--------------------------------------------------//
 

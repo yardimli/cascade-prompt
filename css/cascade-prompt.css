@@ -84,7 +84,7 @@
 }
 
 .spreadsheet-container {
-    margin:10px;
+    margin: 10px;
     padding: 0px;
 
     overflow: auto;
@@ -182,7 +182,7 @@
     z-index: 100;
     resize: none;
     overflow: hidden;
-    box-shadow: 0 0 5px rgba(0,0,0,0.3);
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
     border: 2px solid #1a73e8;
     padding: 2px 5px;
     font-family: inherit;
@@ -203,7 +203,9 @@
 }
 
 .selected-cell {
-    border: 2px solid red !important; /* Thicker border for the selected cell */
+    outline: 1px solid red; /* The second, highlight border */
+    outline-offset: 0px;
+    border: 1px solid red !important; /* Thicker border for the selected cell */
 }
 
 .area-selected-cell {
@@ -215,7 +217,7 @@
 }
 
 #selection-helper {
-    display:none;
+    display: none;
     position: absolute;
     z-index: 10;
 }
@@ -268,4 +270,9 @@
 .selection-helper-edge.left,
 .selection-helper-edge.right {
     pointer-events: auto;
+}
+
+/* Added class for cells hidden by merge */
+.merged-hidden {
+    display: none;
 }

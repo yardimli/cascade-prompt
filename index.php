@@ -74,6 +74,13 @@
 		<button type="button" class="btn btn-sm btn-outline-info">
 			<i class="bi bi-justify-left" style="color:black;"></i>
 		</button>
+		<!-- Added Merge/Unmerge Buttons -->
+		<button type="button" class="btn btn-sm btn-outline-info" id="merge-btn" title="Merge Cells" disabled>
+			<i class="bi bi-arrows-collapse" style="color:black;"></i>
+		</button>
+		<button type="button" class="btn btn-sm btn-outline-info" id="unmerge-btn" title="Unmerge Cells" disabled>
+			<i class="bi bi-arrows-expand" style="color:black;"></i>
+		</button>
 		<!-- Added Reset Button -->
 		<button type="button" class="btn btn-sm btn-outline-danger" id="reset-sheet-btn" title="Reset Spreadsheet">
 			<i class="bi bi-trash3" style="color:black;"></i> Reset
@@ -98,8 +105,11 @@
 			<th class="top-corner-cell"></th>
 			<?php
 				$alphabet = range('A', 'Z');
+				$colIndex = 0;
 				foreach ($alphabet as $letter) {
-					echo "<th class='letter-cell'>$letter</th>";
+					// Added data-col attribute
+					echo "<th class='letter-cell' data-col='$colIndex'>$letter</th>";
+					$colIndex++;
 				}
 			?>
 		</tr>
@@ -110,8 +120,8 @@
 				echo "<tr>";
 				echo "<th class='counter-cell'>$i</th>";
 				for ($j = 0; $j < count($alphabet); $j++) {
-					// Added content-cut div inside the cell
-					echo "<td class='text-cell'><div class='content-cut'></div></td>";
+					// Added data-col attribute to cells
+					echo "<td class='text-cell' data-col='$j'><div class='content-cut'></div></td>";
 				}
 				echo "</tr>";
 			}

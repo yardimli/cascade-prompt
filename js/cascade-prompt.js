@@ -5,28 +5,29 @@ var startCell = null;
 var endCell = null;
 
 let draggingEdge = null;
-let initialMousePos = { top: 0, left: 0 };
-let initialHelperPos = { top: 0, left: 0 };
+let initialMousePos = {top: 0, left: 0};
+let initialHelperPos = {top: 0, left: 0};
 
-let initialStartCellIndex = { row: 0, col: 0 };
-let initialEndCellIndex = { row: 0, col: 0 };
+let initialStartCellIndex = {row: 0, col: 0};
+let initialEndCellIndex = {row: 0, col: 0};
 
 
 //--------------------------------------------------//
-function highlightCell (cell) {
+function highlightCell(cell) {
 	var $this = cell;
-	var cellIndex = $this.index(); // Get the index of the clicked cell
-	var rowIndex = $this.parent().index(); // Get the index of the row
+	// Use data-col attribute instead of index()
+	var cellIndex = parseInt($this.attr('data-col'));
+	var rowIndex = $this.parent().index(); // Row index is still reliable from TR
 	
-	console.log('1) Cell Index: ' + cellIndex + ', Row Index: ' + rowIndex);
+	console.log('1) Cell Col: ' + cellIndex + ', Row Index: ' + rowIndex);
 	
 	// Remove previous highlights and selection
 	$('.spreadsheet .highlight').removeClass('highlight');
 	$('.spreadsheet .selected-cell').removeClass('selected-cell');
 	$('.spreadsheet .edit-cell').removeClass('edit-cell');
 	
-	// Highlight the column header
-	$('.letter-cell').eq(cellIndex - 1).addClass('highlight'); // Adjusting for row header
+	// Highlight the column header using data-col
+	$('.letter-cell[data-col="' + cellIndex + '"]').addClass('highlight');
 	
 	// Highlight the row number
 	$('.counter-cell').eq(rowIndex).addClass('highlight');
@@ -40,23 +41,36 @@ function highlightCell (cell) {
 	
 	scrollToViewWithOffsets($this[0]);
 	
+	// Check for merged status to toggle buttons
+	var rowspan = parseInt($this.attr('rowspan')) || 1;
+	var colspan = parseInt($this.attr('colspan')) || 1;
+	
+	if (rowspan > 1 || colspan > 1) {
+		$('#unmerge-btn').prop('disabled', false);
+	} else {
+		$('#unmerge-btn').prop('disabled', true);
+	}
+	
+	// Disable merge button when only one cell is selected
+	$('#merge-btn').prop('disabled', true);
+	
 	// Save state on selection change (captures cursor position)
 	saveState();
 }
 
 //--------------------------------------------------//
 // Function to get the cumulative width of columns in a given range
-function getColumnWidthRange (startCol, endCol) {
+function getColumnWidthRange(startCol, endCol) {
 	let totalWidth = 0;
 	for (let i = startCol; i <= endCol; i++) {
-		totalWidth += $('.spreadsheet .letter-cell').eq(i - 1).outerWidth();
+		totalWidth += $('.spreadsheet .letter-cell[data-col="' + i + '"]').outerWidth();
 	}
 	return totalWidth;
 }
 
 //--------------------------------------------------//
 // Function to get the cumulative height of rows in a given range
-function getRowHeightRange (startRow, endRow) {
+function getRowHeightRange(startRow, endRow) {
 	let totalHeight = 0;
 	for (let i = startRow; i <= endRow; i++) {
 		totalHeight += $('.spreadsheet .counter-cell').eq(i).outerHeight();
@@ -66,7 +80,7 @@ function getRowHeightRange (startRow, endRow) {
 
 //--------------------------------------------------//
 // Function to get an array of column widths
-function getColumnWidths () {
+function getColumnWidths() {
 	let widths = [];
 	$('.spreadsheet .letter-cell').each(function () {
 		widths.push($(this).outerWidth());
@@ -76,7 +90,7 @@ function getColumnWidths () {
 
 //--------------------------------------------------//
 // Function to get an array of row heights
-function getRowHeights () {
+function getRowHeights() {
 	let heights = [];
 	$('.spreadsheet .counter-cell').each(function () {
 		heights.push($(this).outerHeight());
@@ -85,7 +99,7 @@ function getRowHeights () {
 }
 
 //--------------------------------------------------//
-function snapToCell (position, dimensionArray) {
+function snapToCell(position, dimensionArray) {
 	let cumulativeDimension = 0;
 	let previousCumulativeDimension = cumulativeDimension;
 	for (let i = 0; i < dimensionArray.length; i++) {
@@ -100,34 +114,56 @@ function snapToCell (position, dimensionArray) {
 
 //--------------------------------------------------//
 // Update the selection rectangle based on start and end cells
-function updateSelection () {
+function updateSelection() {
 	$('.spreadsheet .area-selected-cell').removeClass('area-selected-cell'); // Clear existing selection
 	
 	if (startCell === null || endCell === null || startCell.is(endCell)) {
 		$('.selection-helper-edge').remove();
 		$('#selection-helper').hide();
+		$('#merge-btn').prop('disabled', true); // Disable merge if no area
 		return;
 	}
 	
+	// Enable merge button if an area is selected
+	$('#merge-btn').prop('disabled', false);
+	
 	let startRow = Math.min(startCell.parent().index(), endCell.parent().index());
 	let endRow = Math.max(startCell.parent().index(), endCell.parent().index());
-	let startCol = Math.min(startCell.index(), endCell.index());
-	let endCol = Math.max(startCell.index(), endCell.index());
+	
+	// Use data-col for column indices
+	let startCol = Math.min(parseInt(startCell.attr('data-col')), parseInt(endCell.attr('data-col')));
+	let endCol = Math.max(parseInt(startCell.attr('data-col')), parseInt(endCell.attr('data-col')));
 	
 	for (let i = startRow; i <= endRow; i++) {
+		var $row = $('.spreadsheet tr').eq(i + 1);
 		for (let j = startCol; j <= endCol; j++) {
-			$('.spreadsheet tr').eq(i + 1).find('td').eq(j - 1).addClass('area-selected-cell');
+			// Find cell by data-col
+			$row.find('td[data-col="' + j + '"]').addClass('area-selected-cell');
 		}
 	}
 	
 	// Disable formula bar if multiple cells are selected
 	$('#formula-input').val('').prop('disabled', true);
 	
-	let firstSelectedCell = $('.spreadsheet .area-selected-cell').first();
-	let lastSelectedCell = $('.spreadsheet .area-selected-cell').last();
+	// Calculate dimensions based on the theoretical grid, not just selected cells (which might be sparse)
 	let containerOffset = $('.spreadsheet-container').offset();
+	
+	// Find top-left cell of the selection area (might be merged, so we look for the cell at startRow/startCol)
+	// If it doesn't exist (merged away), we might need to adjust, but for standard selection it should be fine.
+	let firstSelectedCell = $('.spreadsheet tr').eq(startRow + 1).find('td[data-col="' + startCol + '"]');
+	
+	// If the exact top-left cell is missing (covered by a merge starting elsewhere),
+	// we should find the cell that covers this position.
+	if (!firstSelectedCell.length) {
+		// Fallback: find the closest cell before it
+		firstSelectedCell = $('.spreadsheet tr').eq(startRow + 1).find('td').filter(function() {
+			return parseInt($(this).attr('data-col')) <= startCol;
+		}).last();
+	}
+	
+	if (!firstSelectedCell.length) return; // Should not happen in valid grid
+	
 	let firstCellOffset = firstSelectedCell.offset();
-	let lastCellOffset = lastSelectedCell.offset();
 	let helperDiv = $('#selection-helper');
 	
 	let scrollLeft = $('.spreadsheet-container').scrollLeft();
@@ -152,10 +188,10 @@ function updateSelection () {
 	
 	// Add edge elements
 	let edgeElements = [
-		$("<div class='selection-helper-edge top'></div>").css({ 'top': -3, 'left': 0, 'width': '100%' }),
-		$("<div class='selection-helper-edge right'></div>").css({ 'top': 0, 'right': -3, 'height': '100%' }),
-		$("<div class='selection-helper-edge bottom'></div>").css({ 'bottom': -3, 'left': 0, 'width': '100%' }),
-		$("<div class='selection-helper-edge left'></div>").css({ 'top': 0, 'left': -3, 'height': '100%' })
+		$("<div class='selection-helper-edge top'></div>").css({'top': -3, 'left': 0, 'width': '100%'}),
+		$("<div class='selection-helper-edge right'></div>").css({'top': 0, 'right': -3, 'height': '100%'}),
+		$("<div class='selection-helper-edge bottom'></div>").css({'bottom': -3, 'left': 0, 'width': '100%'}),
+		$("<div class='selection-helper-edge left'></div>").css({'top': 0, 'left': -3, 'height': '100%'})
 	];
 	
 	edgeElements.forEach(function (edge) {
@@ -167,7 +203,7 @@ function updateSelection () {
 // Persistence Functions
 //--------------------------------------------------//
 
-function saveState () {
+function saveState() {
 	var state = {
 		cells: {},
 		colWidths: [],
@@ -175,14 +211,29 @@ function saveState () {
 		selectedCell: null
 	};
 	
-	// Save Cell Content
+	// Save Cell Content and Attributes (Merge status)
 	$('.spreadsheet .text-cell').each(function () {
-		// Read from inner div
-		var text = $(this).find('.content-cut').text();
-		if (text) {
-			var rowIndex = $(this).parent().index();
-			var colIndex = $(this).index();
-			state.cells[rowIndex + '-' + colIndex] = text;
+		var $cell = $(this);
+		var text = $cell.find('.content-cut').text();
+		var rowspan = parseInt($cell.attr('rowspan')) || 1;
+		var colspan = parseInt($cell.attr('colspan')) || 1;
+		
+		// Only save if there is data or structural change
+		if (text || rowspan > 1 || colspan > 1) {
+			var rowIndex = $cell.parent().index();
+			var colIndex = parseInt($cell.attr('data-col'));
+			
+			// If it's a complex cell (merged), save as object
+			if (rowspan > 1 || colspan > 1) {
+				state.cells[rowIndex + '-' + colIndex] = {
+					text: text,
+					rowspan: rowspan,
+					colspan: colspan
+				};
+			} else {
+				// Simple text save
+				state.cells[rowIndex + '-' + colIndex] = text;
+			}
 		}
 	});
 	
@@ -201,7 +252,7 @@ function saveState () {
 	if ($selected.length) {
 		state.selectedCell = {
 			row: $selected.parent().index(),
-			col: $selected.index()
+			col: parseInt($selected.attr('data-col'))
 		};
 	}
 	
@@ -209,7 +260,7 @@ function saveState () {
 	console.log('State saved');
 }
 
-function loadState () {
+function loadState() {
 	var saved = localStorage.getItem('cascadePromptState');
 	if (!saved) return;
 	
@@ -224,16 +275,10 @@ function loadState () {
 				var w = state.colWidths[index];
 				$(this).css('width', w + 'px');
 				tableWidth += w;
-				
-				// NEW: Apply width to all .content-cut divs in this column
-				$('.spreadsheet tbody tr').each(function () {
-					$(this).find('td').eq(index).find('.content-cut').css('width', w + 'px');
-				});
 			}
 		});
 		// Adjust table width
 		if (tableWidth > 0) {
-			// Add offset for row header
 			$table.width(tableWidth + 50);
 		}
 	}
@@ -244,35 +289,110 @@ function loadState () {
 			if (state.rowHeights[index]) {
 				var h = state.rowHeights[index];
 				$(this).css('height', h + 'px');
-				
-				// NEW: Apply height to all .content-cut divs in this row
-				// index corresponds to the row index in tbody
+				// Apply height to all .content-cut divs in this row
 				$(this).parent().find('.content-cut').css('height', h + 'px');
 			}
 		});
 	}
 	
-	// Restore Cell Content
+	// Restore Cell Content and Attributes
 	if (state.cells) {
 		for (var key in state.cells) {
 			var parts = key.split('-');
 			var r = parseInt(parts[0]);
 			var c = parseInt(parts[1]);
-			// Write to inner div
-			$('.spreadsheet tr').eq(r + 1).find('td').eq(c - 1).find('.content-cut').text(state.cells[key]);
+			var cellData = state.cells[key];
+			
+			// Find cell by data-col
+			var $cell = $('.spreadsheet tr').eq(r + 1).find('td[data-col="' + c + '"]');
+			
+			if (typeof cellData === 'object') {
+				// Restore text
+				$cell.find('.content-cut').text(cellData.text || '');
+				
+				// Restore attributes
+				if (cellData.rowspan > 1) $cell.attr('rowspan', cellData.rowspan);
+				if (cellData.colspan > 1) $cell.attr('colspan', cellData.colspan);
+				
+				// Remove covered cells
+				if (cellData.rowspan > 1 || cellData.colspan > 1) {
+					var rowspan = cellData.rowspan || 1;
+					var colspan = cellData.colspan || 1;
+					
+					for (var i = r; i < r + rowspan; i++) {
+						for (var j = c; j < c + colspan; j++) {
+							if (i === r && j === c) continue;
+							// Remove cell
+							$('.spreadsheet tr').eq(i + 1).find('td[data-col="' + j + '"]').remove();
+						}
+					}
+				}
+				
+			} else {
+				// Legacy/Simple string format
+				$cell.find('.content-cut').text(cellData);
+			}
 		}
 	}
 	
 	// Restore Selection
 	if (state.selectedCell) {
-		var $cell = $('.spreadsheet tr').eq(state.selectedCell.row + 1).find('td').eq(state.selectedCell.col - 1);
+		var $cell = $('.spreadsheet tr').eq(state.selectedCell.row + 1).find('td[data-col="' + state.selectedCell.col + '"]');
 		if ($cell.length) {
 			highlightCell($cell);
 		}
 	}
+	
+	// After loading, we need to ensure widths are correct for merged cells
+	// Trigger a resize update for all columns (simplified by just reapplying widths)
+	if (state.colWidths) {
+		state.colWidths.forEach(function(w, index) {
+			updateColumnWidth(index, w);
+		});
+	}
 }
 
-function resetState () {
+// Helper to update column width including merged cells
+function updateColumnWidth(colIndex, newWidth) {
+	// Update header
+	$('.letter-cell[data-col="' + colIndex + '"]').css('width', newWidth + 'px');
+	
+	// Update cells
+	$('.spreadsheet tbody tr').each(function () {
+		var $row = $(this);
+		
+		// Find exact cell
+		var $cell = $row.find('td[data-col="' + colIndex + '"]');
+		if ($cell.length) {
+			// If it's a single cell or start of merge
+			var colspan = parseInt($cell.attr('colspan')) || 1;
+			if (colspan === 1) {
+				$cell.find('.content-cut').css('width', newWidth + 'px');
+			} else {
+				// Merged cell starting here: recalculate total width
+				var totalWidth = getColumnWidthRange(colIndex, colIndex + colspan - 1);
+				$cell.find('.content-cut').css('width', totalWidth + 'px');
+			}
+		} else {
+			// Cell might be merged from the left
+			// Find the cell that covers this column
+			var $coveringCell = $row.find('td').filter(function() {
+				var c = parseInt($(this).attr('data-col'));
+				var span = parseInt($(this).attr('colspan')) || 1;
+				return c < colIndex && (c + span) > colIndex;
+			});
+			
+			if ($coveringCell.length) {
+				var startCol = parseInt($coveringCell.attr('data-col'));
+				var span = parseInt($coveringCell.attr('colspan'));
+				var totalWidth = getColumnWidthRange(startCol, startCol + span - 1);
+				$coveringCell.find('.content-cut').css('width', totalWidth + 'px');
+			}
+		}
+	});
+}
+
+function resetState() {
 	if (confirm('Are you sure you want to reset the spreadsheet? All data will be lost.')) {
 		localStorage.removeItem('cascadePromptState');
 		location.reload();
@@ -303,8 +423,8 @@ $(document).ready(function () {
 	});
 	
 	// Handle Enter in Formula Bar
-	$('#formula-input').on('keydown', function(e) {
-		if(e.key === "Enter") {
+	$('#formula-input').on('keydown', function (e) {
+		if (e.key === "Enter") {
 			var $selected = $('.selected-cell');
 			if ($selected.length) {
 				// Move focus back to cell or move down
@@ -312,8 +432,8 @@ $(document).ready(function () {
 				// Optional: Move selection down like Excel
 				var $nextRow = $selected.closest("tr").next("tr");
 				if ($nextRow.length) {
-					var cellIndex = $selected.index();
-					var $nextCell = $nextRow.find("td").eq(cellIndex - 1);
+					var cellCol = parseInt($selected.attr('data-col'));
+					var $nextCell = $nextRow.find('td[data-col="' + cellCol + '"]');
 					if ($nextCell.length) {
 						highlightCell($nextCell);
 					}
@@ -388,17 +508,17 @@ $(document).ready(function () {
 	// Handle dragging edges
 	$(document).off('mousedown', '.selection-helper-edge').on('mousedown', '.selection-helper-edge', function (e) {
 		draggingEdge = $(this);
-		initialMousePos = { top: e.pageY, left: e.pageX };
+		initialMousePos = {top: e.pageY, left: e.pageX};
 		initialHelperPos = $('#selection-helper').position();
 		
 		// Save the initial start and end cell indices for column and row counts
 		initialStartCellIndex = {
 			row: startCell.parent().index(),
-			col: startCell.index()
+			col: parseInt(startCell.attr('data-col'))
 		};
 		initialEndCellIndex = {
 			row: endCell.parent().index(),
-			col: endCell.index()
+			col: parseInt(endCell.attr('data-col'))
 		};
 	});
 	
