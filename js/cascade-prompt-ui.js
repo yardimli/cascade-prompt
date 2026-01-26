@@ -132,6 +132,9 @@ function addNewRow() {
 	}
 	newRow += '</tr>';
 	$('.spreadsheet').append(newRow);
+	
+	// Re-attach resize handlers for the new row header
+	attachResizeHandlers();
 }
 
 //--------------------------------------------------//
@@ -149,6 +152,9 @@ function addNewColumn() {
 	var startTableWidth = table.outerWidth();
 	var newTableWidth = startTableWidth + 200;
 	table.width(newTableWidth); // Adjust the table width as the column width is adjusted
+	
+	// Re-attach resize handlers for the new col header
+	attachResizeHandlers();
 }
 
 //--------------------------------------------------//
@@ -269,21 +275,8 @@ function unmergeCells() {
 }
 
 //--------------------------------------------------//
-//----------------- Document Ready -----------------//
-$(document).ready(function () {
-	
-	// Merge Button Listener
-	$('#merge-btn').on('click', function () {
-		mergeCells();
-	});
-	
-	// Unmerge Button Listener
-	$('#unmerge-btn').on('click', function () {
-		unmergeCells();
-	});
-	
-	//--------------------------------------------------//
-	
+// Function to attach resize handlers (extracted for re-use)
+function attachResizeHandlers() {
 	$('.counter-cell').not('.processed').css({
 		'position': 'sticky',
 		'user-select': 'none' // prevents text selection during resize drag
@@ -371,6 +364,30 @@ $(document).ready(function () {
 		
 		e.preventDefault(); // prevents text selection
 	}).addClass('processed');
+}
+
+//--------------------------------------------------//
+//----------------- Document Ready -----------------//
+$(document).ready(function () {
+	
+	// Merge Button Listener
+	$('#merge-btn').on('click', function () {
+		mergeCells();
+	});
+	
+	// Unmerge Button Listener
+	$('#unmerge-btn').on('click', function () {
+		unmergeCells();
+	});
+	
+	//--------------------------------------------------//
+	
+	attachResizeHandlers();
+	
+	// Listen for custom event from Data Manager to re-attach handlers after render
+	$(document).on('sheetRendered', function() {
+		attachResizeHandlers();
+	});
 	
 	//--------------------------------------------------//
 	

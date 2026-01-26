@@ -7,13 +7,15 @@ DONE:
 - allow user to merge selected cells using menu buttons. use colspan and rowspan attributes to achieve this, if cells contain data merge the data with a separator (e.g. space or comma)
 - allow user to unmerge merged cells using a context menu, when unmerging keep all data in the top-left cell of the merged area and clear the rest. unmerge button should only work if a merged cell is selected
 
-TODO:
-
+- create a new javascript file to keep track of the data in the tables, it should have functions to get/set cell data that is called from the other scrips. load and save functions to convert the table data to/from a json structure should also be added here.
 - add array structure to store multiple sheets within a project, only store cells with content along with the height and width of rows and columns, store merged cell info (start row/col, colspan, rowspan) and total number of rows and columns for each sheet
 - add tab at the bottom allow user to create new sheets and navigate between existing sheets.
 
+TODO:
+
 - add php backend to save/load projects (save as json to projects folder) and load from there, create a modal to manage projects (load/delete) and to create new projects and save current project (first time) or save as...
 - add a top menu bar with file/edit/view/help main menus and relevant submenus, create placeholders for future functionality
+- remove the localstorage functionality, only remember the last open file in localstorage and open it on page load if available
 
 
 
@@ -21,3 +23,5 @@ TODO:
 
 when merging cells row height resize acts weirdly for the rows that intersect with merged cells
 when unmerging cells the new cells are not editable until page refresh
+new sheets row heights are different than the first sheet, should have some default height
+switching sheets is slow.

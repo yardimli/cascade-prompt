@@ -200,159 +200,23 @@ function updateSelection() {
 }
 
 //--------------------------------------------------//
-// Persistence Functions
+// Persistence Functions (Delegated to SheetDataManager)
 //--------------------------------------------------//
 
 function saveState() {
-	var state = {
-		cells: {},
-		colWidths: [],
-		rowHeights: [],
-		selectedCell: null
-	};
-	
-	// Save Cell Content and Attributes (Merge status)
-	$('.spreadsheet .text-cell').each(function () {
-		var $cell = $(this);
-		var text = $cell.find('.content-cut').text();
-		var rowspan = parseInt($cell.attr('rowspan')) || 1;
-		var colspan = parseInt($cell.attr('colspan')) || 1;
-		
-		// Only save if there is data or structural change
-		if (text || rowspan > 1 || colspan > 1) {
-			var rowIndex = $cell.parent().index();
-			var colIndex = parseInt($cell.attr('data-col'));
-			
-			// If it's a complex cell (merged), save as object
-			if (rowspan > 1 || colspan > 1) {
-				state.cells[rowIndex + '-' + colIndex] = {
-					text: text,
-					rowspan: rowspan,
-					colspan: colspan
-				};
-			} else {
-				// Simple text save
-				state.cells[rowIndex + '-' + colIndex] = text;
-			}
-		}
-	});
-	
-	// Save Column Widths
-	$('.letter-cell').each(function () {
-		state.colWidths.push($(this).outerWidth());
-	});
-	
-	// Save Row Heights
-	$('.counter-cell').each(function () {
-		state.rowHeights.push($(this).outerHeight());
-	});
-	
-	// Save Selected Cell
-	var $selected = $('.selected-cell');
-	if ($selected.length) {
-		state.selectedCell = {
-			row: $selected.parent().index(),
-			col: parseInt($selected.attr('data-col'))
-		};
+	if (typeof SheetDataManager !== 'undefined') {
+		SheetDataManager.saveToLocalStorage();
 	}
-	
-	localStorage.setItem('cascadePromptState', JSON.stringify(state));
-	console.log('State saved');
 }
 
+// Legacy loadState is replaced by SheetDataManager.init()
+// Kept empty or redirected if called explicitly by old code
 function loadState() {
-	var saved = localStorage.getItem('cascadePromptState');
-	if (!saved) return;
-	
-	var state = JSON.parse(saved);
-	
-	// Restore Column Widths
-	if (state.colWidths) {
-		var $table = $('.spreadsheet');
-		var tableWidth = 0;
-		$('.letter-cell').each(function (index) {
-			if (state.colWidths[index]) {
-				var w = state.colWidths[index];
-				$(this).css('width', (w-2) + 'px');
-				tableWidth += w;
-			}
-		});
-		// Adjust table width
-		if (tableWidth > 0) {
-			$table.width(tableWidth + 50);
-		}
-	}
-	
-	// Restore Row Heights
-	if (state.rowHeights) {
-		$('.counter-cell').each(function (index) {
-			if (state.rowHeights[index]) {
-				var h = state.rowHeights[index];
-				$(this).css('height', h + 'px');
-			}
-		});
-	}
-	
-	// Restore Cell Content and Attributes
-	if (state.cells) {
-		for (var key in state.cells) {
-			var parts = key.split('-');
-			var r = parseInt(parts[0]);
-			var c = parseInt(parts[1]);
-			var cellData = state.cells[key];
-			
-			// Find cell by data-col
-			var $cell = $('.spreadsheet tr').eq(r + 1).find('td[data-col="' + c + '"]');
-			
-			if (typeof cellData === 'object') {
-				// Restore text
-				$cell.find('.content-cut').text(cellData.text || '');
-				
-				// Restore attributes
-				if (cellData.rowspan > 1) $cell.attr('rowspan', cellData.rowspan);
-				if (cellData.colspan > 1) $cell.attr('colspan', cellData.colspan);
-				
-				// Remove covered cells
-				if (cellData.rowspan > 1 || cellData.colspan > 1) {
-					var rowspan = cellData.rowspan || 1;
-					var colspan = cellData.colspan || 1;
-					
-					for (var i = r; i < r + rowspan; i++) {
-						for (var j = c; j < c + colspan; j++) {
-							if (i === r && j === c) continue;
-							// Remove cell
-							$('.spreadsheet tr').eq(i + 1).find('td[data-col="' + j + '"]').remove();
-						}
-					}
-				}
-				
-			} else {
-				// Legacy/Simple string format
-				$cell.find('.content-cut').text(cellData);
-			}
-		}
-	}
-	
-	// Restore Selection
-	if (state.selectedCell) {
-		var $cell = $('.spreadsheet tr').eq(state.selectedCell.row + 1).find('td[data-col="' + state.selectedCell.col + '"]');
-		if ($cell.length) {
-			highlightCell($cell);
-		}
-	}
-	
-	// After loading, we need to ensure widths are correct for merged cells
-	// Trigger a resize update for all columns (simplified by just reapplying widths)
-	if (state.colWidths) {
-		state.colWidths.forEach(function(w, index) {
-			updateColumnWidth(index, w);
-		});
-	}
-	
-	if (state.rowHeights) {
-		state.rowHeights.forEach(function (h, index) {
-			updateRowHeight(index, h)
-		})
+	if (typeof SheetDataManager !== 'undefined') {
+		// SheetDataManager handles loading internally on init
+		// But if called manually, we can force a reload
+		SheetDataManager.loadFromLocalStorage();
+		SheetDataManager.renderSheet(SheetDataManager.data.activeSheetIndex);
 	}
 }
 
@@ -438,8 +302,7 @@ function updateRowHeight (rowIndex, newHeight) {
 
 function resetState() {
 	if (confirm('Are you sure you want to reset the spreadsheet? All data will be lost.')) {
-		localStorage.removeItem('cascadePromptState');
-		location.reload();
+		SheetDataManager.resetData();
 	}
 }
 
@@ -447,8 +310,16 @@ function resetState() {
 //----------------- Document Ready -----------------//
 $(document).ready(function () {
 	
-	// Load saved data immediately
-	loadState();
+	// Initialize Data Manager
+	if (typeof SheetDataManager !== 'undefined') {
+		SheetDataManager.init();
+	}
+	
+	// Add Sheet Button Listener
+	$('.add-sheet-btn').on('click', function () {
+		var nextNum = SheetDataManager.data.sheets.length + 1;
+		SheetDataManager.createSheet('Sheet' + nextNum, false);
+	});
 	
 	// Reset Button Listener
 	$('#reset-sheet-btn').on('click', function () {
@@ -497,17 +368,13 @@ $(document).ready(function () {
 		updateSelection();
 	});
 	
-	$('.text-cell').off('dblclick').on('dblclick', function () {
+	// Use delegated event for double click to handle re-rendered sheets
+	$('.spreadsheet').on('dblclick', '.text-cell', function () {
 		makeCellEditable($(this));
 	});
 	
-	// Note: blur event on .text-cell is less relevant now that we use an overlay textarea,
-	// but we keep the logic in stopEditing() which is called by other interactions.
-	
-	// Listen for content changes in editable cells (via textarea sync)
-	// This is now handled in makeCellEditable's input listener
-	
-	$('.text-cell').off('mousedown').on('mousedown', function (e) {
+	// Use delegated event for mousedown
+	$('.spreadsheet').on('mousedown', '.text-cell', function (e) {
 		console.log('mousedown');
 		
 		if (isEditing && $(this).hasClass('edit-cell')) {
@@ -528,7 +395,7 @@ $(document).ready(function () {
 		e.preventDefault();
 	});
 	
-	$('.spreadsheet').off('mousemove').on('mousemove', '.text-cell', function (e) {
+	$('.spreadsheet').on('mousemove', '.text-cell', function (e) {
 		
 		if (mouseDown && !isSelecting) {
 			isSelecting = true;
@@ -578,7 +445,6 @@ $(document).ready(function () {
 				top: e.pageY - containerOffset.top + scrollTop - $('.top-corner-cell').outerHeight(),
 				left: e.pageX - containerOffset.left + scrollLeft - $('.top-corner-cell').outerWidth()
 			};
-			console.log('Delta: ', delta);
 			
 			let columnWidths = getColumnWidths();
 			let rowHeights = getRowHeights();
@@ -608,8 +474,6 @@ $(document).ready(function () {
 				}
 				leftPos -= columnWidths[i];
 			}
-			
-			console.log('Snapped to: ', topCellIndex, leftCellIndex, delta.left, delta.top);
 			
 			// Ensure the selection rectangle resizes proportionally to the initial selection size
 			let newWidth = getColumnWidthRange(leftCellIndex + 1, leftCellIndex + (initialEndCellIndex.col - initialStartCellIndex.col) + 1);

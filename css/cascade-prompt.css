@@ -1,5 +1,6 @@
 :root {
     --animation-duration: 4s;
+    --tab-bar-height: 35px; /* New variable for tab bar */
 }
 
 ::-webkit-scrollbar {
@@ -84,14 +85,15 @@
 }
 
 .spreadsheet-container {
-    margin: 10px;
+    margin: 10px 10px 0 10px; /* Removed bottom margin to sit flush with tabs */
     padding: 0px;
 
     overflow: auto;
     width: calc(100vw - 20px);
-    /* Adjusted height to account for formula bar (approx 30px + margins) */
-    height: calc(100vh - 145px);
+    /* Adjusted height to account for formula bar + tab bar */
+    height: calc(100vh - 145px - var(--tab-bar-height));
     border: 1px solid #ccc;
+    border-bottom: none; /* Remove bottom border as tabs will act as border */
 
     position: relative;
 }
@@ -275,4 +277,64 @@
 /* Added class for cells hidden by merge */
 .merged-hidden {
     display: none;
+}
+
+/* -------------------------------------------------- */
+/* Sheet Tabs Styles */
+/* -------------------------------------------------- */
+.sheet-tabs-container {
+    margin: 0 10px 10px 10px;
+    height: var(--tab-bar-height);
+    background-color: #f1f3f4;
+    border: 1px solid #ccc;
+    border-top: none;
+    display: flex;
+    align-items: center;
+    padding-left: 5px;
+    overflow-x: auto;
+}
+
+.sheet-tab {
+    display: inline-block;
+    padding: 5px 15px;
+    margin-right: 2px;
+    background-color: #e8eaed;
+    border: 1px solid transparent;
+    border-bottom: none;
+    cursor: pointer;
+    font-size: 13px;
+    user-select: none;
+    min-width: 60px;
+    text-align: center;
+    border-radius: 0 0 4px 4px;
+}
+
+.sheet-tab:hover {
+    background-color: #dee1e6;
+}
+
+.sheet-tab.active {
+    background-color: #fff;
+    color: #1a73e8;
+    font-weight: bold;
+    border-top: 2px solid transparent; /* Visual trick to blend with grid */
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+.add-sheet-btn {
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #5f6368;
+    font-size: 18px;
+    border-radius: 50%;
+    margin-left: 5px;
+}
+
+.add-sheet-btn:hover {
+    background-color: rgba(0,0,0,0.05);
+    color: #000;
 }

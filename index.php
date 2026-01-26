@@ -39,6 +39,8 @@
 	<script src="./js/bootstrap.min.js"></script>
 	<script src="./js/jquery-3.7.0.min.js"></script>
 	
+	<!-- Added Data Manager Script -->
+	<script src="js/cascade-prompt-data.js"></script>
 	<script src="js/cascade-prompt.js"></script>
 	<script src="js/cascade-prompt-keypress.js"></script>
 	<script src="js/cascade-prompt-ui.js"></script>
@@ -128,8 +130,12 @@
 		?>
 		</tbody>
 	</table>
+</div>
 
-
+<!-- Added Sheet Tabs Container -->
+<div class="sheet-tabs-container" id="sheet-tabs-container">
+	<!-- Tabs will be injected here by JS -->
+	<div class="add-sheet-btn" title="Add Sheet">+</div>
 </div>
 
 </body>
