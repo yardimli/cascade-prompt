@@ -1,6 +1,6 @@
 /**
  * Cascade Prompt Data Manager
- * Handles data structure, persistence, and DOM rendering for multiple sheets.
+ * Handles data structure, persistence (PHP Backend), and DOM rendering.
  */
 
 var SheetDataManager = {
@@ -9,36 +9,33 @@ var SheetDataManager = {
 		sheets: []
 	},
 	
+	currentFileName: null, // Tracks the currently open file
+	
 	// Default configuration
 	defaults: {
 		rows: 100,
 		cols: 26,
 		sheetNamePrefix: 'Sheet',
-		defaultRowHeight: 25, // Fallback, will be overwritten by measureDefaults
-		defaultColWidth: 200 // Fallback, will be overwritten by measureDefaults
+		defaultRowHeight: 25,
+		defaultColWidth: 200
 	},
 	
 	/**
 	 * Initialize the data manager
 	 */
 	init: function () {
-		// Measure defaults from the DOM (PHP generated table) before loading data
-		// This ensures new sheets match the CSS styling of the initial sheet
 		this.measureDefaults();
 		
-		this.loadFromLocalStorage();
+		// Check LocalStorage for the last opened file
+		const lastFile = localStorage.getItem('lastOpenedFile');
 		
-		// If no data exists, create the initial sheet based on the current DOM or defaults
-		if (this.data.sheets.length === 0) {
+		if (lastFile) {
+			console.log('Attempting to load last opened file: ' + lastFile);
+			this.loadProject(lastFile, true); // true = isInitialLoad
+		} else {
+			// If no last file, initialize empty sheet based on DOM
 			this.createSheet(this.defaults.sheetNamePrefix + '1', true);
-		}
-		
-		this.renderTabs();
-		
-		// If we loaded data, we might need to render the active sheet
-		// (unless it's a fresh load where the PHP rendered the default grid)
-		if (this.data.sheets.length > 0) {
-			this.renderSheet(this.data.activeSheetIndex);
+			this.renderTabs();
 		}
 	},
 	
@@ -46,13 +43,11 @@ var SheetDataManager = {
 	 * Measure the dimensions of the currently rendered table to set defaults
 	 */
 	measureDefaults: function () {
-		// Measure Row Height from the first row header
 		const sampleRowHeader = document.querySelector('.spreadsheet tbody tr:first-child th.counter-cell');
 		if (sampleRowHeader) {
 			this.defaults.defaultRowHeight = sampleRowHeader.offsetHeight;
 		}
 		
-		// Measure Column Width from the first column header
 		const sampleColHeader = document.querySelector('.spreadsheet thead th.letter-cell');
 		if (sampleColHeader) {
 			this.defaults.defaultColWidth = sampleColHeader.offsetWidth;
@@ -61,53 +56,42 @@ var SheetDataManager = {
 	
 	/**
 	 * Create a new sheet
-	 * @param {string} name - Name of the sheet
-	 * @param {boolean} isInitial - If true, captures current DOM state instead of creating empty
 	 */
 	createSheet: function (name, isInitial) {
 		let newSheet = {
 			name: name,
 			rowCount: this.defaults.rows,
 			colCount: this.defaults.cols,
-			cells: {}, // Format: "rowIndex-colIndex": { text: "...", rowspan: 1, colspan: 1 }
-			colWidths: {}, // Sparse object: { colIndex: width }
-			rowHeights: {} // Sparse object: { rowIndex: height }
+			cells: {},
+			colWidths: {},
+			rowHeights: {}
 		};
 		
 		if (isInitial) {
-			// Capture the state of the PHP-generated table currently in DOM
 			newSheet = this.collectDOMData(newSheet);
 		}
 		
 		this.data.sheets.push(newSheet);
 		
 		if (!isInitial) {
-			// Switch to the new sheet immediately
 			this.selectSheet(this.data.sheets.length - 1);
 		} else {
 			this.renderTabs();
-			this.saveToLocalStorage();
+			// We don't auto-save to server on init, only on explicit save
 		}
 	},
 	
 	/**
 	 * Switch to a specific sheet
-	 * @param {number} index
 	 */
 	selectSheet: function (index) {
 		if (index < 0 || index >= this.data.sheets.length) return;
 		if (index === this.data.activeSheetIndex) return;
 		
-		// 1. Save current sheet state from DOM
 		this.updateCurrentSheetData();
-		
-		// 2. Update active index
 		this.data.activeSheetIndex = index;
-		
-		// 3. Render new sheet
 		this.renderSheet(index);
 		this.renderTabs();
-		this.saveToLocalStorage();
 	},
 	
 	/**
@@ -122,15 +106,12 @@ var SheetDataManager = {
 	
 	/**
 	 * Helper to scrape DOM
-	 * @param {object} sheetObj - The sheet object to update
-	 * @returns {object} - Updated sheet object
 	 */
 	collectDOMData: function (sheetObj) {
 		const cells = {};
 		const colWidths = {};
 		const rowHeights = {};
 		
-		// 1. Save Cell Content and Merges
 		const textCells = document.querySelectorAll('.spreadsheet .text-cell');
 		textCells.forEach(cell => {
 			const contentDiv = cell.querySelector('.content-cut');
@@ -138,7 +119,6 @@ var SheetDataManager = {
 			const rowspan = parseInt(cell.getAttribute('rowspan')) || 1;
 			const colspan = parseInt(cell.getAttribute('colspan')) || 1;
 			
-			// Only save if interesting (content or merge)
 			if (text || rowspan > 1 || colspan > 1) {
 				const row = cell.parentElement;
 				const tbody = row.parentElement;
@@ -153,13 +133,11 @@ var SheetDataManager = {
 			}
 		});
 		
-		// 2. Save Column Widths
 		document.querySelectorAll('.letter-cell').forEach(cell => {
 			const index = parseInt(cell.getAttribute('data-col'));
 			colWidths[index] = cell.offsetWidth;
 		});
 		
-		// 3. Save Row Heights
 		document.querySelectorAll('.counter-cell').forEach(cell => {
 			const row = cell.parentElement;
 			const tbody = row.parentElement;
@@ -167,7 +145,6 @@ var SheetDataManager = {
 			rowHeights[index] = cell.offsetHeight;
 		});
 		
-		// 4. Update Counts
 		sheetObj.rowCount = document.querySelectorAll('.spreadsheet tbody tr').length;
 		sheetObj.colCount = document.querySelectorAll('.spreadsheet thead th.letter-cell').length;
 		
@@ -180,13 +157,11 @@ var SheetDataManager = {
 	
 	/**
 	 * Render a sheet to the DOM
-	 * @param {number} index
 	 */
 	renderSheet: function (index) {
 		const sheet = this.data.sheets[index];
 		if (!sheet) return;
 		
-		// Reset selection/editing state
 		if (typeof stopEditing === 'function') stopEditing();
 		document.querySelectorAll('.selected-cell').forEach(el => el.classList.remove('selected-cell'));
 		document.querySelectorAll('.highlight').forEach(el => el.classList.remove('highlight'));
@@ -198,16 +173,15 @@ var SheetDataManager = {
 		const thead = table.querySelector('thead');
 		const tbody = table.querySelector('tbody');
 		
-		// --- Rebuild Header (Columns) ---
+		// --- Rebuild Header ---
 		const headerRow = thead.querySelector('tr');
-		headerRow.innerHTML = ''; // Clear existing
+		headerRow.innerHTML = '';
 		headerRow.insertAdjacentHTML('beforeend', '<th class="top-corner-cell"></th>');
 		
 		let tableWidth = 0;
 		
 		for (let c = 0; c < sheet.colCount; c++) {
 			const letter = this.getColumnLetter(c);
-			// Use stored width or measured default
 			const width = sheet.colWidths[c] || this.defaults.defaultColWidth;
 			
 			const th = document.createElement('th');
@@ -220,27 +194,22 @@ var SheetDataManager = {
 			tableWidth += width;
 		}
 		
-		// Adjust table width
-		table.style.width = (tableWidth + 50) + 'px'; // +50 for row counter
+		table.style.width = (tableWidth + 50) + 'px';
 		
-		// --- Rebuild Body (Rows & Cells) ---
+		// --- Rebuild Body ---
 		tbody.innerHTML = '';
 		
 		for (let r = 0; r < sheet.rowCount; r++) {
-			// Use stored height or measured default
 			const height = sheet.rowHeights[r] || this.defaults.defaultRowHeight;
 			const tr = document.createElement('tr');
 			
-			// Row Header
 			const rowHeader = document.createElement('th');
 			rowHeader.className = 'counter-cell';
 			rowHeader.textContent = (r + 1);
 			rowHeader.style.height = height + 'px';
 			tr.appendChild(rowHeader);
 			
-			// Cells
 			for (let c = 0; c < sheet.colCount; c++) {
-				// Check if this cell is skipped due to a merge from above or left
 				if (this.isCellHiddenByMerge(sheet, r, c)) {
 					continue;
 				}
@@ -255,7 +224,6 @@ var SheetDataManager = {
 				const content = document.createElement('div');
 				content.className = 'content-cut';
 				
-				// Apply dimensions
 				let cellWidth = sheet.colWidths[c] || this.defaults.defaultColWidth;
 				
 				if (cellData) {
@@ -264,7 +232,6 @@ var SheetDataManager = {
 					if (cellData.rowspan > 1) td.setAttribute('rowspan', cellData.rowspan);
 					if (cellData.colspan > 1) td.setAttribute('colspan', cellData.colspan);
 					
-					// Calculate merged dimensions
 					if (cellData.colspan > 1) {
 						cellWidth = 0;
 						for (let k = 0; k < cellData.colspan; k++) {
@@ -282,7 +249,6 @@ var SheetDataManager = {
 					
 					content.style.height = cellHeight + 'px';
 				} else {
-					// Empty cell
 					content.style.height = height + 'px';
 				}
 				
@@ -290,21 +256,13 @@ var SheetDataManager = {
 				td.appendChild(content);
 				tr.appendChild(td);
 			}
-			
 			tbody.appendChild(tr);
 		}
 		
-		// Re-attach resize handlers (UI function)
 		this.rebindResizeHandlers();
 	},
 	
-	/**
-	 * Check if a specific coordinate is covered by a merge
-	 */
 	isCellHiddenByMerge: function (sheet, row, col) {
-		// This is computationally expensive for large sheets if done naively.
-		// Since we store merges in 'cells', we iterate known merges.
-		
 		for (const key in sheet.cells) {
 			const parts = key.split('-');
 			const r = parseInt(parts[0]);
@@ -312,22 +270,18 @@ var SheetDataManager = {
 			const data = sheet.cells[key];
 			
 			if (data.rowspan > 1 || data.colspan > 1) {
-				// Check if (row, col) falls within this merge, EXCLUDING the start cell itself
 				const endR = r + (data.rowspan || 1) - 1;
 				const endC = c + (data.colspan || 1) - 1;
 				
 				if (row >= r && row <= endR && col >= c && col <= endC) {
-					if (row === r && col === c) return false; // It's the master cell
-					return true; // It's a hidden cell
+					if (row === r && col === c) return false;
+					return true;
 				}
 			}
 		}
 		return false;
 	},
 	
-	/**
-	 * Helper to get column letter from index (0 -> A, 25 -> Z, 26 -> AA)
-	 */
 	getColumnLetter: function (index) {
 		let letter = '';
 		while (index >= 0) {
@@ -337,20 +291,13 @@ var SheetDataManager = {
 		return letter;
 	},
 	
-	/**
-	 * Re-apply events for resizing that are attached to specific elements
-	 */
 	rebindResizeHandlers: function () {
 		const event = new Event('sheetRendered');
 		document.dispatchEvent(event);
 	},
 	
-	/**
-	 * Render the tabs at the bottom
-	 */
 	renderTabs: function () {
 		const container = document.getElementById('sheet-tabs-container');
-		// Remove existing tabs (keep the add button)
 		container.querySelectorAll('.sheet-tab').forEach(el => el.remove());
 		
 		const self = this;
@@ -369,34 +316,150 @@ var SheetDataManager = {
 				self.selectSheet(index);
 			});
 			
-			// Insert before the add button
 			container.insertBefore(tab, addBtn);
 		});
 	},
 	
+	// -----------------------------------------------------------------------
+	// Backend Interaction Methods
+	// -----------------------------------------------------------------------
+	
 	/**
-	 * Persistence
+	 * Save current project to PHP backend
 	 */
-	saveToLocalStorage: function () {
-		// Always update current sheet before saving
+	saveProject: function (filename) {
 		this.updateCurrentSheetData();
-		localStorage.setItem('cascadePromptData', JSON.stringify(this.data));
-		console.log('Data saved to LocalStorage');
-	},
-	
-	loadFromLocalStorage: function () {
-		const saved = localStorage.getItem('cascadePromptData');
-		if (saved) {
-			try {
-				this.data = JSON.parse(saved);
-			} catch (e) {
-				console.error('Failed to load data', e);
-			}
+		
+		if (!filename) {
+			alert('Filename is required.');
+			return;
 		}
+		
+		fetch('api/save_project.php', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json'
+			},
+			body: JSON.stringify({
+				filename: filename,
+				data: this.data
+			})
+		})
+			.then(response => response.json())
+			.then(data => {
+				if (data.success) {
+					this.currentFileName = filename;
+					localStorage.setItem('lastOpenedFile', filename);
+					document.title = filename + ' - Cascade Prompt';
+					alert('Project saved successfully!');
+					// Refresh list if modal is open (optional)
+				} else {
+					alert('Error saving project: ' + data.message);
+				}
+			})
+			.catch(error => {
+				console.error('Error:', error);
+				alert('An error occurred while saving.');
+			});
 	},
 	
-	resetData: function () {
-		localStorage.removeItem('cascadePromptData');
-		location.reload();
+	/**
+	 * Load project from PHP backend
+	 */
+	loadProject: function (filename, isInitialLoad) {
+		fetch('api/load_project.php?filename=' + encodeURIComponent(filename))
+			.then(response => response.json())
+			.then(data => {
+				if (data.success) {
+					this.data = data.data;
+					this.currentFileName = filename;
+					localStorage.setItem('lastOpenedFile', filename);
+					document.title = filename + ' - Cascade Prompt';
+					
+					this.renderSheet(this.data.activeSheetIndex || 0);
+					this.renderTabs();
+				} else {
+					console.warn('Could not load project:', data.message);
+					if (isInitialLoad) {
+						// Fallback to empty sheet if last opened file is missing
+						this.createSheet(this.defaults.sheetNamePrefix + '1', true);
+					} else {
+						alert('Error loading project: ' + data.message);
+					}
+				}
+			})
+			.catch(error => {
+				console.error('Error:', error);
+				if (!isInitialLoad) alert('An error occurred while loading.');
+			});
+	},
+	
+	/**
+	 * List projects for the modal
+	 */
+	listProjects: function (callback) {
+		fetch('api/list_projects.php')
+			.then(response => response.json())
+			.then(data => {
+				if (data.success && callback) {
+					callback(data.files);
+				}
+			});
+	},
+	
+	/**
+	 * Delete a project
+	 */
+	deleteProject: function (filename, callback) {
+		if (!confirm('Are you sure you want to delete "' + filename + '"?')) return;
+		
+		fetch('api/delete_project.php', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json'
+			},
+			body: JSON.stringify({ filename: filename })
+		})
+			.then(response => response.json())
+			.then(data => {
+				if (data.success) {
+					if (callback) callback();
+				} else {
+					alert('Error deleting file: ' + data.message);
+				}
+			});
+	},
+	
+	/**
+	 * Reset to a blank state (New Project)
+	 */
+	newProject: function () {
+		if (confirm('Create new project? Unsaved changes will be lost.')) {
+			this.data = {
+				activeSheetIndex: 0,
+				sheets: []
+			};
+			this.currentFileName = null;
+			localStorage.removeItem('lastOpenedFile');
+			document.title = 'Cascade Prompt';
+			
+			// Reset UI
+			const table = document.querySelector('.spreadsheet tbody');
+			table.innerHTML = ''; // Clear current
+			// Re-initialize with defaults
+			// We need to manually reset the DOM to default 100x26 to "measure" or just force create
+			// Since createSheet(..., true) scrapes DOM, we should clear data and force render a default sheet
+			// Instead of scraping, let's push a default object
+			this.data.sheets.push({
+				name: 'Sheet1',
+				rowCount: this.defaults.rows,
+				colCount: this.defaults.cols,
+				cells: {},
+				colWidths: {},
+				rowHeights: {}
+			});
+			this.renderSheet(0);
+			this.renderTabs();
+		}
 	}
 };

@@ -11,11 +11,13 @@ DONE:
 - add array structure to store multiple sheets within a project, only store cells with content along with the height and width of rows and columns, store merged cell info (start row/col, colspan, rowspan) and total number of rows and columns for each sheet
 - add tab at the bottom allow user to create new sheets and navigate between existing sheets.
 
-TODO:
-
 - add php backend to save/load projects (save as json to projects folder) and load from there, create a modal to manage projects (load/delete) and to create new projects and save current project (first time) or save as...
 - add a top menu bar with file/edit/view/help main menus and relevant submenus, create placeholders for future functionality
 - remove the localstorage functionality, only remember the last open file in localstorage and open it on page load if available
+
+TODO:
+
+- save cursor position and highlighted cells when switching sheets and restore them when returning to the sheet also save them to the project file and restore them when loading a project
 
 
 

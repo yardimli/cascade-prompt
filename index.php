@@ -34,9 +34,8 @@
 	
 	<link href="./css/bootstrap.min.css" rel="stylesheet">
 	<script src="./js/bootstrap.min.js"></script>
-	<!-- Removed jQuery -->
 	
-	<!-- Added Data Manager Script -->
+	<!-- Scripts -->
 	<script src="js/cascade-prompt-data.js"></script>
 	<script src="js/cascade-prompt.js"></script>
 	<script src="js/cascade-prompt-keypress.js"></script>
@@ -45,49 +44,96 @@
 </head>
 
 <body class="bg-light" style="margin-left: 0px; padding-left: 0px; overflow: hidden;">
-<h5 style="margin:10px;"><img src="./images/android-chrome-192x192.png" style="height: 32px;"> Cascade Prompt</h5>
-<div style="margin-left: 10px; margin-right: 10px; margin-top:10px;">
-	<div style="background-color: #eeeeff; border-radius: 10px; padding:5px; padding-left: 20px;">
-		
-		<button type="button" class="btn btn-sm btn-outline-info">
-			<i class="bi bi-arrow-counterclockwise" style="color:black;"></i>
-		</button>
-		<button type="button" class="btn btn-sm btn-outline-info">
-			<i class="bi bi-arrow-clockwise" style="color:black;"></i>
-		</button>
-		<button type="button" class="btn btn-sm btn-outline-info">
-			<i class="bi bi-type-bold" style="color:black;"></i>
-		</button>
-		<button type="button" class="btn btn-sm btn-outline-info">
-			<i class="bi bi-type-italic" style="color:black;"></i>
-		</button>
-		<button type="button" class="btn btn-sm btn-outline-info">
-			<i class="bi bi-type-strikethrough" style="color:black;"></i>
-		</button>
-		<button type="button" class="btn btn-sm btn-outline-info">
-			<i class="bi bi-paint-bucket" style="color:black;"></i>
-		</button>
-		<button type="button" class="btn btn-sm btn-outline-info">
-			<i class="bi bi-grid" style="color:black;"></i>
-		</button>
-		<button type="button" class="btn btn-sm btn-outline-info">
-			<i class="bi bi-justify-left" style="color:black;"></i>
-		</button>
-		<!-- Added Merge/Unmerge Buttons -->
-		<button type="button" class="btn btn-sm btn-outline-info" id="merge-btn" title="Merge Cells" disabled>
-			<i class="bi bi-arrows-collapse" style="color:black;"></i>
-		</button>
-		<button type="button" class="btn btn-sm btn-outline-info" id="unmerge-btn" title="Unmerge Cells" disabled>
-			<i class="bi bi-arrows-expand" style="color:black;"></i>
-		</button>
-		<!-- Added Reset Button -->
-		<button type="button" class="btn btn-sm btn-outline-danger" id="reset-sheet-btn" title="Reset Spreadsheet">
-			<i class="bi bi-trash3" style="color:black;"></i> Reset
-		</button>
+
+<!-- Top Menu Bar -->
+<div class="top-menu-bar">
+	<div style="margin-right: 15px; font-weight: bold; display:flex; align-items:center;">
+		<img src="./images/android-chrome-192x192.png" style="height: 20px; margin-right:5px;">
+		Cascade
+	</div>
+	
+	<!-- File Menu -->
+	<div class="menu-item">
+		File
+		<div class="dropdown-content">
+			<div class="dropdown-item" onclick="openProjectModal('new')">New...</div>
+			<div class="dropdown-item" onclick="openProjectModal('open')">Open... <span class="shortcut-key">Ctrl+O</span></div>
+			<div class="dropdown-divider"></div>
+			<div class="dropdown-item" onclick="performSave()">Save <span class="shortcut-key">Ctrl+S</span></div>
+			<div class="dropdown-item" onclick="openProjectModal('save-as')">Save As...</div>
+			<div class="dropdown-divider"></div>
+			<div class="dropdown-item" onclick="window.print()">Print <span class="shortcut-key">Ctrl+P</span></div>
+		</div>
+	</div>
+	
+	<!-- Edit Menu -->
+	<div class="menu-item">
+		Edit
+		<div class="dropdown-content">
+			<div class="dropdown-item" onclick="document.execCommand('undo')">Undo <span class="shortcut-key">Ctrl+Z</span></div>
+			<div class="dropdown-item" onclick="document.execCommand('redo')">Redo <span class="shortcut-key">Ctrl+Y</span></div>
+			<div class="dropdown-divider"></div>
+			<div class="dropdown-item" onclick="document.execCommand('cut')">Cut <span class="shortcut-key">Ctrl+X</span></div>
+			<div class="dropdown-item" onclick="document.execCommand('copy')">Copy <span class="shortcut-key">Ctrl+C</span></div>
+			<div class="dropdown-item" onclick="document.execCommand('paste')">Paste <span class="shortcut-key">Ctrl+V</span></div>
+		</div>
+	</div>
+	
+	<!-- View Menu -->
+	<div class="menu-item">
+		View
+		<div class="dropdown-content">
+			<div class="dropdown-item">Freeze Rows (Coming Soon)</div>
+			<div class="dropdown-item">Freeze Columns (Coming Soon)</div>
+			<div class="dropdown-divider"></div>
+			<div class="dropdown-item" onclick="document.documentElement.requestFullscreen()">Full Screen</div>
+		</div>
+	</div>
+	
+	<!-- Help Menu -->
+	<div class="menu-item">
+		Help
+		<div class="dropdown-content">
+			<div class="dropdown-item" onclick="alert('Cascade Prompt v1.0\nUse Arrow keys to navigate.\nDouble click to edit.')">About</div>
+		</div>
 	</div>
 </div>
 
-<!-- Added Formula Bar -->
+<!-- Toolbar -->
+<div class="toolbar-container">
+	<button type="button" class="btn btn-sm btn-outline-info">
+		<i class="bi bi-arrow-counterclockwise" style="color:black;"></i>
+	</button>
+	<button type="button" class="btn btn-sm btn-outline-info">
+		<i class="bi bi-arrow-clockwise" style="color:black;"></i>
+	</button>
+	<button type="button" class="btn btn-sm btn-outline-info">
+		<i class="bi bi-type-bold" style="color:black;"></i>
+	</button>
+	<button type="button" class="btn btn-sm btn-outline-info">
+		<i class="bi bi-type-italic" style="color:black;"></i>
+	</button>
+	<button type="button" class="btn btn-sm btn-outline-info">
+		<i class="bi bi-type-strikethrough" style="color:black;"></i>
+	</button>
+	<button type="button" class="btn btn-sm btn-outline-info">
+		<i class="bi bi-paint-bucket" style="color:black;"></i>
+	</button>
+	<button type="button" class="btn btn-sm btn-outline-info">
+		<i class="bi bi-grid" style="color:black;"></i>
+	</button>
+	<button type="button" class="btn btn-sm btn-outline-info">
+		<i class="bi bi-justify-left" style="color:black;"></i>
+	</button>
+	<button type="button" class="btn btn-sm btn-outline-info" id="merge-btn" title="Merge Cells" disabled>
+		<i class="bi bi-arrows-collapse" style="color:black;"></i>
+	</button>
+	<button type="button" class="btn btn-sm btn-outline-info" id="unmerge-btn" title="Unmerge Cells" disabled>
+		<i class="bi bi-arrows-expand" style="color:black;"></i>
+	</button>
+</div>
+
+<!-- Formula Bar -->
 <div class="formula-bar-container">
 	<div class="formula-icon">fx</div>
 	<input type="text" id="formula-input" class="formula-input" placeholder="Select a cell..." disabled>
@@ -106,7 +152,6 @@
 				$alphabet = range('A', 'Z');
 				$colIndex = 0;
 				foreach ($alphabet as $letter) {
-					// Added data-col attribute
 					echo "<th class='letter-cell' data-col='$colIndex'>$letter</th>";
 					$colIndex++;
 				}
@@ -119,7 +164,6 @@
 				echo "<tr>";
 				echo "<th class='counter-cell'>$i</th>";
 				for ($j = 0; $j < count($alphabet); $j++) {
-					// Added data-col attribute to cells
 					echo "<td class='text-cell' data-col='$j'><div class='content-cut'></div></td>";
 				}
 				echo "</tr>";
@@ -129,12 +173,180 @@
 	</table>
 </div>
 
-<!-- Added Sheet Tabs Container -->
+<!-- Sheet Tabs Container -->
 <div class="sheet-tabs-container" id="sheet-tabs-container">
-	<!-- Tabs will be injected here by JS -->
 	<div class="add-sheet-btn" title="Add Sheet">+</div>
 </div>
 
-</body>
+<!-- Project Management Modal -->
+<div class="modal fade" id="projectModal" tabindex="-1" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="projectModalLabel">Project Manager</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body">
+				<!-- Save As Section -->
+				<div id="modal-save-section" class="mb-3" style="display:none;">
+					<label for="project-filename" class="form-label">Project Name:</label>
+					<div class="input-group">
+						<input type="text" class="form-control" id="project-filename" placeholder="MySpreadsheet">
+						<span class="input-group-text">.json</span>
+					</div>
+				</div>
+				
+				<!-- Load/List Section -->
+				<div id="modal-list-section">
+					<h6>Existing Projects:</h6>
+					<div class="list-group" id="project-list-group">
+						<!-- Populated by JS -->
+					</div>
+					<div id="no-projects-msg" class="text-muted mt-2" style="display:none;">No projects found.</div>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+				<button type="button" class="btn btn-primary" id="modal-action-btn">Save</button>
+			</div>
+		</div>
+	</div>
+</div>
 
+<script>
+	// Modal Logic
+	var projectModal = new bootstrap.Modal(document.getElementById('projectModal'));
+	var currentModalMode = '';
+	
+	function openProjectModal(mode) {
+		currentModalMode = mode;
+		const title = document.getElementById('projectModalLabel');
+		const saveSection = document.getElementById('modal-save-section');
+		const listSection = document.getElementById('modal-list-section');
+		const actionBtn = document.getElementById('modal-action-btn');
+		const filenameInput = document.getElementById('project-filename');
+		
+		// Reset UI
+		saveSection.style.display = 'none';
+		listSection.style.display = 'none';
+		filenameInput.value = '';
+		
+		if (mode === 'new') {
+			SheetDataManager.newProject();
+			return; // No modal needed
+		}
+		
+		if (mode === 'save-as') {
+			title.textContent = 'Save Project As';
+			saveSection.style.display = 'block';
+			listSection.style.display = 'block'; // Show list to see existing names
+			actionBtn.textContent = 'Save';
+			actionBtn.className = 'btn btn-primary';
+			if (SheetDataManager.currentFileName) {
+				filenameInput.value = SheetDataManager.currentFileName;
+			}
+			loadProjectList(false); // List for reference
+		} else if (mode === 'open') {
+			title.textContent = 'Open Project';
+			listSection.style.display = 'block';
+			actionBtn.textContent = 'Open';
+			actionBtn.className = 'btn btn-primary disabled'; // Disabled until selection
+			loadProjectList(true); // List for selection
+		}
+		
+		projectModal.show();
+	}
+	
+	function loadProjectList(isSelectable) {
+		const listGroup = document.getElementById('project-list-group');
+		const noMsg = document.getElementById('no-projects-msg');
+		listGroup.innerHTML = '';
+		
+		SheetDataManager.listProjects(function(files) {
+			if (files.length === 0) {
+				noMsg.style.display = 'block';
+			} else {
+				noMsg.style.display = 'none';
+				files.forEach(file => {
+					const item = document.createElement('div');
+					item.className = 'list-group-item project-list-item';
+					
+					const nameSpan = document.createElement('span');
+					nameSpan.textContent = file;
+					item.appendChild(nameSpan);
+					
+					// Delete Button
+					const delBtn = document.createElement('button');
+					delBtn.className = 'btn btn-sm btn-outline-danger';
+					delBtn.innerHTML = '<i class="bi bi-trash"></i>';
+					delBtn.style.marginLeft = '10px';
+					delBtn.onclick = function(e) {
+						e.stopPropagation();
+						SheetDataManager.deleteProject(file, function() {
+							loadProjectList(isSelectable);
+						});
+					};
+					item.appendChild(delBtn);
+					
+					item.onclick = function() {
+						// Highlight selection
+						document.querySelectorAll('.project-list-item').forEach(el => el.classList.remove('active'));
+						item.classList.add('active');
+						
+						if (currentModalMode === 'save-as') {
+							document.getElementById('project-filename').value = file;
+						} else if (currentModalMode === 'open') {
+							document.getElementById('modal-action-btn').classList.remove('disabled');
+							document.getElementById('modal-action-btn').dataset.selectedFile = file;
+						}
+					};
+					
+					listGroup.appendChild(item);
+				});
+			}
+		});
+	}
+	
+	// Modal Action Button
+	document.getElementById('modal-action-btn').addEventListener('click', function() {
+		if (currentModalMode === 'save-as') {
+			const filename = document.getElementById('project-filename').value.trim();
+			if (filename) {
+				SheetDataManager.saveProject(filename);
+				projectModal.hide();
+			} else {
+				alert('Please enter a filename');
+			}
+		} else if (currentModalMode === 'open') {
+			const filename = this.dataset.selectedFile;
+			if (filename) {
+				SheetDataManager.loadProject(filename);
+				projectModal.hide();
+			}
+		}
+	});
+	
+	// Quick Save (Ctrl+S)
+	function performSave() {
+		if (SheetDataManager.currentFileName) {
+			SheetDataManager.saveProject(SheetDataManager.currentFileName);
+		} else {
+			openProjectModal('save-as');
+		}
+	}
+	
+	// Keyboard Shortcuts for Save/Open
+	document.addEventListener('keydown', function(e) {
+		if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+			e.preventDefault();
+			performSave();
+		}
+		if ((e.ctrlKey || e.metaKey) && e.key === 'o') {
+			e.preventDefault();
+			openProjectModal('open');
+		}
+	});
+</script>
+
+</body>
 </html>

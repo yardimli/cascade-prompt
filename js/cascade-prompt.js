@@ -236,17 +236,11 @@ function updateSelection () {
 // --------------------------------------------------//
 
 function saveState () {
-	if (typeof SheetDataManager !== 'undefined') {
-		SheetDataManager.saveToLocalStorage();
+	if (SheetDataManager.currentFileName && !document.title.endsWith('*')) {
+		document.title += '*';
 	}
 }
 
-function loadState () {
-	if (typeof SheetDataManager !== 'undefined') {
-		SheetDataManager.loadFromLocalStorage();
-		SheetDataManager.renderSheet(SheetDataManager.data.activeSheetIndex);
-	}
-}
 
 // Helper to update column width including merged cells
 function updateColumnWidth (colIndex, newWidth) {
@@ -326,9 +320,7 @@ function updateRowHeight (rowIndex, newHeight) {
 }
 
 function resetState () {
-	if (confirm('Are you sure you want to reset the spreadsheet? All data will be lost.')) {
-		SheetDataManager.resetData();
-	}
+	SheetDataManager.newProject();
 }
 
 // --------------------------------------------------//
