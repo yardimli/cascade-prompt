@@ -161,12 +161,13 @@
 
 /* New class for inner cell content */
 .content-cut {
-    height: 100%;
-    width: 100%;
+    /* height: 100%;  <-- Removed to allow explicit pixel height */
+    /* width: 100%;   <-- Removed to allow explicit pixel width */
     overflow: hidden;
     padding: 2px 5px; /* Replaces cell padding */
     box-sizing: border-box;
     white-space: normal;
+    display: block; /* Ensure it respects dimensions */
 }
 
 .letter-cell, .text-cell {

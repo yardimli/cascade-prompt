@@ -179,6 +179,9 @@ $(document).ready(function () {
 		$(document).on('mousemove.resizeRow', function (e) {
 			var newHeight = startHeight + (e.pageY - startY);
 			th.height(newHeight);
+			
+			// NEW: Apply height to all .content-cut divs in this row
+			th.parent().find('.content-cut').css('height', newHeight + 'px');
 		});
 		
 		$(document).on('mouseup.resizeRow', function () {
@@ -214,11 +217,21 @@ $(document).ready(function () {
 		var table = $('.spreadsheet'); // Assuming your table has the class .spreadsheet
 		var startTableWidth = table.outerWidth();
 		
+		// Get column index to update specific cells
+		var colIndex = cell.index();
+		
 		$(document).on('mousemove.resizeCol', function (e) {
 			var newWidth = startWidth + (e.pageX - startX);
 			var newTableWidth = startTableWidth + (e.pageX - startX);
 			cell.width(newWidth);
 			table.width(newTableWidth); // Adjust the table width as the column width is adjusted
+			
+			// NEW: Apply width to all .content-cut divs in this column
+			// Iterate through all rows in tbody
+			$('.spreadsheet tbody tr').each(function () {
+				// Find the td at the corresponding index (colIndex - 1 because of row header)
+				$(this).find('td').eq(colIndex - 1).find('.content-cut').css('width', newWidth + 'px');
+			});
 		});
 		
 		$(document).on('mouseup.resizeCol', function () {

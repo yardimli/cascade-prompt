@@ -224,6 +224,11 @@ function loadState () {
 				var w = state.colWidths[index];
 				$(this).css('width', w + 'px');
 				tableWidth += w;
+				
+				// NEW: Apply width to all .content-cut divs in this column
+				$('.spreadsheet tbody tr').each(function () {
+					$(this).find('td').eq(index).find('.content-cut').css('width', w + 'px');
+				});
 			}
 		});
 		// Adjust table width
@@ -237,7 +242,12 @@ function loadState () {
 	if (state.rowHeights) {
 		$('.counter-cell').each(function (index) {
 			if (state.rowHeights[index]) {
-				$(this).css('height', state.rowHeights[index] + 'px');
+				var h = state.rowHeights[index];
+				$(this).css('height', h + 'px');
+				
+				// NEW: Apply height to all .content-cut divs in this row
+				// index corresponds to the row index in tbody
+				$(this).parent().find('.content-cut').css('height', h + 'px');
 			}
 		});
 	}
