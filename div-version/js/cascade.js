@@ -10,18 +10,59 @@ class ExcelGrid {
 			backgroundColor: '#ffffff',
 			headerBackgroundColor: '#f0f0f0',
 			borderColor: '#ccc',
-			borderWidth: 1
+			borderWidth: 1,
+			cursorRow: 1,
+			cursorCol: 1
 		};
 		this.columnWidths = new Array(this.cols + 1).fill(this.settings.cellWidth);
 		this.rowHeights = new Array(this.rows + 1).fill(this.settings.cellHeight);
 		
-		this.initializeData();
-		this.render(1);
-		this.initializeResizeHandlers();
 		this.suppressScrollRender = false;
+		this.selectedCells = new Set();
+		this.isRendering = false;
+		
+		this.initializeData();
+		this.initializeResizeHandlers();
+		this.initializeClickHandlers();
+		
+		this.render(1);
+		
+		$('body').addClass('no-select');
 	}
 	
-	debounce = (func, wait) => {
+	initializeData() {
+		for (let i = 0; i <= this.rows; i++) {
+			this.data[i] = [];
+			for (let j = 0; j <= this.cols; j++) {
+				this.data[i][j] = {
+					value: '',
+					cellWidth: 1,
+					cellHeight: 1,
+					isHidden: false,
+					isHeader: i === 0 || j === 0,
+					address: i === 0 ? (j === 0 ? '' : this.getColumnLetter(j - 1)) :
+						j === 0 ? i : `${this.getColumnLetter(j - 1)}${i}`
+				};
+			}
+		}
+	}
+	
+	initializeClickHandlers() {
+		const self = this;
+		$(document).on('click', function (e) {
+			const $target = $(e.target);
+			const $cell = $target.closest('.grid-cell:not(.corner-cell)');
+			
+			if ($cell.length && !$cell.closest('.header-row, .header-column').length) {
+				self.clearSelection();
+				self.setCursorPosition(parseInt($cell.attr('data-row')), parseInt($cell.attr('data-col')));
+				console.log("Cell clicked");
+			}
+		});
+	}
+		
+		
+		debounce = (func, wait) => {
 		let timeout;
 		return function executedFunction(...args) {
 			const later = () => {
@@ -41,20 +82,103 @@ class ExcelGrid {
 		return letter.toUpperCase().charCodeAt(0) - 65;
 	}
 	
-	initializeData() {
-		for (let i = 0; i <= this.rows; i++) {
-			this.data[i] = [];
-			for (let j = 0; j <= this.cols; j++) {
-				this.data[i][j] = {
-					value: '',
-					cellWidth: 1,
-					cellHeight: 1,
-					isHidden: false,
-					isHeader: i === 0 || j === 0,
-					address: i === 0 ? (j === 0 ? '' : this.getColumnLetter(j - 1)) :
-						j === 0 ? i : `${this.getColumnLetter(j - 1)}${i}`
-				};
+	getCursorPosition() {
+		return {
+			row: this.settings.cursorRow,
+			col: this.settings.cursorCol
+		};
+	}
+	
+	setCursorPosition(row, col) {
+		this.settings.cursorRow = row;
+		this.settings.cursorCol = col;
+		
+		// Clear any existing selection in the grid data
+		for (let i = 1; i <= this.rows; i++) {
+			for (let j = 1; j <= this.cols; j++) {
+				this.data[i][j].selected = false;
 			}
+		}
+		
+		// Remove selected class from all cells and add it to the current cell
+		$('.grid-cell').removeClass('selected selected-cell');
+		
+		this.drawCursor();
+	}
+	
+	drawCursor() {
+		$('.grid-cell').removeClass('selected');
+		const cell = $(`.grid-cell[data-row="${this.settings.cursorRow}"][data-col="${this.settings.cursorCol}"]`);
+		$(cell).addClass('selected');
+	}
+	
+	navigateToCell(row, col, isPaging = false) {
+		
+		// Update cursor position in settings
+		this.settings.cursorRow = row;
+		this.settings.cursorCol = col;
+		
+		console.log("Navigate to cell: ", row, col);
+		// First, ensure the scroll happens before selecting the cell
+		const container = $('.grid-content');
+		const cellHeight = this.settings.cellHeight;
+		
+		// Handle Page Up/Down differently
+		if (isPaging) {
+			// Just scroll the container without moving the cursor
+			const targetScrollTop = (row - 1) * cellHeight;
+			this.suppressScrollRender = false;
+			container.scrollTop(targetScrollTop);
+			
+			return; // Exit early - don't change cell selection
+		}
+		
+		this.setCursorPosition(row, col);
+		
+		// For normal navigation (arrows, etc.)
+		const cell = $(`.grid-cell[data-row="${row}"][data-col="${col}"]`);
+		if (cell.length) {
+			// Get the container and its dimensions
+			const containerRect = container[0].getBoundingClientRect();
+			
+			// Get cell position and dimensions
+			const cellRect = cell[0].getBoundingClientRect();
+			
+			// Define scroll buffer zones (in pixels)
+			const scrollBuffer = {
+				top: 50,
+				bottom: 50,
+				left: 100,
+				right: 100
+			};
+			
+			// Calculate the new scroll position
+			let newScrollTop = container.scrollTop();
+			let newScrollLeft = container.scrollLeft();
+			
+			if (cellRect.top - containerRect.top < scrollBuffer.top) {
+				newScrollTop = container.scrollTop() - (scrollBuffer.top - (cellRect.top - containerRect.top));
+			} else if (containerRect.bottom - cellRect.bottom < scrollBuffer.bottom) {
+				newScrollTop = container.scrollTop() + (scrollBuffer.bottom - (containerRect.bottom - cellRect.bottom));
+			}
+			
+			if (cellRect.left - containerRect.left < scrollBuffer.left) {
+				newScrollLeft = container.scrollLeft() - (scrollBuffer.left - (cellRect.left - containerRect.left));
+			} else if (containerRect.right - cellRect.right < scrollBuffer.right) {
+				newScrollLeft = container.scrollLeft() + (scrollBuffer.right - (containerRect.right - cellRect.right));
+			}
+			
+			// Apply the scroll if needed
+			if (newScrollTop !== container.scrollTop()) {
+				container.scrollTop(newScrollTop);
+			}
+			if (newScrollLeft !== container.scrollLeft()) {
+				container.scrollLeft(newScrollLeft);
+			}
+		} else
+		{
+			console.log("Cell not found: ", row, col);
+			// If the cell doesn't exist, just scroll to the row
 		}
 	}
 	
@@ -224,6 +348,10 @@ class ExcelGrid {
 			}
 		}
 		
+		if (!isHeader && this.data[i][j].selected) {
+			div.classList.add('selected-cell');
+		}
+		
 		const transform = `translate(${this.getColumnPosition(j)}px, ${this.getRowPosition(i)}px)`;
 		Object.assign(div.style, {
 			transform,
@@ -257,11 +385,6 @@ class ExcelGrid {
 	}
 	
 	renderVisibleCells(content, container, headerRow, headerColumn) {
-		// Store currently selected cell info before rendering
-		const selectedCell = $('.grid-cell.selected');
-		const selectedRow = selectedCell.length ? selectedCell.attr('data-row') : null;
-		const selectedCol = selectedCell.length ? selectedCell.attr('data-col') : null;
-		
 		// Update header positions if content exists
 		if (content.scrollLeft !== undefined && content.scrollTop !== undefined) {
 			headerRow.scrollLeft = content.scrollLeft;
@@ -295,21 +418,17 @@ class ExcelGrid {
 				if (i === 0 || j === 0) continue; // Skip headers
 				const cell = this.createCell(i, j, false);
 				if (cell) {
-					// Restore selection if this is the previously selected cell
-					if (selectedRow && selectedCol &&
-						i === parseInt(selectedRow) &&
-						j === parseInt(selectedCol)) {
-						cell.classList.add('selected');
-					}
 					content.appendChild(cell);
 				}
 			}
 		}
+		this.drawCursor();
 	}
 	
-	
-	
 	render(callId) {
+		if (this.isRendering) return;
+		let start_time = new Date().getTime();
+		this.isRendering = true;
 		console.log('Rendering grid... with callId: '+ callId + ' at ' + new Date().toLocaleTimeString());
 		
 		// Store previous scroll positions if content existed
@@ -379,9 +498,56 @@ class ExcelGrid {
 			}
 		}, 50));
 		
-		const initialScrollEvent = new Event('scroll');
-		content.dispatchEvent(initialScrollEvent);
+		// const initialScrollEvent = new Event('scroll');
+		// content.dispatchEvent(initialScrollEvent);
 		
+		let end_time = new Date().getTime();
+		console.log('Rendering took ' + (end_time - start_time) + ' ms');
+		this.isRendering = false;
+		
+	}
+	
+	isSelected(row, col) {
+		return this.selectedCells.has(`${row},${col}`);
+	}
+	
+	clearSelection() {
+		this.selectedCells.clear();
+		this.updateSelectionState();
+	}
+	
+	addToSelection(row, col) {
+		this.selectedCells.add(`${row},${col}`);
+		this.updateSelectionState();
+	}
+	
+	removeFromSelection(row, col) {
+		this.selectedCells.delete(`${row},${col}`);
+		this.updateSelectionState();
+	}
+	
+	updateSelectionState() {
+		// Update the grid's data structure
+		for (let i = 1; i <= this.rows; i++) {
+			for (let j = 1; j <= this.cols; j++) {
+				this.data[i][j].selected = this.isSelected(i, j);
+			}
+		}
+	}
+	
+	getSelectionBounds() {
+		let startRow = Infinity, startCol = Infinity;
+		let endRow = -Infinity, endCol = -Infinity;
+		
+		this.selectedCells.forEach(cell => {
+			const [row, col] = cell.split(',').map(Number);
+			startRow = Math.min(startRow, row);
+			startCol = Math.min(startCol, col);
+			endRow = Math.max(endRow, row);
+			endCol = Math.max(endCol, col);
+		});
+		
+		return {startRow, startCol, endRow, endCol};
 	}
 	
 	// Add this method to the ExcelGrid class

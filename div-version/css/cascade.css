@@ -1,4 +1,19 @@
 /* cascade.css */
+.no-select {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+/* Make sure the cell editor can still select text */
+.cell-editor {
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
+    user-select: text;
+}
+
 #grid-container {
     position: relative;
     border: 1px solid #ccc;
@@ -17,7 +32,22 @@
     overflow: auto;
     width: calc(100% - 100px);
     height: calc(100% - 25px);
+    user-select: none;
 }
+
+/* Add to cascade.css */
+.grid-cell.selected-cell {
+    background-color: rgba(51, 153, 255, 0.2) !important;
+    cursor: move;
+}
+
+.selection-ghost {
+    pointer-events: none;
+    position: absolute;
+    z-index: 1000;
+    box-sizing: border-box;
+}
+
 
 .grid-cell {
     position: absolute;

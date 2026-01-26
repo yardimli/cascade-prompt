@@ -1,0 +1,2 @@
+- replace contenteditable for cells with a div with an input textarea that starts in size of the cell but grows vertically and horizontally as needed
+- make the cell input overflow:hidden and add a tooltip that shows the full content on hover if the content is larger than the cell
