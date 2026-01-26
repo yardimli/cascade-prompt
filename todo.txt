@@ -1,5 +1,8 @@
-- replace contenteditable for cells with a div with an input textarea that starts in size of the cell but grows vertically and horizontally as needed
-- make the cell input overflow:hidden and add a tooltip that shows the full content on hover if the content is larger than the cell
+- replace contenteditable for cells with a an input textarea that starts in size of the cell but grows vertically and horizontally as needed
+- make the cell input overflow:hidden and add a tooltip that shows the full content on hover if the content is larger than the cell so the content of the cell wont effect the table layout
+
+- allow user to right click to merge selected cells using a context menu use the colspan and rowspan attributes to achieve this, if cells contain data merge the data with a separator (e.g. space or comma)
+- allow user to right click to unmerge merged cells using a context menu, when unmerging keep all data in the top-left cell of the merged area and clear the rest
 
 - add tab at the bottom allow user to create new sheets
 

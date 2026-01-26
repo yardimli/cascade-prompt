@@ -1,34 +1,38 @@
 //--------------------------------------------------//
 //----------------- Document Ready -----------------//
 $(document).ready(function () {
-	$('.text-cell').keydown(function (e) {
+	// Listener for the overlay textarea
+	$('#cell-editor').keydown(function (e) {
 		if (e.key === 'Enter') {
-			e.preventDefault(); // Prevent the default Enter behavior
+			e.preventDefault(); // Prevent the default Enter behavior (newline)
 			e.stopPropagation();
-			console.log('Cell Enter key pressed');
+			console.log('Cell Editor Enter key pressed');
 			
-			var $this = $(this);
-			var $nextRow = $this.closest('tr').next('tr'); // Find the next row
-			
-			stopEditing();
-			if (typeof saveState === 'function') saveState(); // Save on Enter
-			
-			// Find the cell directly below in the next row and start editing, if it exists
-			if ($nextRow.length) {
-				var cellIndex = $this.index(); // Current cell's index
-				var $nextCell = $nextRow.find('td').eq(cellIndex - 1); // Adjust index for td elements
-				if ($nextCell.length) {
-					highlightCell($nextCell);
-					// makeCellEditable($nextCell); // Make the next cell editable
+			// Identify the currently edited cell
+			var $editingCell = $('.edit-cell');
+			if ($editingCell.length) {
+				var $nextRow = $editingCell.closest('tr').next('tr'); // Find the next row
+				
+				stopEditing();
+				if (typeof saveState === 'function') saveState(); // Save on Enter
+				
+				// Find the cell directly below in the next row and start editing, if it exists
+				if ($nextRow.length) {
+					var cellIndex = $editingCell.index(); // Current cell's index
+					var $nextCell = $nextRow.find('td').eq(cellIndex - 1); // Adjust index for td elements
+					if ($nextCell.length) {
+						highlightCell($nextCell);
+						// makeCellEditable($nextCell); // Optional: Make the next cell editable immediately
+					}
 				}
 			}
 		}
 	});
 	
-	// Sync typing in cell with formula bar
-	$('.text-cell').on('keyup', function() {
+	// Sync typing in overlay textarea with formula bar
+	$('#cell-editor').on('keyup', function() {
 		if (isEditing) {
-			$('#formula-input').val($(this).text());
+			$('#formula-input').val($(this).val());
 		}
 	});
 	

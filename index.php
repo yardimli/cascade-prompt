@@ -88,6 +88,9 @@
 </div>
 
 <div class="spreadsheet-container" id="spreadsheet-container">
+	<!-- Overlay Textarea for Editing -->
+	<textarea id="cell-editor"></textarea>
+	
 	<div id="selection-helper" class="active-animation no-select"></div>
 	<table class="spreadsheet no-select">
 		<thead>
@@ -107,7 +110,8 @@
 				echo "<tr>";
 				echo "<th class='counter-cell'>$i</th>";
 				for ($j = 0; $j < count($alphabet); $j++) {
-					echo "<td class='text-cell'></td>";
+					// Added content-cut div inside the cell
+					echo "<td class='text-cell'><div class='content-cut'></div></td>";
 				}
 				echo "</tr>";
 			}

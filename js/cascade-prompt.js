@@ -34,8 +34,8 @@ function highlightCell (cell) {
 	// Highlight the clicked cell
 	$this.addClass('selected-cell');
 	
-	// Update Formula Bar
-	var cellContent = $this.text();
+	// Update Formula Bar - Read from inner div
+	var cellContent = $this.find('.content-cut').text();
 	$('#formula-input').val(cellContent).prop('disabled', false);
 	
 	scrollToViewWithOffsets($this[0]);
@@ -177,7 +177,8 @@ function saveState () {
 	
 	// Save Cell Content
 	$('.spreadsheet .text-cell').each(function () {
-		var text = $(this).text();
+		// Read from inner div
+		var text = $(this).find('.content-cut').text();
 		if (text) {
 			var rowIndex = $(this).parent().index();
 			var colIndex = $(this).index();
@@ -221,8 +222,6 @@ function loadState () {
 		$('.letter-cell').each(function (index) {
 			if (state.colWidths[index]) {
 				var w = state.colWidths[index];
-				// FIX: Use .css('width') to set the total width (border-box)
-				// jQuery's .width() sets content width, which adds padding/border to the CSS value, causing growth
 				$(this).css('width', w + 'px');
 				tableWidth += w;
 			}
@@ -238,7 +237,6 @@ function loadState () {
 	if (state.rowHeights) {
 		$('.counter-cell').each(function (index) {
 			if (state.rowHeights[index]) {
-				// FIX: Use .css('height') to set total height
 				$(this).css('height', state.rowHeights[index] + 'px');
 			}
 		});
@@ -250,7 +248,8 @@ function loadState () {
 			var parts = key.split('-');
 			var r = parseInt(parts[0]);
 			var c = parseInt(parts[1]);
-			$('.spreadsheet tr').eq(r + 1).find('td').eq(c - 1).text(state.cells[key]);
+			// Write to inner div
+			$('.spreadsheet tr').eq(r + 1).find('td').eq(c - 1).find('.content-cut').text(state.cells[key]);
 		}
 	}
 	
@@ -287,7 +286,8 @@ $(document).ready(function () {
 		var val = $(this).val();
 		var $selected = $('.selected-cell');
 		if ($selected.length && !$('.area-selected-cell').length) {
-			$selected.text(val);
+			// Update inner div
+			$selected.find('.content-cut').text(val);
 			saveState(); // Save on typing
 		}
 	});
@@ -327,17 +327,11 @@ $(document).ready(function () {
 		makeCellEditable($(this));
 	});
 	
-	$('.text-cell').off('blur').on('blur', function () {
-		stopEditing();
-		saveState(); // Save when leaving a cell
-	});
+	// Note: blur event on .text-cell is less relevant now that we use an overlay textarea,
+	// but we keep the logic in stopEditing() which is called by other interactions.
 	
-	// Listen for content changes in editable cells (for formula bar sync)
-	$('.text-cell').on('input', function() {
-		if ($(this).hasClass('selected-cell')) {
-			$('#formula-input').val($(this).text());
-		}
-	});
+	// Listen for content changes in editable cells (via textarea sync)
+	// This is now handled in makeCellEditable's input listener
 	
 	$('.text-cell').off('mousedown').on('mousedown', function (e) {
 		console.log('mousedown');

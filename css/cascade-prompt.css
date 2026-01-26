@@ -155,14 +155,41 @@
     border: 1px solid rgb(192, 192, 192);
     width: 200px;
     vertical-align: top;
-    /* Ensure text wraps or hides appropriately */
-    white-space: nowrap;
+    /* Removed white-space and overflow hidden from here as it is handled by .content-cut */
+    padding: 0; /* Padding is now handled by inner div */
+}
+
+/* New class for inner cell content */
+.content-cut {
+    height: 100%;
+    width: 100%;
     overflow: hidden;
+    padding: 2px 5px; /* Replaces cell padding */
+    box-sizing: border-box;
+    white-space: normal;
 }
 
 .letter-cell, .text-cell {
     width: 200px; /* Force width */
     min-width: 200px; /* Ensure minimum width is respected */
+}
+
+/* Style for the overlay textarea */
+#cell-editor {
+    position: absolute;
+    display: none;
+    z-index: 100;
+    resize: none;
+    overflow: hidden;
+    box-shadow: 0 0 5px rgba(0,0,0,0.3);
+    border: 2px solid #1a73e8;
+    padding: 2px 5px;
+    font-family: inherit;
+    font-size: inherit;
+    background-color: white;
+    box-sizing: border-box;
+    min-width: 50px;
+    min-height: 20px;
 }
 
 .edit-cell {
@@ -180,17 +207,6 @@
 
 .area-selected-cell {
     background-color: rgba(14, 101, 235, 0.1);
-}
-
-[contenteditable="true"] {
-    border: none; /* Removes the border */
-    outline: none; /* Removes the outline that might appear during focus */
-}
-
-/* Additional styles for better visual feedback */
-[contenteditable="true"]:focus {
-    box-shadow: 0 0 2px #000000; /* Optional: Adds a subtle shadow for better focus indication */
-    background-color: #fff; /* Optional: Changes background color to indicate editable state */
 }
 
 .dragging {

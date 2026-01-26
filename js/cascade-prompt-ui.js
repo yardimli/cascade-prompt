@@ -30,9 +30,8 @@ function scrollToViewWithOffsets (cell) {
 
 //--------------------------------------------------//
 function makeCellEditable ($cell) {
-	
 	if (!$cell.hasClass('selected-cell')) {
-		highlightCell($cell); // Note: fixed typo from higlightCell to highlightCell based on main JS file
+		highlightCell($cell);
 	}
 	
 	if (!$cell.hasClass('edit-cell')) {
@@ -41,34 +40,82 @@ function makeCellEditable ($cell) {
 	
 	$('.spreadsheet .area-selected-cell').removeClass('area-selected-cell'); // Clear existing selection
 	
-	// Lock the cell size
-	var cellWidth = $cell.width();
-	var cellHeight = $cell.height();
-	$cell.css({
-		'width': cellWidth + 'px',
-		'height': cellHeight + 'px',
-		'min-width': cellWidth + 'px',
-		'min-height': cellHeight + 'px',
-		'max-width': cellWidth + 'px',
-		'max-height': cellHeight + 'px'
+	// Get the inner content div
+	var $contentDiv = $cell.find('.content-cut');
+	var currentText = $contentDiv.text();
+	
+	// Get cell position relative to container
+	var position = $cell.position();
+	var width = $cell.outerWidth();
+	var height = $cell.outerHeight();
+	
+	// Setup the overlay textarea
+	var $editor = $('#cell-editor');
+	$editor.css({
+		'top': position.top + 'px',
+		'left': position.left + 'px',
+		'width': width + 'px',
+		'height': height + 'px',
+		'min-width': width + 'px',
+		'min-height': height + 'px',
+		'display': 'block'
 	});
 	
-	$cell.attr('contenteditable', 'true').focus();
+	// Load content and focus
+	$editor.val(currentText).focus();
+	
+	// Hide the inner div content while editing so it doesn't duplicate visually
+	$contentDiv.css('visibility', 'hidden');
+	
 	isEditing = true;
+	
+	// Auto-resize logic
+	$editor.off('input.autoResize').on('input.autoResize', function () {
+		$(this).css('height', 'auto');
+		$(this).css('width', 'auto');
+		
+		var scrollHeight = this.scrollHeight;
+		var scrollWidth = this.scrollWidth;
+		
+		// Grow vertically
+		if (scrollHeight > height) {
+			$(this).height(scrollHeight);
+		} else {
+			$(this).height(height);
+		}
+		
+		// Grow horizontally
+		if (scrollWidth > width) {
+			$(this).width(scrollWidth);
+		} else {
+			$(this).width(width);
+		}
+	});
 }
 
 //--------------------------------------------------//
 function stopEditing () {
+	if (!isEditing) return;
+	
 	var $editingCell = $('.edit-cell');
+	var $editor = $('#cell-editor');
+	
 	if ($editingCell.length) {
-		$editingCell.removeAttr('contenteditable').css({
-			'min-width': '',
-			'min-height': '',
-			'max-width': '',
-			'max-height': '',
+		// Get value from textarea
+		var newValue = $editor.val();
+		
+		// Update the inner div
+		var $contentDiv = $editingCell.find('.content-cut');
+		$contentDiv.text(newValue);
+		$contentDiv.css('visibility', 'visible'); // Make visible again
+		
+		// Reset and hide editor
+		$editor.val('').hide().css({
 			'width': '',
 			'height': ''
-		}).removeClass('edit-cell');
+		});
+		
+		$editingCell.removeClass('edit-cell');
 		isEditing = false;
 	}
 }
@@ -80,7 +127,7 @@ function addNewRow () {
 	
 	var newRow = '<tr><th class="counter-cell">' + (rowCount) + '</th>';
 	for (var i = 1; i < columnCount; i++) {
-		newRow += '<td class="text-cell"></td>';
+		newRow += '<td class="text-cell"><div class="content-cut"></div></td>';
 	}
 	newRow += '</tr>';
 	$('.spreadsheet').append(newRow);
@@ -93,7 +140,7 @@ function addNewColumn () {
 	var rowCount = $('.spreadsheet tr').length;
 	
 	for (var i = 1; i < rowCount; i++) {
-		$('.spreadsheet tr').eq(i).append('<td class="text-cell"></td>');
+		$('.spreadsheet tr').eq(i).append('<td class="text-cell"><div class="content-cut"></div></td>');
 	}
 	
 	var table = $('.spreadsheet'); // Assuming your table has the class .spreadsheet
@@ -123,7 +170,9 @@ $(document).ready(function () {
 			// "background-color": "#f4f4f4", // just to make the handle more visible
 		}
 	})).on('mousedown.resizeRow', function (e) {
-		var th = $(this).parent();
+		// Modified: Target the cell (th) directly instead of the row (tr).
+		// This ensures we overwrite the height set by loadState on the cell, allowing shrinking.
+		var th = $(this);
 		var startHeight = th.height();
 		var startY = e.pageY;
 		
@@ -180,8 +229,8 @@ $(document).ready(function () {
 		
 		e.preventDefault(); // prevents text selection
 	}).addClass('processed');
-
-//--------------------------------------------------//
+	
+	//--------------------------------------------------//
 	
 	var scrollableDiv = document.getElementById('spreadsheet-container');
 	
