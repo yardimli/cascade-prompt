@@ -43,6 +43,20 @@ document.addEventListener('DOMContentLoaded', function () {
 	// --------------------------------------------------//
 	
 	document.addEventListener('keydown', function (e) {
+		// Handle Undo/Redo Shortcuts
+		if ((e.ctrlKey || e.metaKey) && !isEditing) {
+			if (e.key === 'z') {
+				e.preventDefault();
+				if (typeof HistoryManager !== 'undefined') HistoryManager.undo();
+				return;
+			}
+			if (e.key === 'y') {
+				e.preventDefault();
+				if (typeof HistoryManager !== 'undefined') HistoryManager.redo();
+				return;
+			}
+		}
+		
 		console.log('isEditing: ', isEditing);
 		if (isEditing) return; // Skip navigation if we are in editing mode
 		

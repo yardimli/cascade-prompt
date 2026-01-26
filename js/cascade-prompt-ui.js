@@ -152,6 +152,17 @@ function stopEditing () {
 		
 		// Update the inner div
 		const contentDiv = editingCell.querySelector('.content-cut');
+		const oldValue = contentDiv.textContent;
+		
+		// Only save history if value changed
+		if (newValue !== oldValue) {
+			// Capture state BEFORE updating the DOM with new value
+			// This ensures Undo reverts to the old value
+			if (typeof HistoryManager !== 'undefined') {
+				HistoryManager.addState();
+			}
+		}
+		
 		contentDiv.textContent = newValue;
 		contentDiv.style.visibility = 'visible'; // Make visible again
 		
@@ -169,6 +180,9 @@ function stopEditing () {
 
 // --------------------------------------------------//
 function addNewRow () {
+	// Capture history before adding row
+	if (typeof HistoryManager !== 'undefined') HistoryManager.addState();
+	
 	const firstRow = document.querySelector('.spreadsheet tr');
 	const columnCount = firstRow.querySelectorAll('th').length;
 	const rowCount = document.querySelectorAll('.spreadsheet tbody tr').length;
@@ -189,6 +203,9 @@ function addNewRow () {
 
 // --------------------------------------------------//
 function addNewColumn () {
+	// Capture history before adding column
+	if (typeof HistoryManager !== 'undefined') HistoryManager.addState();
+	
 	const letterCells = document.querySelectorAll('.letter-cell');
 	const colIndex = letterCells.length;
 	const letter = String.fromCharCode('A'.charCodeAt(0) + colIndex); // Next letter (simplified logic)
@@ -214,6 +231,9 @@ function addNewColumn () {
 // --------------------------------------------------//
 function mergeCells () {
 	if (!startCell || !endCell || startCell === endCell) return;
+	
+	// Capture history before merging
+	if (typeof HistoryManager !== 'undefined') HistoryManager.addState();
 	
 	const startRowIdx = startCell.parentElement.rowIndex; // Note: rowIndex includes thead
 	const endRowIdx = endCell.parentElement.rowIndex;
@@ -266,7 +286,7 @@ function mergeCells () {
 	
 	// Update width of the merged cell content
 	const totalWidth = getColumnWidthRange(startCol, endCol);
-	topLeft.querySelector('.content-cut').style.width = (totalWidth-3) + 'px';
+	topLeft.querySelector('.content-cut').style.width = (totalWidth - 3) + 'px';
 	
 	// Reset selection
 	startCell = null;
@@ -289,6 +309,9 @@ function unmergeCells () {
 	
 	if (rowspan === 1 && colspan === 1) return; // Not merged
 	
+	// Capture history before unmerging
+	if (typeof HistoryManager !== 'undefined') HistoryManager.addState();
+	
 	const startRow = cell.parentElement.rowIndex;
 	const startCol = parseInt(cell.getAttribute('data-col'));
 	
@@ -310,14 +333,14 @@ function unmergeCells () {
 			// Set width based on column width
 			const colHeader = document.querySelector('.letter-cell[data-col="' + c + '"]');
 			const colWidth = colHeader ? colHeader.offsetWidth : 100;
-			contentDiv.style.width = (colWidth-3) + 'px';
+			contentDiv.style.width = (colWidth - 3) + 'px';
 			
 			// Set height based on row height
 			// Note: counter-cell index matches row index in tbody (row index - 1 for header)
 			// tableRows[r] is the TR. The counter cell is the first child.
 			const rowHeader = tableRows[r].querySelector('.counter-cell');
 			const rowHeight = rowHeader ? rowHeader.offsetHeight : 25;
-			contentDiv.style.height = (rowHeight-3) + 'px';
+			contentDiv.style.height = (rowHeight - 3) + 'px';
 			
 			// Insert cell at correct position
 			const row = tableRows[r];
@@ -354,7 +377,7 @@ function unmergeCells () {
 	// Reset width of top-left cell to single column width
 	const singleColHeader = document.querySelector('.letter-cell[data-col="' + startCol + '"]');
 	const singleColWidth = singleColHeader ? singleColHeader.offsetWidth : 100;
-	cell.querySelector('.content-cut').style.width = (singleColWidth-3) + 'px';
+	cell.querySelector('.content-cut').style.width = (singleColWidth - 3) + 'px';
 	
 	// Re-highlight to update UI state
 	highlightCell(cell);
@@ -383,6 +406,9 @@ function attachResizeHandlers () {
 		
 		handle.addEventListener('mousedown', function (e) {
 			e.preventDefault(); // prevents text selection
+			// Capture history before resize starts
+			if (typeof HistoryManager !== 'undefined') HistoryManager.addState();
+			
 			const startHeight = th.offsetHeight;
 			const startY = e.pageY;
 			
@@ -395,7 +421,7 @@ function attachResizeHandlers () {
 				// Apply height to all .content-cut divs in this row
 				const contentDivs = row.querySelectorAll('.content-cut');
 				contentDivs.forEach(div => {
-					div.style.height = (newHeight-3) + 'px';
+					div.style.height = (newHeight - 3) + 'px';
 				});
 			}
 			
@@ -436,6 +462,9 @@ function attachResizeHandlers () {
 		
 		handle.addEventListener('mousedown', function (e) {
 			e.preventDefault();
+			// Capture history before resize starts
+			if (typeof HistoryManager !== 'undefined') HistoryManager.addState();
+			
 			console.log('Cell: ', cell);
 			const startWidth = cell.offsetWidth;
 			const startX = e.pageX;

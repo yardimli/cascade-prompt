@@ -1,11 +1,4 @@
 <!doctype html>
-<!--[if lt IE 7 ]>
-<html class="ie ie6" lang="en"> <![endif]-->
-<!--[if IE 7 ]>
-<html class="ie ie7" lang="en"> <![endif]-->
-<!--[if IE 8 ]>
-<html class="ie ie8" lang="en"> <![endif]-->
-<!--[if (gte IE 9)|!(IE)]><!-->
 <html lang="en">
 
 <head>
@@ -37,6 +30,8 @@
 	
 	<!-- Scripts -->
 	<script src="js/cascade-prompt-data.js"></script>
+	<!-- Added History Manager -->
+	<script src="js/cascade-prompt-history.js"></script>
 	<script src="js/cascade-prompt.js"></script>
 	<script src="js/cascade-prompt-keypress.js"></script>
 	<script src="js/cascade-prompt-ui.js"></script>
@@ -70,8 +65,9 @@
 	<div class="menu-item">
 		Edit
 		<div class="dropdown-content">
-			<div class="menu-dropdown-item" onclick="document.execCommand('undo')">Undo <span class="shortcut-key">Ctrl+Z</span></div>
-			<div class="menu-dropdown-item" onclick="document.execCommand('redo')">Redo <span class="shortcut-key">Ctrl+Y</span></div>
+			<!-- Updated Undo/Redo calls -->
+			<div class="menu-dropdown-item" onclick="HistoryManager.undo()">Undo <span class="shortcut-key">Ctrl+Z</span></div>
+			<div class="menu-dropdown-item" onclick="HistoryManager.redo()">Redo <span class="shortcut-key">Ctrl+Y</span></div>
 			<div class="dropdown-divider"></div>
 			<div class="menu-dropdown-item" onclick="document.execCommand('cut')">Cut <span class="shortcut-key">Ctrl+X</span></div>
 			<div class="menu-dropdown-item" onclick="document.execCommand('copy')">Copy <span class="shortcut-key">Ctrl+C</span></div>
@@ -103,10 +99,11 @@
 
 <!-- Toolbar -->
 <div class="toolbar-container">
-	<button type="button" class="btn btn-sm btn-outline-info">
+	<!-- Updated Undo/Redo buttons -->
+	<button type="button" class="btn btn-sm btn-outline-info" onclick="HistoryManager.undo()" title="Undo">
 		<i class="bi bi-arrow-counterclockwise"></i>
 	</button>
-	<button type="button" class="btn btn-sm btn-outline-info">
+	<button type="button" class="btn btn-sm btn-outline-info" onclick="HistoryManager.redo()" title="Redo">
 		<i class="bi bi-arrow-clockwise"></i>
 	</button>
 	<button type="button" class="btn btn-sm btn-outline-info">

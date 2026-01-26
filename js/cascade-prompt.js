@@ -346,10 +346,18 @@ document.addEventListener('DOMContentLoaded', function () {
 		SheetDataManager.init();
 	}
 	
+	// Initialize History Manager
+	if (typeof HistoryManager !== 'undefined') {
+		HistoryManager.init();
+	}
+	
 	// Add Sheet Button Listener
 	const addSheetBtn = document.querySelector('.add-sheet-btn');
 	if (addSheetBtn) {
 		addSheetBtn.addEventListener('click', function () {
+			// Capture history before adding sheet
+			if (typeof HistoryManager !== 'undefined') HistoryManager.addState();
+			
 			const nextNum = SheetDataManager.data.sheets.length + 1;
 			SheetDataManager.createSheet('Sheet' + nextNum, false);
 		});
@@ -365,6 +373,22 @@ document.addEventListener('DOMContentLoaded', function () {
 	
 	// Formula Bar Input Listener
 	const formulaInput = document.getElementById('formula-input');
+	// We need to capture history before the user starts typing in the formula bar,
+	// but 'input' fires on every keystroke. 'focus' is too early (no change yet).
+	// 'keydown' is suitable to capture state once before changes begin.
+	let formulaBarDirty = false;
+	
+	formulaInput.addEventListener('focus', function () {
+		formulaBarDirty = false;
+	});
+	
+	formulaInput.addEventListener('keydown', function () {
+		if (!formulaBarDirty) {
+			if (typeof HistoryManager !== 'undefined') HistoryManager.addState();
+			formulaBarDirty = true;
+		}
+	});
+	
 	formulaInput.addEventListener('input', function () {
 		const val = this.value;
 		const selected = document.querySelector('.selected-cell');
@@ -379,6 +403,7 @@ document.addEventListener('DOMContentLoaded', function () {
 	// Handle Enter in Formula Bar
 	formulaInput.addEventListener('keydown', function (e) {
 		if (e.key === 'Enter') {
+			formulaBarDirty = false; // Reset dirty flag on commit
 			const selected = document.querySelector('.selected-cell');
 			if (selected) {
 				selected.focus();
