@@ -1,7 +1,7 @@
 :root {
     --animation-duration: 4s;
     --tab-bar-height: 35px;
-    --status-bar-height: 25px; /* New variable for status bar */
+    --status-bar-height: 25px;
 }
 
 ::-webkit-scrollbar {
@@ -57,7 +57,7 @@
     border: 1px solid #ccc;
     background-color: #fff;
     height: 30px;
-    border-radius: 4px; /* Slight rounding */
+    border-radius: 4px;
 }
 
 .formula-icon {
@@ -67,7 +67,7 @@
     font-weight: bold;
     color: #666;
     border-right: 1px solid #ccc;
-    background-color: #f8f9fa; /* Lighter background */
+    background-color: #f8f9fa;
     line-height: 28px;
     user-select: none;
     border-radius: 4px 0 0 4px;
@@ -77,7 +77,7 @@
     flex-grow: 1;
     border: none;
     outline: none;
-    padding: 0 8px; /* More padding */
+    padding: 0 8px;
     height: 100%;
     font-size: 14px;
     border-radius: 0 4px 4px 0;
@@ -94,7 +94,6 @@
 
     overflow: auto;
     width: calc(100vw - 20px);
-    /* Adjusted height to account for formula bar + tab bar + status bar + new menu height */
     height: calc(100vh - 155px - var(--tab-bar-height) - var(--status-bar-height));
     border: 1px solid #ccc;
     border-bottom: none;
@@ -185,7 +184,7 @@
     z-index: 100;
     resize: none;
     overflow: hidden;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2); /* Enhanced shadow */
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
     border: 2px solid #1a73e8;
     padding: 2px 5px;
     font-family: inherit;
@@ -202,17 +201,17 @@
 }
 
 .highlight {
-    background-color: #d3e3fd !important; /* Modern Google blue tint */
+    background-color: #d3e3fd !important;
 }
 
 .selected-cell {
-    outline: 1px solid #1a73e8; /* Blue selection */
-    outline-offset: -1px; /* Inside border */
+    outline: 1px solid #1a73e8;
+    outline-offset: -1px;
     border: 1px solid #1a73e8 !important;
 }
 
 .area-selected-cell {
-    background-color: rgba(26, 115, 232, 0.1); /* Blue tint */
+    background-color: rgba(26, 115, 232, 0.1);
 }
 
 .dragging {
@@ -223,13 +222,11 @@
     display: none;
     position: absolute;
     z-index: 10;
-    border: 1px solid #1a73e8; /* Solid blue border for selection area */
+    border: 1px solid #1a73e8;
     background-color: rgba(26, 115, 232, 0.05);
 }
 
 .active-animation {
-    /* Removed dashed animation for a cleaner solid look, or keep if preferred */
-    /* Keeping original animation but changing color to blue */
     background-image: linear-gradient(90deg, #1a73e8 50%, transparent 50%), linear-gradient(90deg, #1a73e8 50%, transparent 50%), linear-gradient(0deg, #1a73e8 50%, transparent 50%), linear-gradient(0deg, #1a73e8 50%, transparent 50%);
 }
 
@@ -266,7 +263,7 @@
 /* Sheet Tabs Styles */
 /* -------------------------------------------------- */
 .sheet-tabs-container {
-    margin: 0 10px 0 10px; /* Removed bottom margin */
+    margin: 0 10px 0 10px;
     height: var(--tab-bar-height);
     background-color: #f1f3f4;
     border: 1px solid #ccc;
@@ -302,7 +299,7 @@
     color: #1a73e8;
     font-weight: bold;
     border-top: 2px solid transparent;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
 }
 
 .add-sheet-btn {
@@ -320,7 +317,7 @@
 }
 
 .add-sheet-btn:hover {
-    background-color: rgba(0, 0, 0, 0.1);
+    background-color: rgba(0,0,0,0.1);
     color: #000;
 }
 
@@ -328,15 +325,15 @@
 /* Top Menu Bar Styles (Modernized) */
 /* -------------------------------------------------- */
 .top-menu-bar {
-    background-color: rgba(255, 255, 255, 0.95); /* Slight opacity */
-    backdrop-filter: blur(5px); /* Blur effect */
+    background-color: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(5px);
     border-bottom: 1px solid #dadce0;
     padding: 0 15px;
-    height: 40px; /* Increased height */
+    height: 40px;
     display: flex;
     align-items: center;
     font-size: 14px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); /* Soft shadow */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
     z-index: 1000;
     position: relative;
 }
@@ -344,7 +341,7 @@
 .menu-item {
     position: relative;
     display: inline-block;
-    padding: 6px 12px; /* More padding */
+    padding: 6px 12px;
     cursor: pointer;
     user-select: none;
     color: #444;
@@ -358,49 +355,63 @@
     color: #000;
 }
 
+/* Sub-Menu / Dropdown Styles */
 .dropdown-content {
     display: none;
     position: absolute;
     background-color: #fff;
-    min-width: 220px; /* Wider dropdown */
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); /* Deeper shadow */
+    min-width: 240px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
     z-index: 1001;
     top: 100%;
     left: 0;
-    border-radius: 6px;
+    border-radius: 8px;
     padding: 6px 0;
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    margin-top: 2px;
+    border: 1px solid rgba(0,0,0,0.05);
+    margin-top: 6px; /* Visual gap */
     animation: fadeIn 0.1s ease-out;
 }
 
+/* Bridge the gap so mouse doesn't lose hover */
+.dropdown-content::before {
+    content: "";
+    position: absolute;
+    top: -10px; /* Covers the margin-top gap */
+    left: 0;
+    width: 100%;
+    height: 10px;
+    background: transparent;
+}
+
 @keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(-5px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+    from { opacity: 0; transform: translateY(-5px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 .menu-item:hover .dropdown-content {
     display: block;
 }
 
-.dropdown-item {
-    padding: 8px 20px; /* More vertical padding */
+.menu-dropdown-item {
+    padding: 8px 16px;
     text-decoration: none;
-    display: block;
+    display: flex; /* Flexbox for alignment */
+    justify-content: space-between; /* Pushes text left, shortcut right */
+    align-items: center;
     color: #3c4043;
     cursor: pointer;
-    font-size: 13px;
-    transition: background-color 0.1s;
+    font-size: 14px;
+    font-weight: 400;
+    transition: background-color 0.1s, color 0.1s;
+    margin: 2px 6px; /* Floating look inside the dropdown */
+    border-radius: 4px;
+    width: auto; /* Let it fill the container minus margins */
+    box-sizing: border-box;
 }
 
-.dropdown-item:hover {
-    background-color: #f1f3f4;
+.menu-dropdown-item:hover {
+    background-color: #e2e8f0; /* Slightly darker blue-grey for better visibility */
+    color: #1a73e8; /* Google Blue text */
 }
 
 .dropdown-divider {
@@ -411,17 +422,18 @@
 }
 
 .shortcut-key {
-    float: right;
     color: #9aa0a6;
-    font-size: 11px;
-    margin-left: 20px;
+    font-size: 12px;
+    font-weight: 500;
+    margin-left: 20px; /* Ensure space between text and key */
+    float: none; /* Remove float to allow Flexbox to handle alignment */
 }
 
 /* Adjust toolbar container to sit below menu */
 .toolbar-container {
     margin: 8px 10px;
     background-color: #f8f9fa;
-    border-radius: 20px; /* Pill shape */
+    border-radius: 20px;
     padding: 5px 20px;
     border: 1px solid #dadce0;
 }
@@ -444,7 +456,7 @@
 }
 
 /* -------------------------------------------------- */
-/* Status Bar Styles (New) */
+/* Status Bar Styles */
 /* -------------------------------------------------- */
 .status-bar {
     position: fixed;
@@ -475,11 +487,11 @@
 }
 
 /* -------------------------------------------------- */
-/* Toast Notification Styles (New) */
+/* Toast Notification Styles */
 /* -------------------------------------------------- */
 .custom-toast {
     position: fixed;
-    bottom: 40px; /* Above status bar */
+    bottom: 40px;
     left: 50%;
     transform: translateX(-50%);
     background-color: #323232;
@@ -491,7 +503,7 @@
     transition: opacity 0.3s ease-in-out;
     z-index: 2000;
     pointer-events: none;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
 }
 
 .custom-toast.show {

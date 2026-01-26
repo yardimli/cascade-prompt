@@ -10,6 +10,7 @@ var SheetDataManager = {
 	},
 	
 	currentFileName: null, // Tracks the currently open file
+	isModified: false,
 	
 	// Default configuration
 	defaults: {
@@ -36,6 +37,7 @@ var SheetDataManager = {
 			// If no last file, initialize empty sheet based on DOM
 			this.createSheet(this.defaults.sheetNamePrefix + '1', true);
 			this.renderTabs();
+			this.updateStatusUI();
 		}
 	},
 	
@@ -80,6 +82,7 @@ var SheetDataManager = {
 		
 		if (!isInitial) {
 			this.selectSheet(this.data.sheets.length - 1);
+			this.setModified(true);
 		} else {
 			this.renderTabs();
 			// We don't auto-save to server on init, only on explicit save
@@ -292,15 +295,14 @@ var SheetDataManager = {
 						}
 					}
 					
-					// FIX: Subtract 3px to account for borders/padding, preventing 1px growth bug.
-					// Matches logic in cascade-prompt-ui.js resize handlers.
+					// FIX: Subtract 3px to account for borders/padding
 					content.style.height = (cellHeight - 3) + 'px';
 				} else {
 					// FIX: Subtract 3px here as well for empty cells.
 					content.style.height = (height - 3) + 'px';
 				}
 				
-				content.style.width = (cellWidth - 3) + 'px'; // Subtract 3px for width consistency too
+				content.style.width = (cellWidth - 3) + 'px';
 				td.appendChild(content);
 				tr.appendChild(td);
 			}
@@ -424,7 +426,7 @@ var SheetDataManager = {
 		this.updateCurrentSheetData();
 		
 		if (!filename) {
-			alert('Filename is required.');
+			showCustomAlert('Filename is required.');
 			return;
 		}
 		
@@ -444,15 +446,17 @@ var SheetDataManager = {
 					this.currentFileName = filename;
 					localStorage.setItem('lastOpenedFile', filename);
 					document.title = filename + ' - Cascade Prompt';
-					alert('Project saved successfully!');
-					// Refresh list if modal is open (optional)
+					this.setModified(false);
+					
+					// Show Toast instead of Alert
+					showToast('Project saved successfully');
 				} else {
-					alert('Error saving project: ' + data.message);
+					showCustomAlert('Error saving project: ' + data.message);
 				}
 			})
 			.catch(error => {
 				console.error('Error:', error);
-				alert('An error occurred while saving.');
+				showCustomAlert('An error occurred while saving.');
 			});
 	},
 	
@@ -471,19 +475,21 @@ var SheetDataManager = {
 					
 					this.renderSheet(this.data.activeSheetIndex || 0);
 					this.renderTabs();
+					this.setModified(false);
 				} else {
 					console.warn('Could not load project:', data.message);
 					if (isInitialLoad) {
 						// Fallback to empty sheet if last opened file is missing
 						this.createSheet(this.defaults.sheetNamePrefix + '1', true);
+						this.updateStatusUI();
 					} else {
-						alert('Error loading project: ' + data.message);
+						showCustomAlert('Error loading project: ' + data.message);
 					}
 				}
 			})
 			.catch(error => {
 				console.error('Error:', error);
-				if (!isInitialLoad) alert('An error occurred while loading.');
+				if (!isInitialLoad) showCustomAlert('An error occurred while loading.');
 			});
 	},
 	
@@ -518,7 +524,7 @@ var SheetDataManager = {
 				if (data.success) {
 					if (callback) callback();
 				} else {
-					alert('Error deleting file: ' + data.message);
+					showCustomAlert('Error deleting file: ' + data.message);
 				}
 			});
 	},
@@ -552,6 +558,31 @@ var SheetDataManager = {
 			});
 			this.renderSheet(0);
 			this.renderTabs();
+			this.setModified(false);
 		}
+	},
+	
+	/**
+	 * Update the status bar UI
+	 */
+	updateStatusUI: function () {
+		const fileEl = document.getElementById('status-file');
+		const modEl = document.getElementById('status-modified');
+		
+		if (fileEl) {
+			fileEl.textContent = this.currentFileName || 'Untitled';
+		}
+		
+		if (modEl) {
+			modEl.style.display = this.isModified ? 'inline' : 'none';
+		}
+	},
+	
+	/**
+	 * Set modified state
+	 */
+	setModified: function (isModified) {
+		this.isModified = isModified;
+		this.updateStatusUI();
 	}
 };

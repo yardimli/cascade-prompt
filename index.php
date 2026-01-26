@@ -56,13 +56,13 @@
 	<div class="menu-item">
 		File
 		<div class="dropdown-content">
-			<div class="dropdown-item" onclick="openProjectModal('new')">New...</div>
-			<div class="dropdown-item" onclick="openProjectModal('open')">Open... <span class="shortcut-key">Ctrl+O</span></div>
+			<div class="menu-dropdown-item" onclick="openProjectModal('new')">New...</div>
+			<div class="menu-dropdown-item" onclick="openProjectModal('open')">Open... <span class="shortcut-key">Ctrl+O</span></div>
 			<div class="dropdown-divider"></div>
-			<div class="dropdown-item" onclick="performSave()">Save <span class="shortcut-key">Ctrl+S</span></div>
-			<div class="dropdown-item" onclick="openProjectModal('save-as')">Save As...</div>
+			<div class="menu-dropdown-item" onclick="performSave()">Save <span class="shortcut-key">Ctrl+S</span></div>
+			<div class="menu-dropdown-item" onclick="openProjectModal('save-as')">Save As...</div>
 			<div class="dropdown-divider"></div>
-			<div class="dropdown-item" onclick="window.print()">Print <span class="shortcut-key">Ctrl+P</span></div>
+			<div class="menu-dropdown-item" onclick="window.print()">Print <span class="shortcut-key">Ctrl+P</span></div>
 		</div>
 	</div>
 	
@@ -70,12 +70,12 @@
 	<div class="menu-item">
 		Edit
 		<div class="dropdown-content">
-			<div class="dropdown-item" onclick="document.execCommand('undo')">Undo <span class="shortcut-key">Ctrl+Z</span></div>
-			<div class="dropdown-item" onclick="document.execCommand('redo')">Redo <span class="shortcut-key">Ctrl+Y</span></div>
+			<div class="menu-dropdown-item" onclick="document.execCommand('undo')">Undo <span class="shortcut-key">Ctrl+Z</span></div>
+			<div class="menu-dropdown-item" onclick="document.execCommand('redo')">Redo <span class="shortcut-key">Ctrl+Y</span></div>
 			<div class="dropdown-divider"></div>
-			<div class="dropdown-item" onclick="document.execCommand('cut')">Cut <span class="shortcut-key">Ctrl+X</span></div>
-			<div class="dropdown-item" onclick="document.execCommand('copy')">Copy <span class="shortcut-key">Ctrl+C</span></div>
-			<div class="dropdown-item" onclick="document.execCommand('paste')">Paste <span class="shortcut-key">Ctrl+V</span></div>
+			<div class="menu-dropdown-item" onclick="document.execCommand('cut')">Cut <span class="shortcut-key">Ctrl+X</span></div>
+			<div class="menu-dropdown-item" onclick="document.execCommand('copy')">Copy <span class="shortcut-key">Ctrl+C</span></div>
+			<div class="menu-dropdown-item" onclick="document.execCommand('paste')">Paste <span class="shortcut-key">Ctrl+V</span></div>
 		</div>
 	</div>
 	
@@ -83,10 +83,10 @@
 	<div class="menu-item">
 		View
 		<div class="dropdown-content">
-			<div class="dropdown-item">Freeze Rows (Coming Soon)</div>
-			<div class="dropdown-item">Freeze Columns (Coming Soon)</div>
+			<div class="menu-dropdown-item">Freeze Rows (Coming Soon)</div>
+			<div class="menu-dropdown-item">Freeze Columns (Coming Soon)</div>
 			<div class="dropdown-divider"></div>
-			<div class="dropdown-item" onclick="document.documentElement.requestFullscreen()">Full Screen</div>
+			<div class="menu-dropdown-item" onclick="document.documentElement.requestFullscreen()">Full Screen</div>
 		</div>
 	</div>
 	
@@ -94,7 +94,7 @@
 	<div class="menu-item">
 		Help
 		<div class="dropdown-content">
-			<div class="dropdown-item" onclick="alert('Cascade Prompt v1.0\nUse Arrow keys to navigate.\nDouble click to edit.')">About</div>
+			<div class="menu-dropdown-item" onclick="showCustomAlert('Cascade Prompt v1.0<br>Use Arrow keys to navigate.<br>Double click to edit.')">About</div>
 		</div>
 	</div>
 </div>
@@ -178,6 +178,28 @@
 	<div class="add-sheet-btn" title="Add Sheet">+</div>
 </div>
 
+<!-- Status Bar -->
+<div class="status-bar">
+	<div class="status-left" style="display:flex;">
+		<div class="status-item" title="Current Selection">
+			<i class="bi bi-cursor"></i> <span id="status-selection">--</span>
+		</div>
+		<div class="status-item" title="File Name">
+			<i class="bi bi-file-earmark-spreadsheet"></i>
+			<span id="status-file">Untitled</span>
+			<span id="status-modified" style="display:none; margin-left:2px;">*</span>
+		</div>
+	</div>
+	<div class="status-right">
+		<span style="font-size: 10px; color: #999;">Ready</span>
+	</div>
+</div>
+
+<!-- Toast Notification -->
+<div id="toast-notification" class="custom-toast">
+	Saved
+</div>
+
 <!-- Project Management Modal -->
 <div class="modal fade" id="projectModal" tabindex="-1" aria-hidden="true">
 	<div class="modal-dialog">
@@ -213,10 +235,45 @@
 	</div>
 </div>
 
+<!-- Generic Alert Modal -->
+<div class="modal fade" id="alertModal" tabindex="-1" aria-hidden="true">
+	<div class="modal-dialog modal-sm">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title">Alert</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body" id="alert-modal-body">
+				<!-- Content -->
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-primary" data-bs-dismiss="modal">OK</button>
+			</div>
+		</div>
+	</div>
+</div>
+
 <script>
 	// Modal Logic
 	var projectModal = new bootstrap.Modal(document.getElementById('projectModal'));
+	var alertModal = new bootstrap.Modal(document.getElementById('alertModal'));
 	var currentModalMode = '';
+	
+	// Helper to show custom alert
+	function showCustomAlert(message) {
+		document.getElementById('alert-modal-body').innerHTML = message;
+		alertModal.show();
+	}
+	
+	// Helper to show toast
+	function showToast(message) {
+		const toast = document.getElementById('toast-notification');
+		toast.textContent = message;
+		toast.classList.add('show');
+		setTimeout(() => {
+			toast.classList.remove('show');
+		}, 3000);
+	}
 	
 	function openProjectModal(mode) {
 		currentModalMode = mode;
@@ -315,7 +372,7 @@
 				SheetDataManager.saveProject(filename);
 				projectModal.hide();
 			} else {
-				alert('Please enter a filename');
+				showCustomAlert('Please enter a filename');
 			}
 		} else if (currentModalMode === 'open') {
 			const filename = this.dataset.selectedFile;
@@ -349,4 +406,5 @@
 </script>
 
 </body>
+
 </html>
