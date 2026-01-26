@@ -15,10 +15,18 @@ DONE:
 - add a top menu bar with file/edit/view/help main menus and relevant submenus, create placeholders for future functionality
 - remove the localstorage functionality, only remember the last open file in localstorage and open it on page load if available
 
-TODO:
-
 - save cursor position and highlighted cells when switching sheets and restore them when returning to the sheet also save them to the project file and restore them when loading a project
 
+- improve UI (menus)
+- add light/dark mode toggle in the view menu and remember user preference in localstorage
+
+TODO:
+
+- implement undo/redo functionality for cell edits, merges/unmerges, row/column resizing, and sheet changes. maintain a history stack to track changes and allow users to revert or reapply actions. create a new history javascript file to manage this functionality.
+- make html formatting buttons work.
+- add cell border, color and background color options in the top menu for better cell customization, apply to cursor or selected cells.
+
+- add copy/paste functionality for cells and ranges of cells using keyboard shortcuts (Ctrl+C, Ctrl+V). ensure that formatting and merged cell states are preserved during copy/paste operations.
 
 
 --------- BUGS:

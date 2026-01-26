@@ -257,11 +257,11 @@ function updateColumnWidth (colIndex, newWidth) {
 			const colspan = parseInt(cell.getAttribute('colspan')) || 1;
 			const contentDiv = cell.querySelector('.content-cut');
 			if (colspan === 1) {
-				contentDiv.style.width = (newWidth-2) + 'px';
+				contentDiv.style.width = (newWidth-3) + 'px';
 			} else {
 				// Merged cell starting here
 				const totalWidth = getColumnWidthRange(colIndex, colIndex + colspan - 1);
-				contentDiv.style.width = (totalWidth-2) + 'px';
+				contentDiv.style.width = (totalWidth-3) + 'px';
 			}
 		} else {
 			// Cell might be merged from the left
@@ -276,7 +276,7 @@ function updateColumnWidth (colIndex, newWidth) {
 				const startCol = parseInt(coveringCell.getAttribute('data-col'));
 				const span = parseInt(coveringCell.getAttribute('colspan'));
 				const totalWidth = getColumnWidthRange(startCol, startCol + span - 1);
-				coveringCell.querySelector('.content-cut').style.width = (totalWidth-2) + 'px';
+				coveringCell.querySelector('.content-cut').style.width = (totalWidth-3) + 'px';
 			}
 		}
 	});
@@ -298,10 +298,10 @@ function updateRowHeight (rowIndex, newHeight) {
 		const contentDiv = cell.querySelector('.content-cut');
 		
 		if (rowspan === 1) {
-			contentDiv.style.height = (newHeight-2) + 'px';
+			contentDiv.style.height = (newHeight-3) + 'px';
 		} else {
 			const totalHeight = getRowHeightRange(rowIndex, rowIndex + rowspan - 1);
-			contentDiv.style.height = (totalHeight-2) + 'px';
+			contentDiv.style.height = (totalHeight-3) + 'px';
 		}
 	});
 	
@@ -313,7 +313,7 @@ function updateRowHeight (rowIndex, newHeight) {
 			// Check overlap
 			if (i + span > rowIndex) {
 				const totalHeight = getRowHeightRange(i, i + span - 1);
-				pCell.querySelector('.content-cut').style.height = (totalHeight-2) + 'px';
+				pCell.querySelector('.content-cut').style.height = (totalHeight-3) + 'px';
 			}
 		});
 	}

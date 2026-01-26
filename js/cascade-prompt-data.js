@@ -64,7 +64,12 @@ var SheetDataManager = {
 			colCount: this.defaults.cols,
 			cells: {},
 			colWidths: {},
-			rowHeights: {}
+			rowHeights: {},
+			// Initialize default selection state
+			selection: {
+				active: { r: 0, c: 0 }, // Default to A1
+				range: null
+			}
 		};
 		
 		if (isInitial) {
@@ -152,6 +157,37 @@ var SheetDataManager = {
 		sheetObj.colWidths = colWidths;
 		sheetObj.rowHeights = rowHeights;
 		
+		// --- Capture Selection State ---
+		const selectedCell = document.querySelector('.selected-cell');
+		if (selectedCell) {
+			const row = selectedCell.parentElement;
+			const tbody = row.parentElement;
+			const rowIndex = Array.from(tbody.children).indexOf(row);
+			const colIndex = parseInt(selectedCell.getAttribute('data-col'));
+			
+			sheetObj.selection = {
+				active: { r: rowIndex, c: colIndex },
+				range: null
+			};
+			
+			// Check if there is a range selection (using globals from cascade-prompt.js)
+			if (window.startCell && window.endCell && window.startCell !== window.endCell) {
+				const startRow = window.startCell.parentElement;
+				const endRow = window.endCell.parentElement;
+				const startRIndex = Array.from(tbody.children).indexOf(startRow);
+				const endRIndex = Array.from(tbody.children).indexOf(endRow);
+				
+				sheetObj.selection.range = {
+					startR: startRIndex,
+					startC: parseInt(window.startCell.getAttribute('data-col')),
+					endR: endRIndex,
+					endC: parseInt(window.endCell.getAttribute('data-col'))
+				};
+			}
+		} else {
+			sheetObj.selection = null;
+		}
+		
 		return sheetObj;
 	},
 	
@@ -163,8 +199,17 @@ var SheetDataManager = {
 		if (!sheet) return;
 		
 		if (typeof stopEditing === 'function') stopEditing();
+		
+		// Clear existing selection state in DOM
 		document.querySelectorAll('.selected-cell').forEach(el => el.classList.remove('selected-cell'));
 		document.querySelectorAll('.highlight').forEach(el => el.classList.remove('highlight'));
+		document.querySelectorAll('.area-selected-cell').forEach(el => el.classList.remove('area-selected-cell'));
+		
+		// Reset global selection variables
+		window.startCell = null;
+		window.endCell = null;
+		if (typeof updateSelection === 'function') updateSelection();
+		
 		const formulaInput = document.getElementById('formula-input');
 		formulaInput.value = '';
 		formulaInput.disabled = true;
@@ -247,12 +292,15 @@ var SheetDataManager = {
 						}
 					}
 					
-					content.style.height = cellHeight + 'px';
+					// FIX: Subtract 3px to account for borders/padding, preventing 1px growth bug.
+					// Matches logic in cascade-prompt-ui.js resize handlers.
+					content.style.height = (cellHeight - 3) + 'px';
 				} else {
-					content.style.height = height + 'px';
+					// FIX: Subtract 3px here as well for empty cells.
+					content.style.height = (height - 3) + 'px';
 				}
 				
-				content.style.width = cellWidth + 'px';
+				content.style.width = (cellWidth - 3) + 'px'; // Subtract 3px for width consistency too
 				td.appendChild(content);
 				tr.appendChild(td);
 			}
@@ -260,6 +308,51 @@ var SheetDataManager = {
 		}
 		
 		this.rebindResizeHandlers();
+		
+		// --- Restore Selection ---
+		if (sheet.selection && sheet.selection.active) {
+			const activeR = sheet.selection.active.r;
+			const activeC = sheet.selection.active.c;
+			
+			// Find the row (tbody children are 0-indexed)
+			const targetRow = tbody.children[activeR];
+			if (targetRow) {
+				const targetCell = targetRow.querySelector(`td[data-col="${activeC}"]`);
+				if (targetCell) {
+					// Restore active cell highlight
+					if (typeof highlightCell === 'function') {
+						highlightCell(targetCell);
+					}
+					
+					// Restore Range Selection if it exists
+					if (sheet.selection.range) {
+						const sR = sheet.selection.range.startR;
+						const sC = sheet.selection.range.startC;
+						const eR = sheet.selection.range.endR;
+						const eC = sheet.selection.range.endC;
+						
+						const startRow = tbody.children[sR];
+						const endRow = tbody.children[eR];
+						
+						if (startRow && endRow) {
+							const domStartCell = startRow.querySelector(`td[data-col="${sC}"]`);
+							const domEndCell = endRow.querySelector(`td[data-col="${eC}"]`);
+							
+							if (domStartCell && domEndCell) {
+								// Update global variables used by cascade-prompt.js
+								window.startCell = domStartCell;
+								window.endCell = domEndCell;
+								window.isSelecting = false;
+								
+								if (typeof updateSelection === 'function') {
+									updateSelection();
+								}
+							}
+						}
+					}
+				}
+			}
+		}
 	},
 	
 	isCellHiddenByMerge: function (sheet, row, col) {
@@ -446,17 +539,16 @@ var SheetDataManager = {
 			// Reset UI
 			const table = document.querySelector('.spreadsheet tbody');
 			table.innerHTML = ''; // Clear current
-			// Re-initialize with defaults
-			// We need to manually reset the DOM to default 100x26 to "measure" or just force create
-			// Since createSheet(..., true) scrapes DOM, we should clear data and force render a default sheet
-			// Instead of scraping, let's push a default object
+			
+			// Create default sheet
 			this.data.sheets.push({
 				name: 'Sheet1',
 				rowCount: this.defaults.rows,
 				colCount: this.defaults.cols,
 				cells: {},
 				colWidths: {},
-				rowHeights: {}
+				rowHeights: {},
+				selection: { active: { r: 0, c: 0 }, range: null }
 			});
 			this.renderSheet(0);
 			this.renderTabs();

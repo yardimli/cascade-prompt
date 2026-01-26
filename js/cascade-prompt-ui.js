@@ -234,7 +234,7 @@ function mergeCells () {
 	
 	// Update width of the merged cell content
 	const totalWidth = getColumnWidthRange(startCol, endCol);
-	topLeft.querySelector('.content-cut').style.width = (totalWidth-2) + 'px';
+	topLeft.querySelector('.content-cut').style.width = (totalWidth-3) + 'px';
 	
 	// Reset selection
 	startCell = null;
@@ -278,14 +278,14 @@ function unmergeCells () {
 			// Set width based on column width
 			const colHeader = document.querySelector('.letter-cell[data-col="' + c + '"]');
 			const colWidth = colHeader ? colHeader.offsetWidth : 100;
-			contentDiv.style.width = (colWidth-2) + 'px';
+			contentDiv.style.width = (colWidth-3) + 'px';
 			
 			// Set height based on row height
 			// Note: counter-cell index matches row index in tbody (row index - 1 for header)
 			// tableRows[r] is the TR. The counter cell is the first child.
 			const rowHeader = tableRows[r].querySelector('.counter-cell');
 			const rowHeight = rowHeader ? rowHeader.offsetHeight : 25;
-			contentDiv.style.height = (rowHeight-2) + 'px';
+			contentDiv.style.height = (rowHeight-3) + 'px';
 			
 			// Insert cell at correct position
 			const row = tableRows[r];
@@ -322,7 +322,7 @@ function unmergeCells () {
 	// Reset width of top-left cell to single column width
 	const singleColHeader = document.querySelector('.letter-cell[data-col="' + startCol + '"]');
 	const singleColWidth = singleColHeader ? singleColHeader.offsetWidth : 100;
-	cell.querySelector('.content-cut').style.width = (singleColWidth-2) + 'px';
+	cell.querySelector('.content-cut').style.width = (singleColWidth-3) + 'px';
 	
 	// Re-highlight to update UI state
 	highlightCell(cell);
@@ -363,7 +363,7 @@ function attachResizeHandlers () {
 				// Apply height to all .content-cut divs in this row
 				const contentDivs = row.querySelectorAll('.content-cut');
 				contentDivs.forEach(div => {
-					div.style.height = (newHeight-2) + 'px';
+					div.style.height = (newHeight-3) + 'px';
 				});
 			}
 			

@@ -1,6 +1,7 @@
 :root {
     --animation-duration: 4s;
-    --tab-bar-height: 35px; /* New variable for tab bar */
+    --tab-bar-height: 35px;
+    --status-bar-height: 25px; /* New variable for status bar */
 }
 
 ::-webkit-scrollbar {
@@ -56,6 +57,7 @@
     border: 1px solid #ccc;
     background-color: #fff;
     height: 30px;
+    border-radius: 4px; /* Slight rounding */
 }
 
 .formula-icon {
@@ -65,18 +67,20 @@
     font-weight: bold;
     color: #666;
     border-right: 1px solid #ccc;
-    background-color: #f0f0f0;
+    background-color: #f8f9fa; /* Lighter background */
     line-height: 28px;
     user-select: none;
+    border-radius: 4px 0 0 4px;
 }
 
 .formula-input {
     flex-grow: 1;
     border: none;
     outline: none;
-    padding: 0 5px;
+    padding: 0 8px; /* More padding */
     height: 100%;
     font-size: 14px;
+    border-radius: 0 4px 4px 0;
 }
 
 .formula-input:disabled {
@@ -85,15 +89,15 @@
 }
 
 .spreadsheet-container {
-    margin: 10px 10px 0 10px; /* Removed bottom margin to sit flush with tabs */
+    margin: 10px 10px 0 10px;
     padding: 0px;
 
     overflow: auto;
     width: calc(100vw - 20px);
-    /* Adjusted height to account for formula bar + tab bar */
-    height: calc(100vh - 145px - var(--tab-bar-height));
+    /* Adjusted height to account for formula bar + tab bar + status bar + new menu height */
+    height: calc(100vh - 155px - var(--tab-bar-height) - var(--status-bar-height));
     border: 1px solid #ccc;
-    border-bottom: none; /* Remove bottom border as tabs will act as border */
+    border-bottom: none;
 
     position: relative;
 }
@@ -105,7 +109,7 @@
     margin: 0px;
     min-width: 1000px;
     width: auto;
-    table-layout: fixed; /* Forces the table to respect set column widths */
+    table-layout: fixed;
 }
 
 .spreadsheet th {
@@ -144,7 +148,7 @@
     position: sticky;
     left: 0;
     background: #f0f0f0;
-    z-index: 1; /* Less than header cells to prevent overlap */
+    z-index: 1;
     border: 1px solid rgb(192, 192, 192);
     width: 50px;
     max-width: 50px !important;
@@ -157,24 +161,21 @@
     border: 1px solid rgb(192, 192, 192);
     width: 200px;
     vertical-align: top;
-    /* Removed white-space and overflow hidden from here as it is handled by .content-cut */
-    padding: 0; /* Padding is now handled by inner div */
+    padding: 0;
 }
 
 /* New class for inner cell content */
 .content-cut {
-    /* height: 100%;  <-- Removed to allow explicit pixel height */
-    /* width: 100%;   <-- Removed to allow explicit pixel width */
     overflow: hidden;
-    padding: 2px 5px; /* Replaces cell padding */
+    padding: 2px 5px;
     box-sizing: border-box;
     white-space: normal;
-    display: block; /* Ensure it respects dimensions */
+    display: block;
 }
 
 .letter-cell, .text-cell {
-    width: 200px; /* Force width */
-    min-width: 200px; /* Ensure minimum width is respected */
+    width: 200px;
+    min-width: 200px;
 }
 
 /* Style for the overlay textarea */
@@ -184,7 +185,7 @@
     z-index: 100;
     resize: none;
     overflow: hidden;
-    box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2); /* Enhanced shadow */
     border: 2px solid #1a73e8;
     padding: 2px 5px;
     font-family: inherit;
@@ -201,17 +202,17 @@
 }
 
 .highlight {
-    background-color: #ccc !important; /* Highlights background */
+    background-color: #d3e3fd !important; /* Modern Google blue tint */
 }
 
 .selected-cell {
-    outline: 1px solid red; /* The second, highlight border */
-    outline-offset: 0px;
-    border: 1px solid red !important; /* Thicker border for the selected cell */
+    outline: 1px solid #1a73e8; /* Blue selection */
+    outline-offset: -1px; /* Inside border */
+    border: 1px solid #1a73e8 !important;
 }
 
 .area-selected-cell {
-    background-color: rgba(14, 101, 235, 0.1);
+    background-color: rgba(26, 115, 232, 0.1); /* Blue tint */
 }
 
 .dragging {
@@ -222,31 +223,21 @@
     display: none;
     position: absolute;
     z-index: 10;
+    border: 1px solid #1a73e8; /* Solid blue border for selection area */
+    background-color: rgba(26, 115, 232, 0.05);
 }
 
 .active-animation {
-    background-image: linear-gradient(90deg, silver 50%, transparent 50%), linear-gradient(90deg, silver 50%, transparent 50%), linear-gradient(0deg, silver 50%, transparent 50%), linear-gradient(0deg, silver 50%, transparent 50%);
-    background-repeat: repeat-x, repeat-x, repeat-y, repeat-y;
-    background-size: 15px 2px, 15px 2px, 2px 15px, 2px 15px;
-    background-position: left top, right bottom, left bottom, right top;
-    animation: border-dance 1s infinite linear;
-}
-
-@keyframes border-dance {
-    0% {
-        background-position: left top, right bottom, left bottom, right top;
-    }
-
-    100% {
-        background-position: left 15px top, right 15px bottom, left bottom 15px, right top 15px;
-    }
+    /* Removed dashed animation for a cleaner solid look, or keep if preferred */
+    /* Keeping original animation but changing color to blue */
+    background-image: linear-gradient(90deg, #1a73e8 50%, transparent 50%), linear-gradient(90deg, #1a73e8 50%, transparent 50%), linear-gradient(0deg, #1a73e8 50%, transparent 50%), linear-gradient(0deg, #1a73e8 50%, transparent 50%);
 }
 
 .no-select {
-    user-select: none; /* Standard syntax */
-    -webkit-user-select: none; /* For WebKit browsers (Chrome, Safari, etc.) */
-    -moz-user-select: none; /* For Firefox */
-    -ms-user-select: none; /* For Internet Explorer/Edge */
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
 }
 
 .selection-helper-edge {
@@ -267,14 +258,6 @@
     cursor: move;
 }
 
-.selection-helper-edge.top,
-.selection-helper-edge.bottom,
-.selection-helper-edge.left,
-.selection-helper-edge.right {
-    pointer-events: auto;
-}
-
-/* Added class for cells hidden by merge */
 .merged-hidden {
     display: none;
 }
@@ -283,7 +266,7 @@
 /* Sheet Tabs Styles */
 /* -------------------------------------------------- */
 .sheet-tabs-container {
-    margin: 0 10px 10px 10px;
+    margin: 0 10px 0 10px; /* Removed bottom margin */
     height: var(--tab-bar-height);
     background-color: #f1f3f4;
     border: 1px solid #ccc;
@@ -307,6 +290,7 @@
     min-width: 60px;
     text-align: center;
     border-radius: 0 0 4px 4px;
+    transition: background-color 0.2s;
 }
 
 .sheet-tab:hover {
@@ -317,8 +301,8 @@
     background-color: #fff;
     color: #1a73e8;
     font-weight: bold;
-    border-top: 2px solid transparent; /* Visual trick to blend with grid */
-    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    border-top: 2px solid transparent;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .add-sheet-btn {
@@ -332,52 +316,73 @@
     font-size: 18px;
     border-radius: 50%;
     margin-left: 5px;
+    transition: background-color 0.2s;
 }
 
 .add-sheet-btn:hover {
-    background-color: rgba(0,0,0,0.05);
+    background-color: rgba(0, 0, 0, 0.1);
     color: #000;
 }
 
 /* -------------------------------------------------- */
-/* Top Menu Bar Styles */
+/* Top Menu Bar Styles (Modernized) */
 /* -------------------------------------------------- */
 .top-menu-bar {
-    background-color: #f8f9fa;
+    background-color: rgba(255, 255, 255, 0.95); /* Slight opacity */
+    backdrop-filter: blur(5px); /* Blur effect */
     border-bottom: 1px solid #dadce0;
-    padding: 0 10px;
-    height: 30px;
+    padding: 0 15px;
+    height: 40px; /* Increased height */
     display: flex;
     align-items: center;
     font-size: 14px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); /* Soft shadow */
+    z-index: 1000;
+    position: relative;
 }
 
 .menu-item {
     position: relative;
     display: inline-block;
-    padding: 5px 10px;
+    padding: 6px 12px; /* More padding */
     cursor: pointer;
     user-select: none;
-    color: #333;
+    color: #444;
+    border-radius: 4px;
+    transition: background-color 0.2s, color 0.2s;
+    margin-right: 5px;
 }
 
 .menu-item:hover {
-    background-color: #e8eaed;
-    border-radius: 4px;
+    background-color: #f1f3f4;
+    color: #000;
 }
 
 .dropdown-content {
     display: none;
     position: absolute;
     background-color: #fff;
-    min-width: 200px;
-    box-shadow: 0 2px 6px 2px rgba(60, 64, 67, .15);
-    z-index: 1000;
+    min-width: 220px; /* Wider dropdown */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); /* Deeper shadow */
+    z-index: 1001;
     top: 100%;
     left: 0;
-    border-radius: 4px;
-    padding: 5px 0;
-    border: 1px solid #dadce0;
+    border-radius: 6px;
+    padding: 6px 0;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    margin-top: 2px;
+    animation: fadeIn 0.1s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .menu-item:hover .dropdown-content {
@@ -385,12 +390,13 @@
 }
 
 .dropdown-item {
-    padding: 6px 20px;
+    padding: 8px 20px; /* More vertical padding */
     text-decoration: none;
     display: block;
-    color: #333;
+    color: #3c4043;
     cursor: pointer;
     font-size: 13px;
+    transition: background-color 0.1s;
 }
 
 .dropdown-item:hover {
@@ -399,25 +405,25 @@
 
 .dropdown-divider {
     height: 1px;
-    margin: 4px 0;
+    margin: 6px 0;
     overflow: hidden;
-    background-color: #e0e0e0;
+    background-color: #e8eaed;
 }
 
 .shortcut-key {
     float: right;
-    color: #999;
+    color: #9aa0a6;
     font-size: 11px;
-    margin-left: 15px;
+    margin-left: 20px;
 }
 
 /* Adjust toolbar container to sit below menu */
 .toolbar-container {
-    margin: 5px 10px;
-    background-color: #eeeeff;
-    border-radius: 10px;
-    padding: 5px;
-    padding-left: 20px;
+    margin: 8px 10px;
+    background-color: #f8f9fa;
+    border-radius: 20px; /* Pill shape */
+    padding: 5px 20px;
+    border: 1px solid #dadce0;
 }
 
 /* Project List in Modal */
@@ -435,4 +441,59 @@
 
 .project-list-item:hover {
     background-color: #f8f9fa;
+}
+
+/* -------------------------------------------------- */
+/* Status Bar Styles (New) */
+/* -------------------------------------------------- */
+.status-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: var(--status-bar-height);
+    background-color: #f8f9fa;
+    border-top: 1px solid #dadce0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 15px;
+    font-size: 12px;
+    color: #5f6368;
+    z-index: 1000;
+    user-select: none;
+}
+
+.status-item {
+    margin-right: 20px;
+    display: flex;
+    align-items: center;
+}
+
+.status-item i {
+    margin-right: 5px;
+}
+
+/* -------------------------------------------------- */
+/* Toast Notification Styles (New) */
+/* -------------------------------------------------- */
+.custom-toast {
+    position: fixed;
+    bottom: 40px; /* Above status bar */
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #323232;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 4px;
+    font-size: 14px;
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+    z-index: 2000;
+    pointer-events: none;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.custom-toast.show {
+    opacity: 1;
 }
