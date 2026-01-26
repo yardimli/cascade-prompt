@@ -4,6 +4,9 @@ var mouseDown = false;
 var startCell = null;
 var endCell = null;
 
+var isDraggingSelection = false;
+var dragOffset = { top: 0, left: 0 };
+
 let draggingEdge = null;
 let initialMousePos = { top: 0, left: 0 };
 let initialHelperPos = { top: 0, left: 0 };
@@ -422,15 +425,31 @@ document.addEventListener('DOMContentLoaded', function () {
 	});
 	
 	const selectionHelper = document.getElementById('selection-helper');
+	
 	selectionHelper.addEventListener('mousedown', function (e) {
+		// If clicking an edge resizer, let the document listener handle it
 		if (e.target.classList.contains('selection-helper-edge')) {
 			return;
 		}
-		stopEditing();
-		startCell = null;
-		endCell = null;
-		isSelecting = false;
-		updateSelection();
+		
+		// Start dragging the selection block
+		e.preventDefault();
+		e.stopPropagation();
+		
+		isDraggingSelection = true;
+		
+		// Calculate offset of mouse relative to the helper's top-left
+		const rect = selectionHelper.getBoundingClientRect();
+		dragOffset = {
+			left: e.clientX - rect.left,
+			top: e.clientY - rect.top
+		};
+		
+		// Store initial indices to calculate move delta later
+		initialStartCellIndex = {
+			row: startCell.parentElement.rowIndex, // Note: includes header row (0)
+			col: parseInt(startCell.getAttribute('data-col'))
+		};
 	});
 	
 	const spreadsheet = document.querySelector('.spreadsheet');
@@ -514,19 +533,44 @@ document.addEventListener('DOMContentLoaded', function () {
 		}
 	});
 	
+	// Unified Mouse Move for Dragging Edge OR Dragging Selection
 	document.addEventListener('mousemove', function (e) {
+		const container = document.querySelector('.spreadsheet-container');
+		const containerOffset = container.getBoundingClientRect();
+		const scrollLeft = container.scrollLeft;
+		const scrollTop = container.scrollTop;
+		
+		const topCorner = document.querySelector('.top-corner-cell');
+		const cornerHeight = topCorner ? topCorner.offsetHeight : 0;
+		const cornerWidth = topCorner ? topCorner.offsetWidth : 0;
+		
+		// 1. Handle Dragging the Whole Selection (Move Cells)
+		if (isDraggingSelection) {
+			e.preventDefault();
+			
+			// Calculate desired top/left based on mouse pos minus offset
+			// Adjust for container scroll and position
+			const rawTop = e.clientY - containerOffset.top + scrollTop - dragOffset.top - cornerHeight;
+			const rawLeft = e.clientX - containerOffset.left + scrollLeft - dragOffset.left - cornerWidth;
+			
+			const columnWidths = getColumnWidths();
+			const rowHeights = getRowHeights();
+			
+			// Snap to nearest cell
+			const snappedTop = snapToCell(rawTop, rowHeights);
+			const snappedLeft = snapToCell(rawLeft, columnWidths);
+			
+			// Apply position (add corner offsets back)
+			selectionHelper.style.top = (snappedTop + cornerHeight) + 'px';
+			selectionHelper.style.left = (snappedLeft + cornerWidth) + 'px';
+			
+			return;
+		}
+		
+		// 2. Handle Resizing Selection Edge
 		if (draggingEdge) {
 			e.preventDefault();
 			e.stopPropagation();
-			
-			const container = document.querySelector('.spreadsheet-container');
-			const containerOffset = container.getBoundingClientRect();
-			const scrollLeft = container.scrollLeft;
-			const scrollTop = container.scrollTop;
-			
-			const topCorner = document.querySelector('.top-corner-cell');
-			const cornerHeight = topCorner ? topCorner.offsetHeight : 0;
-			const cornerWidth = topCorner ? topCorner.offsetWidth : 0;
 			
 			const delta = {
 				top: e.pageY - containerOffset.top + scrollTop - cornerHeight,
@@ -568,8 +612,6 @@ document.addEventListener('DOMContentLoaded', function () {
 			}
 			
 			// Calculate new width/height based on indices
-			// Note: Logic here is simplified for the prompt conversion.
-			// Original logic used indices to calculate range.
 			const colDiff = initialEndCellIndex.col - initialStartCellIndex.col;
 			const rowDiff = initialEndCellIndex.row - initialStartCellIndex.row;
 			
@@ -583,9 +625,74 @@ document.addEventListener('DOMContentLoaded', function () {
 		}
 	});
 	
+	// Unified Mouse Up
 	document.addEventListener('mouseup', function () {
 		if (draggingEdge) {
 			draggingEdge = null;
+		}
+		
+		if (isDraggingSelection) {
+			isDraggingSelection = false;
+			
+			// Determine where we dropped it
+			const helperTop = parseInt(selectionHelper.style.top);
+			const helperLeft = parseInt(selectionHelper.style.left);
+			
+			const topCorner = document.querySelector('.top-corner-cell');
+			const cornerHeight = topCorner ? topCorner.offsetHeight : 0;
+			const cornerWidth = topCorner ? topCorner.offsetWidth : 0;
+			
+			// Convert pixels back to row/col indices
+			const rowHeights = getRowHeights();
+			const colWidths = getColumnWidths();
+			
+			let targetRow = 0;
+			let targetCol = 0;
+			
+			let currentH = 0;
+			// Adjust for header height
+			const effectiveTop = helperTop - cornerHeight;
+			for (let i = 0; i < rowHeights.length; i++) {
+				if (currentH >= effectiveTop - 2) { // -2 for fuzzy tolerance
+					targetRow = i;
+					break;
+				}
+				currentH += rowHeights[i];
+				targetRow = i + 1;
+			}
+			
+			let currentW = 0;
+			// Adjust for sidebar width
+			const effectiveLeft = helperLeft - cornerWidth;
+			for (let i = 0; i < colWidths.length; i++) {
+				if (currentW >= effectiveLeft - 2) {
+					targetCol = i;
+					break;
+				}
+				currentW += colWidths[i];
+				targetCol = i + 1;
+			}
+			
+			// Perform the move via DataManager
+			if (startCell && endCell) {
+				const startRowIdx = startCell.parentElement.rowIndex - 1; // 0-based index in tbody
+				const endRowIdx = endCell.parentElement.rowIndex - 1;
+				
+				const startColIdx = parseInt(startCell.getAttribute('data-col'));
+				const endColIdx = parseInt(endCell.getAttribute('data-col'));
+				
+				const range = {
+					startR: Math.min(startRowIdx, endRowIdx),
+					endR: Math.max(startRowIdx, endRowIdx),
+					startC: Math.min(startColIdx, endColIdx),
+					endC: Math.max(startColIdx, endColIdx)
+				};
+				
+				SheetDataManager.moveRange(range, targetRow, targetCol);
+			} else {
+				// Revert visual if something went wrong
+				updateSelection();
+			}
 		}
 	});
 });

@@ -415,6 +415,105 @@ var SheetDataManager = {
 		});
 	},
 	
+	/**
+	 * Move a range of cells to a new location
+	 * @param {Object} range - {startR, startC, endR, endC}
+	 * @param {Number} targetR - The new top-left row index
+	 * @param {Number} targetC - The new top-left column index
+	 */
+	moveRange: function (range, targetR, targetC) {
+		const sheet = this.data.sheets[this.data.activeSheetIndex];
+		if (!sheet) return;
+		
+		// 1. Calculate Offsets
+		const rowOffset = targetR - range.startR;
+		const colOffset = targetC - range.startC;
+		
+		// If no movement, do nothing
+		if (rowOffset === 0 && colOffset === 0) return;
+		
+		// 2. Capture History
+		if (typeof HistoryManager !== 'undefined') {
+			HistoryManager.addState();
+		}
+		
+		// 3. Collect Data (Clipboard)
+		// We read all data first to prevent overwriting issues during a self-overlapping move
+		const movingCells = [];
+		
+		for (let r = range.startR; r <= range.endR; r++) {
+			for (let c = range.startC; c <= range.endC; c++) {
+				const key = r + '-' + c;
+				if (sheet.cells[key]) {
+					// Only move the cell if it is the top-left of a merge, or a standard cell
+					// If it's part of a merge but not the anchor, it's implicitly moved by the anchor
+					const cellData = sheet.cells[key];
+					movingCells.push({
+						oldR: r,
+						oldC: c,
+						data: JSON.parse(JSON.stringify(cellData)) // Deep copy
+					});
+				}
+			}
+		}
+		
+		// 4. Clear Source Cells
+		// We must clear the specific range in the data model
+		movingCells.forEach(item => {
+			delete sheet.cells[item.oldR + '-' + item.oldC];
+		});
+		
+		// 5. Place in Target
+		movingCells.forEach(item => {
+			const newR = item.oldR + rowOffset;
+			const newC = item.oldC + colOffset;
+			
+			// Boundary check (optional, but good practice)
+			if (newR >= 0 && newC >= 0) {
+				sheet.cells[newR + '-' + newC] = item.data;
+			}
+		});
+		
+		// 6. Re-render
+		this.renderSheet(this.data.activeSheetIndex);
+		this.setModified(true);
+		
+		// 7. Update Selection to new location
+		// We need to find the new DOM elements to update the global selection state
+		setTimeout(() => {
+			const table = document.querySelector('.spreadsheet tbody');
+			const newStartR = range.startR + rowOffset;
+			const newStartC = range.startC + colOffset;
+			const newEndR = range.endR + rowOffset;
+			const newEndC = range.endC + colOffset;
+			
+			const startRow = table.children[newStartR];
+			const endRow = table.children[newEndR];
+			
+			if (startRow && endRow) {
+				const newStartCell = startRow.querySelector(`td[data-col="${newStartC}"]`);
+				const newEndCell = endRow.querySelector(`td[data-col="${newEndC}"]`);
+				
+				if (newStartCell && newEndCell) {
+					// Update globals in cascade-prompt.js
+					window.startCell = newStartCell;
+					window.endCell = newEndCell;
+					window.isSelecting = false;
+					
+					// Trigger UI update
+					if (typeof updateSelection === 'function') {
+						updateSelection();
+					}
+					
+					// Highlight the anchor cell
+					if (typeof highlightCell === 'function') {
+						highlightCell(newStartCell);
+					}
+				}
+			}
+		}, 0);
+	},
+	
 	// -----------------------------------------------------------------------
 	// Backend Interaction Methods
 	// -----------------------------------------------------------------------

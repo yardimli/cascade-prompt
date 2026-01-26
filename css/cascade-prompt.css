@@ -305,7 +305,13 @@ body {
     z-index: 10;
     border: 1px solid var(--accent-color); /* Updated */
     background-color: var(--accent-hover); /* Updated */
+    cursor: grab; /* Added: Indicate draggable */
 }
+
+#selection-helper:active {
+    cursor: grabbing; /* Added: Visual feedback when dragging */
+}
+
 
 .no-select {
     user-select: none;

@@ -20,9 +20,12 @@ DONE:
 - improve UI (menus)
 - add light/dark mode toggle in the view menu and remember user preference in localstorage
 
+- implement undo/redo functionality for cell edits, merges/unmerges, row/column resizing, and sheet changes. maintain a history stack to track changes and allow users to revert or reapply actions. create a new history javascript file to manage this functionality.
+
 TODO:
 
-- implement undo/redo functionality for cell edits, merges/unmerges, row/column resizing, and sheet changes. maintain a history stack to track changes and allow users to revert or reapply actions. create a new history javascript file to manage this functionality.
+- allow user to drag the selected cells to a new location. merged cells should be moved as a whole. overwrite any existing cells in the target location. clear the original cells after the move.
+
 
 - make html formatting buttons work.
 - add cell border, color and background color options in the top menu for better cell customization, apply to cursor or selected cells.
