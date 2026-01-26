@@ -21,6 +21,7 @@ TODO:
 
 --------- BUGS:
 
+row heights keep increase on reload of the page when navigating between sheet on each refresh
 when merging cells row height resize acts weirdly for the rows that intersect with merged cells
 when unmerging cells the new cells are not editable until page refresh
 new sheets row heights are different than the first sheet, should have some default height

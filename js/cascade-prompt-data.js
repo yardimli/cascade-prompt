@@ -15,7 +15,7 @@ var SheetDataManager = {
 		cols: 26,
 		sheetNamePrefix: 'Sheet',
 		defaultRowHeight: 25, // Fallback, will be overwritten by measureDefaults
-		defaultColWidth: 200  // Fallback, will be overwritten by measureDefaults
+		defaultColWidth: 200 // Fallback, will be overwritten by measureDefaults
 	},
 	
 	/**
@@ -45,18 +45,17 @@ var SheetDataManager = {
 	/**
 	 * Measure the dimensions of the currently rendered table to set defaults
 	 */
-	measureDefaults: function() {
+	measureDefaults: function () {
 		// Measure Row Height from the first row header
-		var $sampleRowHeader = $('.spreadsheet tbody tr:first th.counter-cell');
-		if ($sampleRowHeader.length) {
-			// outerHeight includes padding and borders, which matches how we apply css('height') with border-box
-			this.defaults.defaultRowHeight = $sampleRowHeader.outerHeight();
+		const sampleRowHeader = document.querySelector('.spreadsheet tbody tr:first-child th.counter-cell');
+		if (sampleRowHeader) {
+			this.defaults.defaultRowHeight = sampleRowHeader.offsetHeight;
 		}
 		
 		// Measure Column Width from the first column header
-		var $sampleColHeader = $('.spreadsheet thead th.letter-cell').first();
-		if ($sampleColHeader.length) {
-			this.defaults.defaultColWidth = $sampleColHeader.outerWidth();
+		const sampleColHeader = document.querySelector('.spreadsheet thead th.letter-cell');
+		if (sampleColHeader) {
+			this.defaults.defaultColWidth = sampleColHeader.offsetWidth;
 		}
 	},
 	
@@ -66,7 +65,7 @@ var SheetDataManager = {
 	 * @param {boolean} isInitial - If true, captures current DOM state instead of creating empty
 	 */
 	createSheet: function (name, isInitial) {
-		var newSheet = {
+		let newSheet = {
 			name: name,
 			rowCount: this.defaults.rows,
 			colCount: this.defaults.cols,
@@ -115,7 +114,7 @@ var SheetDataManager = {
 	 * Scrape current DOM to update the active sheet's data object
 	 */
 	updateCurrentSheetData: function () {
-		var activeIndex = this.data.activeSheetIndex;
+		const activeIndex = this.data.activeSheetIndex;
 		if (this.data.sheets[activeIndex]) {
 			this.data.sheets[activeIndex] = this.collectDOMData(this.data.sheets[activeIndex]);
 		}
@@ -127,21 +126,24 @@ var SheetDataManager = {
 	 * @returns {object} - Updated sheet object
 	 */
 	collectDOMData: function (sheetObj) {
-		var cells = {};
-		var colWidths = {};
-		var rowHeights = {};
+		const cells = {};
+		const colWidths = {};
+		const rowHeights = {};
 		
 		// 1. Save Cell Content and Merges
-		$('.spreadsheet .text-cell').each(function () {
-			var $cell = $(this);
-			var text = $cell.find('.content-cut').text();
-			var rowspan = parseInt($cell.attr('rowspan')) || 1;
-			var colspan = parseInt($cell.attr('colspan')) || 1;
+		const textCells = document.querySelectorAll('.spreadsheet .text-cell');
+		textCells.forEach(cell => {
+			const contentDiv = cell.querySelector('.content-cut');
+			const text = contentDiv ? contentDiv.textContent : '';
+			const rowspan = parseInt(cell.getAttribute('rowspan')) || 1;
+			const colspan = parseInt(cell.getAttribute('colspan')) || 1;
 			
 			// Only save if interesting (content or merge)
 			if (text || rowspan > 1 || colspan > 1) {
-				var rowIndex = $cell.parent().index();
-				var colIndex = parseInt($cell.attr('data-col'));
+				const row = cell.parentElement;
+				const tbody = row.parentElement;
+				const rowIndex = Array.from(tbody.children).indexOf(row);
+				const colIndex = parseInt(cell.getAttribute('data-col'));
 				
 				cells[rowIndex + '-' + colIndex] = {
 					text: text,
@@ -152,20 +154,22 @@ var SheetDataManager = {
 		});
 		
 		// 2. Save Column Widths
-		$('.letter-cell').each(function () {
-			var index = parseInt($(this).attr('data-col'));
-			colWidths[index] = $(this).outerWidth();
+		document.querySelectorAll('.letter-cell').forEach(cell => {
+			const index = parseInt(cell.getAttribute('data-col'));
+			colWidths[index] = cell.offsetWidth;
 		});
 		
 		// 3. Save Row Heights
-		$('.counter-cell').each(function () {
-			var index = $(this).parent().index();
-			rowHeights[index] = $(this).outerHeight();
+		document.querySelectorAll('.counter-cell').forEach(cell => {
+			const row = cell.parentElement;
+			const tbody = row.parentElement;
+			const index = Array.from(tbody.children).indexOf(row);
+			rowHeights[index] = cell.offsetHeight;
 		});
 		
 		// 4. Update Counts
-		sheetObj.rowCount = $('.spreadsheet tbody tr').length;
-		sheetObj.colCount = $('.spreadsheet thead th.letter-cell').length;
+		sheetObj.rowCount = document.querySelectorAll('.spreadsheet tbody tr').length;
+		sheetObj.colCount = document.querySelectorAll('.spreadsheet thead th.letter-cell').length;
 		
 		sheetObj.cells = cells;
 		sheetObj.colWidths = colWidths;
@@ -179,104 +183,115 @@ var SheetDataManager = {
 	 * @param {number} index
 	 */
 	renderSheet: function (index) {
-		var sheet = this.data.sheets[index];
+		const sheet = this.data.sheets[index];
 		if (!sheet) return;
 		
 		// Reset selection/editing state
 		if (typeof stopEditing === 'function') stopEditing();
-		$('.selected-cell').removeClass('selected-cell');
-		$('.highlight').removeClass('highlight');
-		$('#formula-input').val('').prop('disabled', true);
+		document.querySelectorAll('.selected-cell').forEach(el => el.classList.remove('selected-cell'));
+		document.querySelectorAll('.highlight').forEach(el => el.classList.remove('highlight'));
+		const formulaInput = document.getElementById('formula-input');
+		formulaInput.value = '';
+		formulaInput.disabled = true;
 		
-		var $table = $('.spreadsheet');
-		var $thead = $table.find('thead');
-		var $tbody = $table.find('tbody');
+		const table = document.querySelector('.spreadsheet');
+		const thead = table.querySelector('thead');
+		const tbody = table.querySelector('tbody');
 		
 		// --- Rebuild Header (Columns) ---
-		var $headerRow = $thead.find('tr');
-		$headerRow.empty();
-		$headerRow.append('<th class="top-corner-cell"></th>');
+		const headerRow = thead.querySelector('tr');
+		headerRow.innerHTML = ''; // Clear existing
+		headerRow.insertAdjacentHTML('beforeend', '<th class="top-corner-cell"></th>');
 		
-		var tableWidth = 0;
+		let tableWidth = 0;
 		
-		for (var c = 0; c < sheet.colCount; c++) {
-			var letter = this.getColumnLetter(c);
+		for (let c = 0; c < sheet.colCount; c++) {
+			const letter = this.getColumnLetter(c);
 			// Use stored width or measured default
-			var width = sheet.colWidths[c] || this.defaults.defaultColWidth;
-			var $th = $('<th class="letter-cell" data-col="' + c + '">' + letter + '</th>');
+			const width = sheet.colWidths[c] || this.defaults.defaultColWidth;
 			
-			$th.css('width', (width) + 'px');
+			const th = document.createElement('th');
+			th.className = 'letter-cell';
+			th.setAttribute('data-col', c);
+			th.textContent = letter;
+			th.style.width = width + 'px';
 			
-			$headerRow.append($th);
+			headerRow.appendChild(th);
 			tableWidth += width;
 		}
 		
 		// Adjust table width
-		$table.width(tableWidth + 50); // +50 for row counter
+		table.style.width = (tableWidth + 50) + 'px'; // +50 for row counter
 		
 		// --- Rebuild Body (Rows & Cells) ---
-		$tbody.empty();
+		tbody.innerHTML = '';
 		
-		for (var r = 0; r < sheet.rowCount; r++) {
+		for (let r = 0; r < sheet.rowCount; r++) {
 			// Use stored height or measured default
-			var height = sheet.rowHeights[r] || this.defaults.defaultRowHeight;
-			var $tr = $('<tr></tr>');
+			const height = sheet.rowHeights[r] || this.defaults.defaultRowHeight;
+			const tr = document.createElement('tr');
 			
 			// Row Header
-			var $rowHeader = $('<th class="counter-cell">' + (r + 1) + '</th>');
-			$rowHeader.css('height', height + 'px');
-			$tr.append($rowHeader);
+			const rowHeader = document.createElement('th');
+			rowHeader.className = 'counter-cell';
+			rowHeader.textContent = (r + 1);
+			rowHeader.style.height = height + 'px';
+			tr.appendChild(rowHeader);
 			
 			// Cells
-			for (var c = 0; c < sheet.colCount; c++) {
+			for (let c = 0; c < sheet.colCount; c++) {
 				// Check if this cell is skipped due to a merge from above or left
 				if (this.isCellHiddenByMerge(sheet, r, c)) {
 					continue;
 				}
 				
-				var cellKey = r + '-' + c;
-				var cellData = sheet.cells[cellKey];
+				const cellKey = r + '-' + c;
+				const cellData = sheet.cells[cellKey];
 				
-				var $td = $('<td class="text-cell" data-col="' + c + '"></td>');
-				var $content = $('<div class="content-cut"></div>');
+				const td = document.createElement('td');
+				td.className = 'text-cell';
+				td.setAttribute('data-col', c);
+				
+				const content = document.createElement('div');
+				content.className = 'content-cut';
 				
 				// Apply dimensions
-				var cellWidth = sheet.colWidths[c] || this.defaults.defaultColWidth;
+				let cellWidth = sheet.colWidths[c] || this.defaults.defaultColWidth;
 				
 				if (cellData) {
-					$content.text(cellData.text || '');
+					content.textContent = cellData.text || '';
 					
-					if (cellData.rowspan > 1) $td.attr('rowspan', cellData.rowspan);
-					if (cellData.colspan > 1) $td.attr('colspan', cellData.colspan);
+					if (cellData.rowspan > 1) td.setAttribute('rowspan', cellData.rowspan);
+					if (cellData.colspan > 1) td.setAttribute('colspan', cellData.colspan);
 					
 					// Calculate merged dimensions
 					if (cellData.colspan > 1) {
 						cellWidth = 0;
-						for (var k = 0; k < cellData.colspan; k++) {
+						for (let k = 0; k < cellData.colspan; k++) {
 							cellWidth += (sheet.colWidths[c + k] || this.defaults.defaultColWidth);
 						}
 					}
 					
-					var cellHeight = height;
+					let cellHeight = height;
 					if (cellData.rowspan > 1) {
 						cellHeight = 0;
-						for (var k = 0; k < cellData.rowspan; k++) {
+						for (let k = 0; k < cellData.rowspan; k++) {
 							cellHeight += (sheet.rowHeights[r + k] || this.defaults.defaultRowHeight);
 						}
 					}
 					
-					$content.css('height', cellHeight + 'px');
+					content.style.height = cellHeight + 'px';
 				} else {
 					// Empty cell
-					$content.css('height', height + 'px');
+					content.style.height = height + 'px';
 				}
 				
-				$content.css('width', cellWidth + 'px');
-				$td.append($content);
-				$tr.append($td);
+				content.style.width = cellWidth + 'px';
+				td.appendChild(content);
+				tr.appendChild(td);
 			}
 			
-			$tbody.append($tr);
+			tbody.appendChild(tr);
 		}
 		
 		// Re-attach resize handlers (UI function)
@@ -290,16 +305,16 @@ var SheetDataManager = {
 		// This is computationally expensive for large sheets if done naively.
 		// Since we store merges in 'cells', we iterate known merges.
 		
-		for (var key in sheet.cells) {
-			var parts = key.split('-');
-			var r = parseInt(parts[0]);
-			var c = parseInt(parts[1]);
-			var data = sheet.cells[key];
+		for (const key in sheet.cells) {
+			const parts = key.split('-');
+			const r = parseInt(parts[0]);
+			const c = parseInt(parts[1]);
+			const data = sheet.cells[key];
 			
 			if (data.rowspan > 1 || data.colspan > 1) {
 				// Check if (row, col) falls within this merge, EXCLUDING the start cell itself
-				var endR = r + (data.rowspan || 1) - 1;
-				var endC = c + (data.colspan || 1) - 1;
+				const endR = r + (data.rowspan || 1) - 1;
+				const endC = c + (data.colspan || 1) - 1;
 				
 				if (row >= r && row <= endR && col >= c && col <= endC) {
 					if (row === r && col === c) return false; // It's the master cell
@@ -314,7 +329,7 @@ var SheetDataManager = {
 	 * Helper to get column letter from index (0 -> A, 25 -> Z, 26 -> AA)
 	 */
 	getColumnLetter: function (index) {
-		var letter = '';
+		let letter = '';
 		while (index >= 0) {
 			letter = String.fromCharCode((index % 26) + 65) + letter;
 			index = Math.floor(index / 26) - 1;
@@ -323,32 +338,39 @@ var SheetDataManager = {
 	},
 	
 	/**
-	 * Re-apply jQuery events for resizing that are attached to specific elements
+	 * Re-apply events for resizing that are attached to specific elements
 	 */
 	rebindResizeHandlers: function () {
-		$(document).trigger('sheetRendered');
+		const event = new Event('sheetRendered');
+		document.dispatchEvent(event);
 	},
 	
 	/**
 	 * Render the tabs at the bottom
 	 */
 	renderTabs: function () {
-		var $container = $('#sheet-tabs-container');
-		$container.find('.sheet-tab').remove(); // Remove existing tabs
+		const container = document.getElementById('sheet-tabs-container');
+		// Remove existing tabs (keep the add button)
+		container.querySelectorAll('.sheet-tab').forEach(el => el.remove());
 		
-		var self = this;
+		const self = this;
+		const addBtn = container.querySelector('.add-sheet-btn');
 		
 		this.data.sheets.forEach(function (sheet, index) {
-			var $tab = $('<div class="sheet-tab">' + sheet.name + '</div>');
+			const tab = document.createElement('div');
+			tab.className = 'sheet-tab';
+			tab.textContent = sheet.name;
+			
 			if (index === self.data.activeSheetIndex) {
-				$tab.addClass('active');
+				tab.classList.add('active');
 			}
 			
-			$tab.on('click', function () {
+			tab.addEventListener('click', function () {
 				self.selectSheet(index);
 			});
 			
-			$container.find('.add-sheet-btn').before($tab);
+			// Insert before the add button
+			container.insertBefore(tab, addBtn);
 		});
 	},
 	
@@ -363,7 +385,7 @@ var SheetDataManager = {
 	},
 	
 	loadFromLocalStorage: function () {
-		var saved = localStorage.getItem('cascadePromptData');
+		const saved = localStorage.getItem('cascadePromptData');
 		if (saved) {
 			try {
 				this.data = JSON.parse(saved);

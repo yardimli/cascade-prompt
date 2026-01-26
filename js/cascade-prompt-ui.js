@@ -1,187 +1,218 @@
 var isChangingTableCellWidth = false;
 
-//--------------------------------------------------//
-function scrollToViewWithOffsets(cell) {
-	var $container = $('.spreadsheet-container');
-	var containerRect = $container[0].getBoundingClientRect();
-	var cellRect = cell.getBoundingClientRect();
+// --------------------------------------------------//
+function scrollToViewWithOffsets (cell) {
+	const container = document.querySelector('.spreadsheet-container');
+	const containerRect = container.getBoundingClientRect();
+	const cellRect = cell.getBoundingClientRect();
 	
 	// Assuming sticky header and sidebar have fixed heights and widths respectively
-	var stickyHeaderHeight = $('.letter-cell').first().outerHeight() || 0;
-	var stickySidebarWidth = $('.counter-cell').first().outerWidth() || 0;
+	const firstLetterCell = document.querySelector('.letter-cell');
+	const stickyHeaderHeight = firstLetterCell ? firstLetterCell.offsetHeight : 0;
+	
+	const firstCounterCell = document.querySelector('.counter-cell');
+	const stickySidebarWidth = firstCounterCell ? firstCounterCell.offsetWidth : 0;
 	
 	// Calculate offsets considering the sticky elements
-	var topOffset = cellRect.top - containerRect.top - stickyHeaderHeight;
-	var leftOffset = cellRect.left - containerRect.left - stickySidebarWidth;
+	const topOffset = cellRect.top - containerRect.top - stickyHeaderHeight;
+	const leftOffset = cellRect.left - containerRect.left - stickySidebarWidth;
 	
 	// Scroll adjustments
 	if (topOffset < 0) {
-		$container.scrollTop($container.scrollTop() + topOffset);
+		container.scrollTop += topOffset;
 	} else if (cellRect.bottom > containerRect.bottom - 30) {
-		$container.scrollTop($container.scrollTop() + cellRect.bottom - containerRect.bottom + 30);
+		container.scrollTop += (cellRect.bottom - containerRect.bottom + 30);
 	}
 	
 	if (leftOffset < 0) {
-		$container.scrollLeft($container.scrollLeft() + leftOffset);
+		container.scrollLeft += leftOffset;
 	} else if (cellRect.right > containerRect.right - 20) {
-		$container.scrollLeft($container.scrollLeft() + cellRect.right - containerRect.right + 20);
+		container.scrollLeft += (cellRect.right - containerRect.right + 20);
 	}
 }
 
-//--------------------------------------------------//
-function makeCellEditable($cell) {
-	if (!$cell.hasClass('selected-cell')) {
-		highlightCell($cell);
+// --------------------------------------------------//
+function makeCellEditable (cell) {
+	// Ensure cell is a DOM element
+	if (!cell.classList.contains('selected-cell')) {
+		highlightCell(cell);
 	}
 	
-	if (!$cell.hasClass('edit-cell')) {
-		$cell.addClass('edit-cell');
+	if (!cell.classList.contains('edit-cell')) {
+		cell.classList.add('edit-cell');
 	}
 	
-	$('.spreadsheet .area-selected-cell').removeClass('area-selected-cell'); // Clear existing selection
+	// Clear existing selection
+	document.querySelectorAll('.spreadsheet .area-selected-cell').forEach(el => el.classList.remove('area-selected-cell'));
 	
 	// Get the inner content div
-	var $contentDiv = $cell.find('.content-cut');
-	var currentText = $contentDiv.text();
+	const contentDiv = cell.querySelector('.content-cut');
+	const currentText = contentDiv.textContent;
 	
 	// Get cell position relative to container
-	var position = $cell.position();
-	var width = $cell.outerWidth();
-	var height = $cell.outerHeight();
+	// In vanilla, we need offsetLeft/Top relative to the offsetParent (the table or container)
+	// However, the editor is absolute positioned.
+	const width = cell.offsetWidth;
+	const height = cell.offsetHeight;
+	
+	// Calculate position relative to the document or closest positioned ancestor
+	// Since #cell-editor is absolute, we need coordinates relative to its offset parent.
+	// Assuming .spreadsheet-container is relative/absolute, or we use offsets relative to the cell.
+	const cellLeft = cell.offsetLeft;
+	const cellTop = cell.offsetTop;
 	
 	// Setup the overlay textarea
-	var $editor = $('#cell-editor');
-	$editor.css({
-		'top': position.top + 'px',
-		'left': position.left + 'px',
-		'width': width + 'px',
-		'height': height + 'px',
-		'min-width': width + 'px',
-		'min-height': height + 'px',
-		'display': 'block'
-	});
+	const editor = document.getElementById('cell-editor');
+	editor.style.top = cellTop + 'px';
+	editor.style.left = cellLeft + 'px';
+	editor.style.width = width + 'px';
+	editor.style.height = height + 'px';
+	editor.style.minWidth = width + 'px';
+	editor.style.minHeight = height + 'px';
+	editor.style.display = 'block';
 	
 	// Load content and focus
-	$editor.val(currentText).focus();
+	editor.value = currentText;
+	editor.focus();
 	
 	// Hide the inner div content while editing so it doesn't duplicate visually
-	$contentDiv.css('visibility', 'hidden');
+	contentDiv.style.visibility = 'hidden';
 	
 	isEditing = true;
 	
 	// Auto-resize logic
-	$editor.off('input.autoResize').on('input.autoResize', function () {
-		$(this).css('height', 'auto');
-		$(this).css('width', 'auto');
+	// Remove old listener first to avoid duplicates (though typically we'd use a named function)
+	// Here we just overwrite the oninput property or add listener.
+	// Since we want to remove it later, a named handler is better, but for simplicity:
+	editor.oninput = function () {
+		this.style.height = 'auto';
+		this.style.width = 'auto';
 		
-		var scrollHeight = this.scrollHeight;
-		var scrollWidth = this.scrollWidth;
+		const scrollHeight = this.scrollHeight;
+		const scrollWidth = this.scrollWidth;
 		
 		// Grow vertically
 		if (scrollHeight > height) {
-			$(this).height(scrollHeight);
+			this.style.height = scrollHeight + 'px';
 		} else {
-			$(this).height(height);
+			this.style.height = height + 'px';
 		}
 		
 		// Grow horizontally
 		if (scrollWidth > width) {
-			$(this).width(scrollWidth);
+			this.style.width = scrollWidth + 'px';
 		} else {
-			$(this).width(width);
+			this.style.width = width + 'px';
 		}
-	});
+	};
 }
 
-//--------------------------------------------------//
-function stopEditing() {
+// --------------------------------------------------//
+function stopEditing () {
 	if (!isEditing) return;
 	
-	var $editingCell = $('.edit-cell');
-	var $editor = $('#cell-editor');
+	const editingCell = document.querySelector('.edit-cell');
+	const editor = document.getElementById('cell-editor');
 	
-	if ($editingCell.length) {
+	if (editingCell) {
 		// Get value from textarea
-		var newValue = $editor.val();
+		const newValue = editor.value;
 		
 		// Update the inner div
-		var $contentDiv = $editingCell.find('.content-cut');
-		$contentDiv.text(newValue);
-		$contentDiv.css('visibility', 'visible'); // Make visible again
+		const contentDiv = editingCell.querySelector('.content-cut');
+		contentDiv.textContent = newValue;
+		contentDiv.style.visibility = 'visible'; // Make visible again
 		
 		// Reset and hide editor
-		$editor.val('').hide().css({
-			'width': '',
-			'height': ''
-		});
+		editor.value = '';
+		editor.style.display = 'none';
+		editor.style.width = '';
+		editor.style.height = '';
+		editor.oninput = null; // Clean up listener
 		
-		$editingCell.removeClass('edit-cell');
+		editingCell.classList.remove('edit-cell');
 		isEditing = false;
 	}
 }
 
-//--------------------------------------------------//
-function addNewRow() {
-	var columnCount = $('.spreadsheet tr:first th').length;
-	var rowCount = $('.spreadsheet tr').length;
+// --------------------------------------------------//
+function addNewRow () {
+	const firstRow = document.querySelector('.spreadsheet tr');
+	const columnCount = firstRow.querySelectorAll('th').length;
+	const rowCount = document.querySelectorAll('.spreadsheet tbody tr').length;
 	
-	var newRow = '<tr><th class="counter-cell">' + (rowCount) + '</th>';
-	for (var i = 1; i < columnCount; i++) {
+	let newRowHtml = '<tr><th class="counter-cell">' + (rowCount + 1) + '</th>';
+	for (let i = 1; i < columnCount; i++) {
 		// Note: New rows need data-col
-		newRow += '<td class="text-cell" data-col="'+(i-1)+'"><div class="content-cut"></div></td>';
+		newRowHtml += '<td class="text-cell" data-col="' + (i - 1) + '"><div class="content-cut"></div></td>';
 	}
-	newRow += '</tr>';
-	$('.spreadsheet').append(newRow);
+	newRowHtml += '</tr>';
+	
+	// Append to tbody
+	document.querySelector('.spreadsheet tbody').insertAdjacentHTML('beforeend', newRowHtml);
 	
 	// Re-attach resize handlers for the new row header
 	attachResizeHandlers();
 }
 
-//--------------------------------------------------//
-function addNewColumn() {
-	var colIndex = $('.letter-cell').length;
-	var letter = String.fromCharCode('A'.charCodeAt(0) + colIndex); // Next letter
-	$('.spreadsheet tr:first').append('<th class="letter-cell" data-col="'+colIndex+'">' + letter + '</th>');
-	var rowCount = $('.spreadsheet tr').length;
+// --------------------------------------------------//
+function addNewColumn () {
+	const letterCells = document.querySelectorAll('.letter-cell');
+	const colIndex = letterCells.length;
+	const letter = String.fromCharCode('A'.charCodeAt(0) + colIndex); // Next letter (simplified logic)
 	
-	for (var i = 1; i < rowCount; i++) {
-		$('.spreadsheet tr').eq(i).append('<td class="text-cell" data-col="'+colIndex+'"><div class="content-cut"></div></td>');
-	}
+	// Append header
+	const headerRow = document.querySelector('.spreadsheet thead tr');
+	headerRow.insertAdjacentHTML('beforeend', '<th class="letter-cell" data-col="' + colIndex + '">' + letter + '</th>');
 	
-	var table = $('.spreadsheet'); // Assuming your table has the class .spreadsheet
-	var startTableWidth = table.outerWidth();
-	var newTableWidth = startTableWidth + 200;
-	table.width(newTableWidth); // Adjust the table width as the column width is adjusted
+	const rows = document.querySelectorAll('.spreadsheet tbody tr');
+	rows.forEach(row => {
+		row.insertAdjacentHTML('beforeend', '<td class="text-cell" data-col="' + colIndex + '"><div class="content-cut"></div></td>');
+	});
+	
+	const table = document.querySelector('.spreadsheet');
+	const startTableWidth = table.offsetWidth;
+	const newTableWidth = startTableWidth + 200;
+	table.style.width = newTableWidth + 'px';
 	
 	// Re-attach resize handlers for the new col header
 	attachResizeHandlers();
 }
 
-//--------------------------------------------------//
-function mergeCells() {
-	if (!startCell || !endCell || startCell.is(endCell)) return;
+// --------------------------------------------------//
+function mergeCells () {
+	if (!startCell || !endCell || startCell === endCell) return;
 	
-	var startRow = Math.min(startCell.parent().index(), endCell.parent().index());
-	var endRow = Math.max(startCell.parent().index(), endCell.parent().index());
-	var startCol = Math.min(parseInt(startCell.attr('data-col')), parseInt(endCell.attr('data-col')));
-	var endCol = Math.max(parseInt(startCell.attr('data-col')), parseInt(endCell.attr('data-col')));
+	const startRowIdx = startCell.parentElement.rowIndex; // Note: rowIndex includes thead
+	const endRowIdx = endCell.parentElement.rowIndex;
+	
+	// We need index relative to tbody for logic, or just stick to rowIndex
+	// Let's use rowIndex but remember thead is row 0.
+	
+	const startRow = Math.min(startRowIdx, endRowIdx);
+	const endRow = Math.max(startRowIdx, endRowIdx);
+	
+	const startCol = Math.min(parseInt(startCell.getAttribute('data-col')), parseInt(endCell.getAttribute('data-col')));
+	const endCol = Math.max(parseInt(startCell.getAttribute('data-col')), parseInt(endCell.getAttribute('data-col')));
 	
 	// Calculate spans
-	var rowspan = endRow - startRow + 1;
-	var colspan = endCol - startCol + 1;
+	const rowspan = endRow - startRow + 1;
+	const colspan = endCol - startCol + 1;
 	
-	// Top Left Cell (Target)
-	var $topLeft = $('.spreadsheet tr').eq(startRow + 1).find('td[data-col="' + startCol + '"]');
-	var mergedContent = [];
+	// Top Left Cell (Target) - Row index in `rows` collection
+	// `rows` collection usually includes all rows in table.
+	const tableRows = document.querySelectorAll('.spreadsheet tr');
+	const topLeft = tableRows[startRow].querySelector('td[data-col="' + startCol + '"]');
+	
+	const mergedContent = [];
 	
 	// Iterate through range
-	for (var r = startRow; r <= endRow; r++) {
-		for (var c = startCol; c <= endCol; c++) {
-			// Skip the top-left cell in the loop for removal, but read its content
-			var $cell = $('.spreadsheet tr').eq(r + 1).find('td[data-col="' + c + '"]');
+	for (let r = startRow; r <= endRow; r++) {
+		for (let c = startCol; c <= endCol; c++) {
+			const cell = tableRows[r].querySelector('td[data-col="' + c + '"]');
 			
-			if ($cell.length) {
-				var text = $cell.find('.content-cut').text().trim();
+			if (cell) {
+				const text = cell.querySelector('.content-cut').textContent.trim();
 				if (text) {
 					mergedContent.push(text);
 				}
@@ -191,19 +222,19 @@ function mergeCells() {
 				}
 				
 				// Remove other cells
-				$cell.remove();
+				cell.remove();
 			}
 		}
 	}
 	
 	// Apply changes to top-left cell
-	$topLeft.attr('rowspan', rowspan);
-	$topLeft.attr('colspan', colspan);
-	$topLeft.find('.content-cut').text(mergedContent.join(' '));
+	topLeft.setAttribute('rowspan', rowspan);
+	topLeft.setAttribute('colspan', colspan);
+	topLeft.querySelector('.content-cut').textContent = mergedContent.join(' ');
 	
 	// Update width of the merged cell content
-	var totalWidth = getColumnWidthRange(startCol, endCol);
-	$topLeft.find('.content-cut').css('width', totalWidth + 'px');
+	const totalWidth = getColumnWidthRange(startCol, endCol);
+	topLeft.querySelector('.content-cut').style.width = (totalWidth-2) + 'px';
 	
 	// Reset selection
 	startCell = null;
@@ -211,185 +242,224 @@ function mergeCells() {
 	isSelecting = false;
 	
 	// Highlight the merged cell
-	highlightCell($topLeft);
+	highlightCell(topLeft);
 	updateSelection(); // Clears the selection box
 	saveState();
 }
 
-//--------------------------------------------------//
-function unmergeCells() {
-	var $cell = $('.selected-cell');
-	if (!$cell.length) return;
+// --------------------------------------------------//
+function unmergeCells () {
+	const cell = document.querySelector('.selected-cell');
+	if (!cell) return;
 	
-	var rowspan = parseInt($cell.attr('rowspan')) || 1;
-	var colspan = parseInt($cell.attr('colspan')) || 1;
+	const rowspan = parseInt(cell.getAttribute('rowspan')) || 1;
+	const colspan = parseInt(cell.getAttribute('colspan')) || 1;
 	
 	if (rowspan === 1 && colspan === 1) return; // Not merged
 	
-	var startRow = $cell.parent().index();
-	var startCol = parseInt($cell.attr('data-col'));
+	const startRow = cell.parentElement.rowIndex;
+	const startCol = parseInt(cell.getAttribute('data-col'));
+	
+	const tableRows = document.querySelectorAll('.spreadsheet tr');
 	
 	// Iterate through the range covered by the merge
-	for (var r = startRow; r < startRow + rowspan; r++) {
-		for (var c = startCol; c < startCol + colspan; c++) {
+	for (let r = startRow; r < startRow + rowspan; r++) {
+		for (let c = startCol; c < startCol + colspan; c++) {
 			if (r === startRow && c === startCol) continue;
 			
 			// Create new cell
-			var newCell = $('<td class="text-cell" data-col="' + c + '"><div class="content-cut"></div></td>');
+			const newCell = document.createElement('td');
+			newCell.className = 'text-cell';
+			newCell.setAttribute('data-col', c);
+			const contentDiv = document.createElement('div');
+			contentDiv.className = 'content-cut';
+			newCell.appendChild(contentDiv);
 			
 			// Set width based on column width
-			var colWidth = $('.letter-cell[data-col="' + c + '"]').outerWidth();
-			newCell.find('.content-cut').css('width', colWidth + 'px');
+			const colHeader = document.querySelector('.letter-cell[data-col="' + c + '"]');
+			const colWidth = colHeader ? colHeader.offsetWidth : 100;
+			contentDiv.style.width = (colWidth-2) + 'px';
 			
 			// Set height based on row height
-			var rowHeight = $('.counter-cell').eq(r).outerHeight();
-			newCell.find('.content-cut').css('height', rowHeight + 'px');
+			// Note: counter-cell index matches row index in tbody (row index - 1 for header)
+			// tableRows[r] is the TR. The counter cell is the first child.
+			const rowHeader = tableRows[r].querySelector('.counter-cell');
+			const rowHeight = rowHeader ? rowHeader.offsetHeight : 25;
+			contentDiv.style.height = (rowHeight-2) + 'px';
 			
 			// Insert cell at correct position
-			var $row = $('.spreadsheet tr').eq(r + 1);
+			const row = tableRows[r];
 			
 			// Find the insertion point: after the cell with data-col < c
-			var $prev = $row.find('td').filter(function() {
-				return parseInt($(this).attr('data-col')) < c;
-			}).last();
+			const cells = Array.from(row.querySelectorAll('td'));
+			let prev = null;
+			for (let i = cells.length - 1; i >= 0; i--) {
+				if (parseInt(cells[i].getAttribute('data-col')) < c) {
+					prev = cells[i];
+					break;
+				}
+			}
 			
-			if ($prev.length) {
-				$prev.after(newCell);
+			if (prev) {
+				prev.insertAdjacentElement('afterend', newCell);
 			} else {
-				$row.prepend(newCell);
+				// If no previous cell (e.g. first col), prepend after the header
+				// The first child is the TH (counter), so append after that or prepend to existing TDs
+				const firstTd = row.querySelector('td');
+				if (firstTd) {
+					firstTd.insertAdjacentElement('beforebegin', newCell);
+				} else {
+					row.appendChild(newCell);
+				}
 			}
 		}
 	}
 	
 	// Remove attributes from top-left cell
-	$cell.removeAttr('rowspan');
-	$cell.removeAttr('colspan');
+	cell.removeAttribute('rowspan');
+	cell.removeAttribute('colspan');
 	
 	// Reset width of top-left cell to single column width
-	var singleColWidth = $('.letter-cell[data-col="' + startCol + '"]').outerWidth();
-	$cell.find('.content-cut').css('width', singleColWidth + 'px');
+	const singleColHeader = document.querySelector('.letter-cell[data-col="' + startCol + '"]');
+	const singleColWidth = singleColHeader ? singleColHeader.offsetWidth : 100;
+	cell.querySelector('.content-cut').style.width = (singleColWidth-2) + 'px';
 	
 	// Re-highlight to update UI state
-	highlightCell($cell);
+	highlightCell(cell);
 	saveState();
 }
 
-//--------------------------------------------------//
+// --------------------------------------------------//
 // Function to attach resize handlers (extracted for re-use)
-function attachResizeHandlers() {
-	$('.counter-cell').not('.processed').css({
-		'position': 'sticky',
-		'user-select': 'none' // prevents text selection during resize drag
-	}).append($('<div/>', {
-		'class': 'resize-handle-row',
-		'css': {
-			'position': 'absolute',
-			'bottom': 0,
-			'left': 0,
-			'width': '100%',
-			'height': '5px',
-			'cursor': 'row-resize'
-			// "background-color": "#f4f4f4", // just to make the handle more visible
-		}
-	})).on('mousedown.resizeRow', function (e) {
-		// Modified: Target the cell (th) directly instead of the row (tr).
-		// This ensures we overwrite the height set by loadState on the cell, allowing shrinking.
-		var th = $(this);
-		var startHeight = th.height();
-		var startY = e.pageY;
+function attachResizeHandlers () {
+	// Row Resizing
+	const counterCells = document.querySelectorAll('.counter-cell:not(.processed)');
+	counterCells.forEach(th => {
+		th.style.position = 'sticky';
+		th.style.userSelect = 'none';
 		
-		$(document).on('mousemove.resizeRow', function (e) {
-			var newHeight = startHeight + (e.pageY - startY);
-			th.height(newHeight);
+		const handle = document.createElement('div');
+		handle.className = 'resize-handle-row';
+		handle.style.position = 'absolute';
+		handle.style.bottom = '0';
+		handle.style.left = '0';
+		handle.style.width = '100%';
+		handle.style.height = '5px';
+		handle.style.cursor = 'row-resize';
+		
+		th.appendChild(handle);
+		
+		handle.addEventListener('mousedown', function (e) {
+			e.preventDefault(); // prevents text selection
+			const startHeight = th.offsetHeight;
+			const startY = e.pageY;
 			
-			// NEW: Apply height to all .content-cut divs in this row
-			th.parent().find('.content-cut').css('height', newHeight + 'px');
+			const row = th.parentElement;
+			
+			function onMouseMove (e) {
+				const newHeight = startHeight + (e.pageY - startY);
+				th.style.height = newHeight + 'px';
+				
+				// Apply height to all .content-cut divs in this row
+				const contentDivs = row.querySelectorAll('.content-cut');
+				contentDivs.forEach(div => {
+					div.style.height = (newHeight-2) + 'px';
+				});
+			}
+			
+			function onMouseUp () {
+				const rowIndex = Array.from(row.parentElement.children).indexOf(row);
+				const rowHeight = th.offsetHeight;
+				
+				document.removeEventListener('mousemove', onMouseMove);
+				document.removeEventListener('mouseup', onMouseUp);
+				
+				updateRowHeight(rowIndex, rowHeight);
+				if (typeof saveState === 'function') saveState();
+			}
+			
+			document.addEventListener('mousemove', onMouseMove);
+			document.addEventListener('mouseup', onMouseUp);
 		});
 		
-		$(document).on('mouseup.resizeRow', function () {
-			var th = $(this);
-			var rowIndex = th.parent().index();
-			var rowHeight = th.height();
-			
-			$(document).off('mousemove.resizeRow');
-			$(document).off('mouseup.resizeRow');
-			updateRowHeight(rowIndex, rowHeight);
-			if (typeof saveState === 'function') saveState(); // Save state after resize
-		});
-		
-		e.preventDefault(); // prevents text selection
-	}).addClass('processed');
+		th.classList.add('processed');
+	});
 	
-	//--------------------------------------------------//
-	
-	$('.letter-cell').not('.processed').css({
-		'position': 'sticky',
-		'user-select': 'none' // prevents text selection during resize drag
-	}).append($('<div/>', {
-		'class': 'resize-handle',
-		'css': {
-			'position': 'absolute',
-			'top': 0,
-			'right': 0,
-			'width': '5px',
-			'height': '100%',
-			'cursor': 'col-resize'
-			// "background-color": "#f4f4f4", // just to make the handle more visible
-		}
-	})).on('mousedown.resizeCol', function (e) {
-		var cell = $(this);
-		console.log('Cell: ', cell);
-		var startWidth = cell.width();
-		var startX = e.pageX;
-		var table = $('.spreadsheet'); // Assuming your table has the class .spreadsheet
-		var startTableWidth = table.outerWidth();
+	// Column Resizing
+	const letterCells = document.querySelectorAll('.letter-cell:not(.processed)');
+	letterCells.forEach(cell => {
+		cell.style.position = 'sticky';
+		cell.style.userSelect = 'none';
 		
-		// Get column index to update specific cells
-		var colIndex = parseInt(cell.attr('data-col'));
+		const handle = document.createElement('div');
+		handle.className = 'resize-handle';
+		handle.style.position = 'absolute';
+		handle.style.top = '0';
+		handle.style.right = '0';
+		handle.style.width = '5px';
+		handle.style.height = '100%';
+		handle.style.cursor = 'col-resize';
 		
-		$(document).on('mousemove.resizeCol', function (e) {
-			var newWidth = startWidth + (e.pageX - startX);
-			var newTableWidth = startTableWidth + (e.pageX - startX);
-			cell.width(newWidth);
-			table.width(newTableWidth); // Adjust the table width as the column width is adjusted
+		cell.appendChild(handle);
+		
+		handle.addEventListener('mousedown', function (e) {
+			e.preventDefault();
+			console.log('Cell: ', cell);
+			const startWidth = cell.offsetWidth;
+			const startX = e.pageX;
+			const table = document.querySelector('.spreadsheet');
+			const startTableWidth = table.offsetWidth;
 			
-			updateColumnWidth(colIndex, newWidth);
+			const colIndex = parseInt(cell.getAttribute('data-col'));
+			
+			function onMouseMove (e) {
+				const diff = e.pageX - startX;
+				const newWidth = startWidth + diff;
+				const newTableWidth = startTableWidth + diff;
+				
+				cell.style.width = newWidth + 'px';
+				table.style.width = newTableWidth + 'px';
+				
+				updateColumnWidth(colIndex, newWidth);
+			}
+			
+			function onMouseUp () {
+				document.removeEventListener('mousemove', onMouseMove);
+				document.removeEventListener('mouseup', onMouseUp);
+				if (typeof saveState === 'function') saveState();
+			}
+			
+			document.addEventListener('mousemove', onMouseMove);
+			document.addEventListener('mouseup', onMouseUp);
 		});
 		
-		$(document).on('mouseup.resizeCol', function () {
-			$(document).off('mousemove.resizeCol');
-			$(document).off('mouseup.resizeCol');
-			if (typeof saveState === 'function') saveState(); // Save state after resize
-		});
-		
-		e.preventDefault(); // prevents text selection
-	}).addClass('processed');
+		cell.classList.add('processed');
+	});
 }
 
-//--------------------------------------------------//
-//----------------- Document Ready -----------------//
-$(document).ready(function () {
-	
+// --------------------------------------------------//
+// ----------------- Document Ready -----------------//
+document.addEventListener('DOMContentLoaded', function () {
 	// Merge Button Listener
-	$('#merge-btn').on('click', function () {
+	document.getElementById('merge-btn').addEventListener('click', function () {
 		mergeCells();
 	});
 	
 	// Unmerge Button Listener
-	$('#unmerge-btn').on('click', function () {
+	document.getElementById('unmerge-btn').addEventListener('click', function () {
 		unmergeCells();
 	});
 	
-	//--------------------------------------------------//
+	// --------------------------------------------------//
 	
 	attachResizeHandlers();
 	
 	// Listen for custom event from Data Manager to re-attach handlers after render
-	$(document).on('sheetRendered', function() {
+	document.addEventListener('sheetRendered', function () {
 		attachResizeHandlers();
 	});
 	
-	//--------------------------------------------------//
+	// --------------------------------------------------//
 	
 	var scrollableDiv = document.getElementById('spreadsheet-container');
 	
@@ -407,9 +477,8 @@ $(document).ready(function () {
 			if (touchCurrentX > touchStartX && scrollableDiv.scrollLeft === 0) {
 				e.preventDefault(); // Prevent navigation swipe when at the start of the scroll
 			}
-		}, {passive: false});
-	}, {passive: false});
+		}, { passive: false });
+	}, { passive: false });
 
-//--------------------------------------------------//
-
+// --------------------------------------------------//
 });

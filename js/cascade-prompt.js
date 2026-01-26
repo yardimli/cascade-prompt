@@ -5,101 +5,111 @@ var startCell = null;
 var endCell = null;
 
 let draggingEdge = null;
-let initialMousePos = {top: 0, left: 0};
-let initialHelperPos = {top: 0, left: 0};
+let initialMousePos = { top: 0, left: 0 };
+let initialHelperPos = { top: 0, left: 0 };
 
-let initialStartCellIndex = {row: 0, col: 0};
-let initialEndCellIndex = {row: 0, col: 0};
+let initialStartCellIndex = { row: 0, col: 0 };
+let initialEndCellIndex = { row: 0, col: 0 };
 
-
-//--------------------------------------------------//
-function highlightCell(cell) {
-	var $this = cell;
-	// Use data-col attribute instead of index()
-	var cellIndex = parseInt($this.attr('data-col'));
-	var rowIndex = $this.parent().index(); // Row index is still reliable from TR
+// --------------------------------------------------//
+function highlightCell (cell) {
+	const cellIndex = parseInt(cell.getAttribute('data-col'));
+	// Row index from TR. Note: parentElement is TR.
+	const row = cell.parentElement;
+	// We need the index in the tbody to match counter-cell
+	const tbody = row.parentElement;
+	const rowIndex = Array.from(tbody.children).indexOf(row);
 	
 	console.log('1) Cell Col: ' + cellIndex + ', Row Index: ' + rowIndex);
 	
 	// Remove previous highlights and selection
-	$('.spreadsheet .highlight').removeClass('highlight');
-	$('.spreadsheet .selected-cell').removeClass('selected-cell');
-	$('.spreadsheet .edit-cell').removeClass('edit-cell');
+	document.querySelectorAll('.spreadsheet .highlight').forEach(el => el.classList.remove('highlight'));
+	document.querySelectorAll('.spreadsheet .selected-cell').forEach(el => el.classList.remove('selected-cell'));
+	document.querySelectorAll('.spreadsheet .edit-cell').forEach(el => el.classList.remove('edit-cell'));
 	
-	// Highlight the column header using data-col
-	$('.letter-cell[data-col="' + cellIndex + '"]').addClass('highlight');
+	// Highlight the column header
+	const letterCell = document.querySelector('.letter-cell[data-col="' + cellIndex + '"]');
+	if (letterCell) letterCell.classList.add('highlight');
 	
 	// Highlight the row number
-	$('.counter-cell').eq(rowIndex).addClass('highlight');
+	const counterCells = document.querySelectorAll('.counter-cell');
+	if (counterCells[rowIndex]) counterCells[rowIndex].classList.add('highlight');
 	
 	// Highlight the clicked cell
-	$this.addClass('selected-cell');
+	cell.classList.add('selected-cell');
 	
 	// Update Formula Bar - Read from inner div
-	var cellContent = $this.find('.content-cut').text();
-	$('#formula-input').val(cellContent).prop('disabled', false);
+	const cellContent = cell.querySelector('.content-cut').textContent;
+	const formulaInput = document.getElementById('formula-input');
+	formulaInput.value = cellContent;
+	formulaInput.disabled = false;
 	
-	scrollToViewWithOffsets($this[0]);
+	scrollToViewWithOffsets(cell);
 	
 	// Check for merged status to toggle buttons
-	var rowspan = parseInt($this.attr('rowspan')) || 1;
-	var colspan = parseInt($this.attr('colspan')) || 1;
+	const rowspan = parseInt(cell.getAttribute('rowspan')) || 1;
+	const colspan = parseInt(cell.getAttribute('colspan')) || 1;
+	
+	const unmergeBtn = document.getElementById('unmerge-btn');
+	const mergeBtn = document.getElementById('merge-btn');
 	
 	if (rowspan > 1 || colspan > 1) {
-		$('#unmerge-btn').prop('disabled', false);
+		unmergeBtn.disabled = false;
 	} else {
-		$('#unmerge-btn').prop('disabled', true);
+		unmergeBtn.disabled = true;
 	}
 	
 	// Disable merge button when only one cell is selected
-	$('#merge-btn').prop('disabled', true);
+	mergeBtn.disabled = true;
 	
 	// Save state on selection change (captures cursor position)
 	saveState();
 }
 
-//--------------------------------------------------//
+// --------------------------------------------------//
 // Function to get the cumulative width of columns in a given range
-function getColumnWidthRange(startCol, endCol) {
+function getColumnWidthRange (startCol, endCol) {
 	let totalWidth = 0;
 	for (let i = startCol; i <= endCol; i++) {
-		totalWidth += $('.spreadsheet .letter-cell[data-col="' + i + '"]').outerWidth();
+		const cell = document.querySelector('.spreadsheet .letter-cell[data-col="' + i + '"]');
+		if (cell) totalWidth += cell.offsetWidth;
 	}
 	return totalWidth;
 }
 
-//--------------------------------------------------//
+// --------------------------------------------------//
 // Function to get the cumulative height of rows in a given range
-function getRowHeightRange(startRow, endRow) {
+function getRowHeightRange (startRow, endRow) {
 	let totalHeight = 0;
+	const counterCells = document.querySelectorAll('.spreadsheet .counter-cell');
 	for (let i = startRow; i <= endRow; i++) {
-		totalHeight += $('.spreadsheet .counter-cell').eq(i).outerHeight();
+		if (counterCells[i]) totalHeight += counterCells[i].offsetHeight;
 	}
 	return totalHeight;
 }
 
-//--------------------------------------------------//
+// --------------------------------------------------//
 // Function to get an array of column widths
-function getColumnWidths() {
-	let widths = [];
-	$('.spreadsheet .letter-cell').each(function () {
-		widths.push($(this).outerWidth());
+function getColumnWidths () {
+	const widths = [];
+	document.querySelectorAll('.spreadsheet .letter-cell').forEach(cell => {
+		widths.push(cell.offsetWidth);
 	});
 	return widths;
 }
 
-//--------------------------------------------------//
+// --------------------------------------------------//
 // Function to get an array of row heights
-function getRowHeights() {
-	let heights = [];
-	$('.spreadsheet .counter-cell').each(function () {
-		heights.push($(this).outerHeight());
+function getRowHeights () {
+	const heights = [];
+	document.querySelectorAll('.spreadsheet .counter-cell').forEach(cell => {
+		heights.push(cell.offsetHeight);
 	});
 	return heights;
 }
 
-//--------------------------------------------------//
-function snapToCell(position, dimensionArray) {
+// --------------------------------------------------//
+function snapToCell (position, dimensionArray) {
 	let cumulativeDimension = 0;
 	let previousCumulativeDimension = cumulativeDimension;
 	for (let i = 0; i < dimensionArray.length; i++) {
@@ -112,149 +122,167 @@ function snapToCell(position, dimensionArray) {
 	return cumulativeDimension; // Fallback to the last cell boundary
 }
 
-//--------------------------------------------------//
+// --------------------------------------------------//
 // Update the selection rectangle based on start and end cells
-function updateSelection() {
-	$('.spreadsheet .area-selected-cell').removeClass('area-selected-cell'); // Clear existing selection
+function updateSelection () {
+	document.querySelectorAll('.spreadsheet .area-selected-cell').forEach(el => el.classList.remove('area-selected-cell'));
 	
-	if (startCell === null || endCell === null || startCell.is(endCell)) {
-		$('.selection-helper-edge').remove();
-		$('#selection-helper').hide();
-		$('#merge-btn').prop('disabled', true); // Disable merge if no area
+	const helperDiv = document.getElementById('selection-helper');
+	const mergeBtn = document.getElementById('merge-btn');
+	const formulaInput = document.getElementById('formula-input');
+	
+	if (startCell === null || endCell === null || startCell === endCell) {
+		// Remove edges
+		helperDiv.querySelectorAll('.selection-helper-edge').forEach(el => el.remove());
+		helperDiv.style.display = 'none';
+		mergeBtn.disabled = true;
 		return;
 	}
 	
 	// Enable merge button if an area is selected
-	$('#merge-btn').prop('disabled', false);
+	mergeBtn.disabled = false;
 	
-	let startRow = Math.min(startCell.parent().index(), endCell.parent().index());
-	let endRow = Math.max(startCell.parent().index(), endCell.parent().index());
+	const startRowIdx = startCell.parentElement.rowIndex;
+	const endRowIdx = endCell.parentElement.rowIndex;
 	
-	// Use data-col for column indices
-	let startCol = Math.min(parseInt(startCell.attr('data-col')), parseInt(endCell.attr('data-col')));
-	let endCol = Math.max(parseInt(startCell.attr('data-col')), parseInt(endCell.attr('data-col')));
+	const startRow = Math.min(startRowIdx, endRowIdx);
+	const endRow = Math.max(startRowIdx, endRowIdx);
 	
+	const startCol = Math.min(parseInt(startCell.getAttribute('data-col')), parseInt(endCell.getAttribute('data-col')));
+	const endCol = Math.max(parseInt(startCell.getAttribute('data-col')), parseInt(endCell.getAttribute('data-col')));
+	
+	const tableRows = document.querySelectorAll('.spreadsheet tr');
+	
+	// Loop through relevant rows (adjusting for thead which is row 0)
+	// The logic assumes startRow/endRow are indices in the whole table
 	for (let i = startRow; i <= endRow; i++) {
-		var $row = $('.spreadsheet tr').eq(i + 1);
+		const row = tableRows[i];
+		if (!row) continue;
 		for (let j = startCol; j <= endCol; j++) {
-			// Find cell by data-col
-			$row.find('td[data-col="' + j + '"]').addClass('area-selected-cell');
+			const cell = row.querySelector('td[data-col="' + j + '"]');
+			if (cell) cell.classList.add('area-selected-cell');
 		}
 	}
 	
 	// Disable formula bar if multiple cells are selected
-	$('#formula-input').val('').prop('disabled', true);
+	formulaInput.value = '';
+	formulaInput.disabled = true;
 	
-	// Calculate dimensions based on the theoretical grid, not just selected cells (which might be sparse)
-	let containerOffset = $('.spreadsheet-container').offset();
+	// Calculate dimensions
+	const container = document.querySelector('.spreadsheet-container');
+	const containerRect = container.getBoundingClientRect();
 	
-	// Find top-left cell of the selection area (might be merged, so we look for the cell at startRow/startCol)
-	// If it doesn't exist (merged away), we might need to adjust, but for standard selection it should be fine.
-	let firstSelectedCell = $('.spreadsheet tr').eq(startRow + 1).find('td[data-col="' + startCol + '"]');
+	// Find top-left cell of the selection area
+	let firstSelectedCell = tableRows[startRow].querySelector('td[data-col="' + startCol + '"]');
 	
-	// If the exact top-left cell is missing (covered by a merge starting elsewhere),
-	// we should find the cell that covers this position.
-	if (!firstSelectedCell.length) {
-		// Fallback: find the closest cell before it
-		firstSelectedCell = $('.spreadsheet tr').eq(startRow + 1).find('td').filter(function() {
-			return parseInt($(this).attr('data-col')) <= startCol;
-		}).last();
+	// Fallback if merged
+	if (!firstSelectedCell) {
+		const cells = Array.from(tableRows[startRow].querySelectorAll('td'));
+		// Find last cell with data-col <= startCol
+		for (let i = cells.length - 1; i >= 0; i--) {
+			if (parseInt(cells[i].getAttribute('data-col')) <= startCol) {
+				firstSelectedCell = cells[i];
+				break;
+			}
+		}
 	}
 	
-	if (!firstSelectedCell.length) return; // Should not happen in valid grid
+	if (!firstSelectedCell) return;
 	
-	let firstCellOffset = firstSelectedCell.offset();
-	let helperDiv = $('#selection-helper');
+	const firstCellRect = firstSelectedCell.getBoundingClientRect();
 	
-	let scrollLeft = $('.spreadsheet-container').scrollLeft();
-	let scrollTop = $('.spreadsheet-container').scrollTop();
+	const scrollLeft = container.scrollLeft;
+	const scrollTop = container.scrollTop;
 	
-	let top = firstCellOffset.top - containerOffset.top - 1 + scrollTop;
-	let left = firstCellOffset.left - containerOffset.left - 1 + scrollLeft;
-	let width = getColumnWidthRange(startCol, endCol);
-	let height = getRowHeightRange(startRow, endRow);
+	const top = firstCellRect.top - containerRect.top - 1 + scrollTop;
+	const left = firstCellRect.left - containerRect.left - 1 + scrollLeft;
 	
-	helperDiv.css({
-		'top': top,
-		'left': left,
-		'width': width,
-		'height': height
-	});
+	// Adjust row indices for height calculation.
+	// getRowHeightRange expects 0-based index of counter cells (tbody rows)
+	// startRow is TR index (0 is header). So subtract 1.
+	const heightStart = startRow - 1;
+	const heightEnd = endRow - 1;
 	
-	helperDiv.show();
+	const width = getColumnWidthRange(startCol, endCol);
+	const height = getRowHeightRange(heightStart, heightEnd);
 	
-	// Remove any existing edge elements
-	$('.selection-helper-edge').remove();
+	helperDiv.style.top = top + 'px';
+	helperDiv.style.left = left + 'px';
+	helperDiv.style.width = width + 'px';
+	helperDiv.style.height = height + 'px';
+	helperDiv.style.display = 'block';
+	
+	// Remove existing edges
+	helperDiv.querySelectorAll('.selection-helper-edge').forEach(el => el.remove());
 	
 	// Add edge elements
-	let edgeElements = [
-		$("<div class='selection-helper-edge top'></div>").css({'top': -3, 'left': 0, 'width': '100%'}),
-		$("<div class='selection-helper-edge right'></div>").css({'top': 0, 'right': -3, 'height': '100%'}),
-		$("<div class='selection-helper-edge bottom'></div>").css({'bottom': -3, 'left': 0, 'width': '100%'}),
-		$("<div class='selection-helper-edge left'></div>").css({'top': 0, 'left': -3, 'height': '100%'})
+	const edges = [
+		{ class: 'top', style: { top: '-3px', left: '0', width: '100%' } },
+		{ class: 'right', style: { top: '0', right: '-3px', height: '100%' } },
+		{ class: 'bottom', style: { bottom: '-3px', left: '0', width: '100%' } },
+		{ class: 'left', style: { top: '0', left: '-3px', height: '100%' } }
 	];
 	
-	edgeElements.forEach(function (edge) {
-		helperDiv.append(edge);
+	edges.forEach(edgeData => {
+		const div = document.createElement('div');
+		div.className = 'selection-helper-edge ' + edgeData.class;
+		Object.assign(div.style, edgeData.style);
+		helperDiv.appendChild(div);
 	});
 }
 
-//--------------------------------------------------//
+// --------------------------------------------------//
 // Persistence Functions (Delegated to SheetDataManager)
-//--------------------------------------------------//
+// --------------------------------------------------//
 
-function saveState() {
+function saveState () {
 	if (typeof SheetDataManager !== 'undefined') {
 		SheetDataManager.saveToLocalStorage();
 	}
 }
 
-// Legacy loadState is replaced by SheetDataManager.init()
-// Kept empty or redirected if called explicitly by old code
-function loadState() {
+function loadState () {
 	if (typeof SheetDataManager !== 'undefined') {
-		// SheetDataManager handles loading internally on init
-		// But if called manually, we can force a reload
 		SheetDataManager.loadFromLocalStorage();
 		SheetDataManager.renderSheet(SheetDataManager.data.activeSheetIndex);
 	}
 }
 
 // Helper to update column width including merged cells
-function updateColumnWidth(colIndex, newWidth) {
+function updateColumnWidth (colIndex, newWidth) {
 	// Update header
-	$('.letter-cell[data-col="' + colIndex + '"]').css('width', newWidth + 'px');
+	const header = document.querySelector('.letter-cell[data-col="' + colIndex + '"]');
+	if (header) header.style.width = newWidth + 'px';
 	
 	// Update cells
-	$('.spreadsheet tbody tr').each(function () {
-		var $row = $(this);
-		
+	const rows = document.querySelectorAll('.spreadsheet tbody tr');
+	rows.forEach(row => {
 		// Find exact cell
-		var $cell = $row.find('td[data-col="' + colIndex + '"]');
-		if ($cell.length) {
-			// If it's a single cell or start of merge
-			var colspan = parseInt($cell.attr('colspan')) || 1;
+		const cell = row.querySelector('td[data-col="' + colIndex + '"]');
+		if (cell) {
+			const colspan = parseInt(cell.getAttribute('colspan')) || 1;
+			const contentDiv = cell.querySelector('.content-cut');
 			if (colspan === 1) {
-				$cell.find('.content-cut').css('width', newWidth + 'px');
+				contentDiv.style.width = (newWidth-2) + 'px';
 			} else {
-				// Merged cell starting here: recalculate total width
-				var totalWidth = getColumnWidthRange(colIndex, colIndex + colspan - 1);
-				$cell.find('.content-cut').css('width', totalWidth + 'px');
+				// Merged cell starting here
+				const totalWidth = getColumnWidthRange(colIndex, colIndex + colspan - 1);
+				contentDiv.style.width = (totalWidth-2) + 'px';
 			}
 		} else {
 			// Cell might be merged from the left
-			// Find the cell that covers this column
-			var $coveringCell = $row.find('td').filter(function() {
-				var c = parseInt($(this).attr('data-col'));
-				var span = parseInt($(this).attr('colspan')) || 1;
-				return c < colIndex && (c + span) > colIndex;
+			const cells = Array.from(row.querySelectorAll('td'));
+			const coveringCell = cells.find(c => {
+				const cIdx = parseInt(c.getAttribute('data-col'));
+				const span = parseInt(c.getAttribute('colspan')) || 1;
+				return cIdx < colIndex && (cIdx + span) > colIndex;
 			});
 			
-			if ($coveringCell.length) {
-				var startCol = parseInt($coveringCell.attr('data-col'));
-				var span = parseInt($coveringCell.attr('colspan'));
-				var totalWidth = getColumnWidthRange(startCol, startCol + span - 1);
-				$coveringCell.find('.content-cut').css('width', totalWidth + 'px');
+			if (coveringCell) {
+				const startCol = parseInt(coveringCell.getAttribute('data-col'));
+				const span = parseInt(coveringCell.getAttribute('colspan'));
+				const totalWidth = getColumnWidthRange(startCol, startCol + span - 1);
+				coveringCell.querySelector('.content-cut').style.width = (totalWidth-2) + 'px';
 			}
 		}
 	});
@@ -262,129 +290,142 @@ function updateColumnWidth(colIndex, newWidth) {
 
 function updateRowHeight (rowIndex, newHeight) {
 	// Update the header cell height
-	$('.counter-cell').eq(rowIndex).css('height', newHeight + 'px')
+	const counterCells = document.querySelectorAll('.counter-cell');
+	if (counterCells[rowIndex]) {
+		counterCells[rowIndex].style.height = newHeight + 'px';
+	}
+	
+	const rows = document.querySelectorAll('.spreadsheet tbody tr');
+	const row = rows[rowIndex];
 	
 	// 1. Handle cells starting in this row
-	var $row = $('.spreadsheet tbody tr').eq(rowIndex)
-	$row.find('td.text-cell').each(function () {
-		var $cell = $(this)
-		var rowspan = parseInt($cell.attr('rowspan')) || 1
+	row.querySelectorAll('td.text-cell').forEach(cell => {
+		const rowspan = parseInt(cell.getAttribute('rowspan')) || 1;
+		const contentDiv = cell.querySelector('.content-cut');
 		
 		if (rowspan === 1) {
-			// Simple cell, matches row height
-			$cell.find('.content-cut').css('height', newHeight + 'px')
+			contentDiv.style.height = (newHeight-2) + 'px';
 		} else {
-			// Merged cell starting here: recalculate total height based on range
-			var totalHeight = getRowHeightRange(rowIndex, rowIndex + rowspan - 1)
-			$cell.find('.content-cut').css('height', totalHeight + 'px')
+			const totalHeight = getRowHeightRange(rowIndex, rowIndex + rowspan - 1);
+			contentDiv.style.height = (totalHeight-2) + 'px';
 		}
-	})
+	});
 	
 	// 2. Handle cells starting in previous rows that span into this row
-	// We iterate rows above the current one to find any overlapping merges
-	$('.spreadsheet tbody tr').slice(0, rowIndex).each(function () {
-		var $prevRow = $(this)
-		var prevRowIndex = $prevRow.index()
-		
-		// Find cells in this previous row that have a rowspan
-		$prevRow.find('td[rowspan]').each(function () {
-			var $pCell = $(this)
-			var span = parseInt($pCell.attr('rowspan')) || 1
-			
-			// Check if this merged cell overlaps the resized row
-			if (prevRowIndex + span > rowIndex) {
-				var totalHeight = getRowHeightRange(prevRowIndex, prevRowIndex + span - 1)
-				$pCell.find('.content-cut').css('height', totalHeight + 'px')
+	for (let i = 0; i < rowIndex; i++) {
+		const prevRow = rows[i];
+		prevRow.querySelectorAll('td[rowspan]').forEach(pCell => {
+			const span = parseInt(pCell.getAttribute('rowspan')) || 1;
+			// Check overlap
+			if (i + span > rowIndex) {
+				const totalHeight = getRowHeightRange(i, i + span - 1);
+				pCell.querySelector('.content-cut').style.height = (totalHeight-2) + 'px';
 			}
-		})
-	})
+		});
+	}
 }
 
-function resetState() {
+function resetState () {
 	if (confirm('Are you sure you want to reset the spreadsheet? All data will be lost.')) {
 		SheetDataManager.resetData();
 	}
 }
 
-//--------------------------------------------------//
-//----------------- Document Ready -----------------//
-$(document).ready(function () {
-	
+// --------------------------------------------------//
+// ----------------- Document Ready -----------------//
+document.addEventListener('DOMContentLoaded', function () {
 	// Initialize Data Manager
 	if (typeof SheetDataManager !== 'undefined') {
 		SheetDataManager.init();
 	}
 	
 	// Add Sheet Button Listener
-	$('.add-sheet-btn').on('click', function () {
-		var nextNum = SheetDataManager.data.sheets.length + 1;
-		SheetDataManager.createSheet('Sheet' + nextNum, false);
-	});
+	const addSheetBtn = document.querySelector('.add-sheet-btn');
+	if (addSheetBtn) {
+		addSheetBtn.addEventListener('click', function () {
+			const nextNum = SheetDataManager.data.sheets.length + 1;
+			SheetDataManager.createSheet('Sheet' + nextNum, false);
+		});
+	}
 	
 	// Reset Button Listener
-	$('#reset-sheet-btn').on('click', function () {
-		resetState();
-	});
+	const resetBtn = document.getElementById('reset-sheet-btn');
+	if (resetBtn) {
+		resetBtn.addEventListener('click', function () {
+			resetState();
+		});
+	}
 	
 	// Formula Bar Input Listener
-	$('#formula-input').on('input', function () {
-		var val = $(this).val();
-		var $selected = $('.selected-cell');
-		if ($selected.length && !$('.area-selected-cell').length) {
-			// Update inner div
-			$selected.find('.content-cut').text(val);
-			saveState(); // Save on typing
+	const formulaInput = document.getElementById('formula-input');
+	formulaInput.addEventListener('input', function () {
+		const val = this.value;
+		const selected = document.querySelector('.selected-cell');
+		const areaSelected = document.querySelector('.area-selected-cell');
+		
+		if (selected && !areaSelected) {
+			selected.querySelector('.content-cut').textContent = val;
+			saveState();
 		}
 	});
 	
 	// Handle Enter in Formula Bar
-	$('#formula-input').on('keydown', function (e) {
-		if (e.key === "Enter") {
-			var $selected = $('.selected-cell');
-			if ($selected.length) {
-				// Move focus back to cell or move down
-				$selected.focus();
-				// Optional: Move selection down like Excel
-				var $nextRow = $selected.closest("tr").next("tr");
-				if ($nextRow.length) {
-					var cellCol = parseInt($selected.attr('data-col'));
-					var $nextCell = $nextRow.find('td[data-col="' + cellCol + '"]');
-					if ($nextCell.length) {
-						highlightCell($nextCell);
+	formulaInput.addEventListener('keydown', function (e) {
+		if (e.key === 'Enter') {
+			const selected = document.querySelector('.selected-cell');
+			if (selected) {
+				selected.focus();
+				// Optional: Move selection down
+				const row = selected.closest('tr');
+				const nextRow = row.nextElementSibling;
+				if (nextRow) {
+					const cellCol = parseInt(selected.getAttribute('data-col'));
+					const nextCell = nextRow.querySelector('td[data-col="' + cellCol + '"]');
+					if (nextCell) {
+						highlightCell(nextCell);
 					}
 				}
 			}
 		}
 	});
 	
-	$('#selection-helper').on('mousedown', function (e) {
-		if ($(e.target).hasClass('selection-helper-edge')) {
+	const selectionHelper = document.getElementById('selection-helper');
+	selectionHelper.addEventListener('mousedown', function (e) {
+		if (e.target.classList.contains('selection-helper-edge')) {
 			return;
 		}
-		stopEditing(); // Stop editing any cell before highlighting a new cell
+		stopEditing();
 		startCell = null;
 		endCell = null;
 		isSelecting = false;
 		updateSelection();
 	});
 	
-	// Use delegated event for double click to handle re-rendered sheets
-	$('.spreadsheet').on('dblclick', '.text-cell', function () {
-		makeCellEditable($(this));
+	const spreadsheet = document.querySelector('.spreadsheet');
+	
+	// Double click delegation
+	spreadsheet.addEventListener('dblclick', function (e) {
+		const cell = e.target.closest('.text-cell');
+		if (cell) {
+			makeCellEditable(cell);
+		}
 	});
 	
-	// Use delegated event for mousedown
-	$('.spreadsheet').on('mousedown', '.text-cell', function (e) {
+	// Mousedown delegation
+	spreadsheet.addEventListener('mousedown', function (e) {
+		const cell = e.target.closest('.text-cell');
+		if (!cell) return;
+		
 		console.log('mousedown');
 		
-		if (isEditing && $(this).hasClass('edit-cell')) {
+		if (isEditing && cell.classList.contains('edit-cell')) {
 			console.log('Selection helper clicked while editing');
 			return;
 		}
 		
-		stopEditing(); // Stop editing any cell before highlighting a new cell
-		if (!$(this).hasClass('selected-cell')) {
-			highlightCell($(this));
+		stopEditing();
+		if (!cell.classList.contains('selected-cell')) {
+			highlightCell(cell);
 		}
 		startCell = null;
 		endCell = null;
@@ -395,104 +436,124 @@ $(document).ready(function () {
 		e.preventDefault();
 	});
 	
-	$('.spreadsheet').on('mousemove', '.text-cell', function (e) {
+	// Mousemove delegation
+	spreadsheet.addEventListener('mousemove', function (e) {
+		const cell = e.target.closest('.text-cell');
+		if (!cell) return;
 		
 		if (mouseDown && !isSelecting) {
 			isSelecting = true;
-			startCell = $(this);
-			endCell = startCell; // Initially, the start cell is the end cell
+			startCell = cell;
+			endCell = startCell;
 			updateSelection();
 		}
 		
 		if (!isSelecting) return;
-		endCell = $(this);
+		endCell = cell;
 		updateSelection();
 	});
 	
-	$(document).off('mouseup').on('mouseup', function (e) {
+	document.addEventListener('mouseup', function () {
 		mouseDown = false;
 		isSelecting = false;
 	});
 	
-	
-	//--------------------------------------------------//
+	// --------------------------------------------------//
 	// Handle dragging edges
-	$(document).off('mousedown', '.selection-helper-edge').on('mousedown', '.selection-helper-edge', function (e) {
-		draggingEdge = $(this);
-		initialMousePos = {top: e.pageY, left: e.pageX};
-		initialHelperPos = $('#selection-helper').position();
-		
-		// Save the initial start and end cell indices for column and row counts
-		initialStartCellIndex = {
-			row: startCell.parent().index(),
-			col: parseInt(startCell.attr('data-col'))
-		};
-		initialEndCellIndex = {
-			row: endCell.parent().index(),
-			col: parseInt(endCell.attr('data-col'))
-		};
+	document.addEventListener('mousedown', function (e) {
+		if (e.target.classList.contains('selection-helper-edge')) {
+			draggingEdge = e.target;
+			initialMousePos = { top: e.pageY, left: e.pageX };
+			
+			// Helper position
+			const rect = selectionHelper.getBoundingClientRect();
+			// We need offset relative to parent, but selectionHelper is absolute.
+			// We can use offsetLeft/Top
+			initialHelperPos = { top: selectionHelper.offsetTop, left: selectionHelper.offsetLeft };
+			
+			initialStartCellIndex = {
+				row: startCell.parentElement.rowIndex,
+				col: parseInt(startCell.getAttribute('data-col'))
+			};
+			initialEndCellIndex = {
+				row: endCell.parentElement.rowIndex,
+				col: parseInt(endCell.getAttribute('data-col'))
+			};
+		}
 	});
 	
-	$(document).off('mousemove.edgeDrag').on('mousemove.edgeDrag', function (e) {
+	document.addEventListener('mousemove', function (e) {
 		if (draggingEdge) {
 			e.preventDefault();
 			e.stopPropagation();
 			
-			var scrollLeft = $('.spreadsheet-container').scrollLeft();
-			var scrollTop = $('.spreadsheet-container').scrollTop();
-			let containerOffset = $('.spreadsheet-container').offset();
-			let delta = {
-				top: e.pageY - containerOffset.top + scrollTop - $('.top-corner-cell').outerHeight(),
-				left: e.pageX - containerOffset.left + scrollLeft - $('.top-corner-cell').outerWidth()
+			const container = document.querySelector('.spreadsheet-container');
+			const containerOffset = container.getBoundingClientRect();
+			const scrollLeft = container.scrollLeft;
+			const scrollTop = container.scrollTop;
+			
+			const topCorner = document.querySelector('.top-corner-cell');
+			const cornerHeight = topCorner ? topCorner.offsetHeight : 0;
+			const cornerWidth = topCorner ? topCorner.offsetWidth : 0;
+			
+			const delta = {
+				top: e.pageY - containerOffset.top + scrollTop - cornerHeight,
+				left: e.pageX - containerOffset.left + scrollLeft - cornerWidth
 			};
 			
-			let columnWidths = getColumnWidths();
-			let rowHeights = getRowHeights();
+			const columnWidths = getColumnWidths();
+			const rowHeights = getRowHeights();
 			
-			let newPos = {
-				top: snapToCell(delta.top, rowHeights) + $('.top-corner-cell').outerHeight(),
-				left: snapToCell(delta.left, columnWidths) + $('.top-corner-cell').outerWidth()
+			const newPos = {
+				top: snapToCell(delta.top, rowHeights) + cornerHeight,
+				left: snapToCell(delta.left, columnWidths) + cornerWidth
 			};
 			
-			//get the top and left cell numbers being snapped to
+			// Get cell indices
 			let topCellIndex = 0;
 			let leftCellIndex = 0;
-			let topPos = newPos.top;
-			let leftPos = newPos.left;
+			let topPos = newPos.top - cornerHeight; // Adjust back for calculation
+			let leftPos = newPos.left - cornerWidth;
 			
 			for (let i = 0; i < rowHeights.length; i++) {
-				if (topPos <= rowHeights[i]) {
+				if (topPos <= 0) break; // Approximate
+				if (topPos < rowHeights[i]) {
 					topCellIndex = i;
 					break;
 				}
 				topPos -= rowHeights[i];
+				topCellIndex = i; // Keep advancing
 			}
+			
 			for (let i = 0; i < columnWidths.length; i++) {
-				if (leftPos <= columnWidths[i]) {
+				if (leftPos <= 0) break;
+				if (leftPos < columnWidths[i]) {
 					leftCellIndex = i;
 					break;
 				}
 				leftPos -= columnWidths[i];
+				leftCellIndex = i;
 			}
 			
-			// Ensure the selection rectangle resizes proportionally to the initial selection size
-			let newWidth = getColumnWidthRange(leftCellIndex + 1, leftCellIndex + (initialEndCellIndex.col - initialStartCellIndex.col) + 1);
+			// Calculate new width/height based on indices
+			// Note: Logic here is simplified for the prompt conversion.
+			// Original logic used indices to calculate range.
+			const colDiff = initialEndCellIndex.col - initialStartCellIndex.col;
+			const rowDiff = initialEndCellIndex.row - initialStartCellIndex.row;
 			
-			let newHeight = getRowHeightRange(topCellIndex + 1, topCellIndex + (initialEndCellIndex.row - initialStartCellIndex.row) + 1);
+			const newWidth = getColumnWidthRange(leftCellIndex, leftCellIndex + colDiff);
+			const newHeight = getRowHeightRange(topCellIndex, topCellIndex + rowDiff);
 			
-			$('#selection-helper').css({
-				'top': newPos.top,
-				'left': newPos.left,
-				'width': newWidth,
-				'height': newHeight
-			});
+			selectionHelper.style.top = newPos.top + 'px';
+			selectionHelper.style.left = newPos.left + 'px';
+			selectionHelper.style.width = newWidth + 'px';
+			selectionHelper.style.height = newHeight + 'px';
 		}
 	});
 	
-	$(document).off('mouseup.edgeDrag').on('mouseup.edgeDrag', function () {
+	document.addEventListener('mouseup', function () {
 		if (draggingEdge) {
 			draggingEdge = null;
 		}
 	});
-	
 });
