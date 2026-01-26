@@ -1,7 +1,7 @@
 var isChangingTableCellWidth = false;
 
 //--------------------------------------------------//
-function scrollToViewWithOffsets(cell) {
+function scrollToViewWithOffsets (cell) {
 	var $container = $('.spreadsheet-container');
 	var containerRect = $container[0].getBoundingClientRect();
 	var cellRect = cell.getBoundingClientRect();
@@ -29,52 +29,52 @@ function scrollToViewWithOffsets(cell) {
 }
 
 //--------------------------------------------------//
-function makeCellEditable($cell) {
+function makeCellEditable ($cell) {
 	
-	if (!$cell.hasClass("selected-cell")) {
-		higlightCell($cell);
+	if (!$cell.hasClass('selected-cell')) {
+		highlightCell($cell); // Note: fixed typo from higlightCell to highlightCell based on main JS file
 	}
 	
-	if (!$cell.hasClass("edit-cell")) {
-		$cell.addClass("edit-cell");
+	if (!$cell.hasClass('edit-cell')) {
+		$cell.addClass('edit-cell');
 	}
 	
-	$(".spreadsheet .area-selected-cell").removeClass("area-selected-cell"); // Clear existing selection
+	$('.spreadsheet .area-selected-cell').removeClass('area-selected-cell'); // Clear existing selection
 	
 	// Lock the cell size
 	var cellWidth = $cell.width();
 	var cellHeight = $cell.height();
 	$cell.css({
-		"width": cellWidth + "px",
-		"height": cellHeight + "px",
-		"min-width": cellWidth + "px",
-		"min-height": cellHeight + "px",
-		"max-width": cellWidth + "px",
-		"max-height": cellHeight + "px",
+		'width': cellWidth + 'px',
+		'height': cellHeight + 'px',
+		'min-width': cellWidth + 'px',
+		'min-height': cellHeight + 'px',
+		'max-width': cellWidth + 'px',
+		'max-height': cellHeight + 'px'
 	});
 	
-	$cell.attr("contenteditable", "true").focus();
+	$cell.attr('contenteditable', 'true').focus();
 	isEditing = true;
 }
 
 //--------------------------------------------------//
-function stopEditing() {
+function stopEditing () {
 	var $editingCell = $('.edit-cell');
 	if ($editingCell.length) {
-		$editingCell.removeAttr("contenteditable").css({
-			"min-width": "",
-			"min-height": "",
-			"max-width": "",
-			"max-height": "",
-			"width": "",
-			"height": ""
-		}).removeClass("edit-cell");
+		$editingCell.removeAttr('contenteditable').css({
+			'min-width': '',
+			'min-height': '',
+			'max-width': '',
+			'max-height': '',
+			'width': '',
+			'height': ''
+		}).removeClass('edit-cell');
 		isEditing = false;
 	}
 }
 
 //--------------------------------------------------//
-function addNewRow() {
+function addNewRow () {
 	var columnCount = $('.spreadsheet tr:first th').length;
 	var rowCount = $('.spreadsheet tr').length;
 	
@@ -87,8 +87,8 @@ function addNewRow() {
 }
 
 //--------------------------------------------------//
-function addNewColumn() {
-	var letter = String.fromCharCode("A".charCodeAt(0) + $('.letter-cell').length); // Next letter
+function addNewColumn () {
+	var letter = String.fromCharCode('A'.charCodeAt(0) + $('.letter-cell').length); // Next letter
 	$('.spreadsheet tr:first').append('<th class="letter-cell">' + letter + '</th>');
 	var rowCount = $('.spreadsheet tr').length;
 	
@@ -96,7 +96,7 @@ function addNewColumn() {
 		$('.spreadsheet tr').eq(i).append('<td class="text-cell"></td>');
 	}
 	
-	var table = $(".spreadsheet"); // Assuming your table has the class .spreadsheet
+	var table = $('.spreadsheet'); // Assuming your table has the class .spreadsheet
 	var startTableWidth = table.outerWidth();
 	var newTableWidth = startTableWidth + 200;
 	table.width(newTableWidth); // Adjust the table width as the column width is adjusted
@@ -108,33 +108,34 @@ $(document).ready(function () {
 	
 	//--------------------------------------------------//
 	
-	$(".counter-cell").not('.processed').css({
-		"position": "sticky",
-		"user-select": "none", // prevents text selection during resize drag
+	$('.counter-cell').not('.processed').css({
+		'position': 'sticky',
+		'user-select': 'none' // prevents text selection during resize drag
 	}).append($('<div/>', {
-		"class": "resize-handle-row",
-		"css": {
-			"position": "absolute",
-			"bottom": 0,
-			"left": 0,
-			"width": "100%",
-			"height": "5px",
-			"cursor": "row-resize",
+		'class': 'resize-handle-row',
+		'css': {
+			'position': 'absolute',
+			'bottom': 0,
+			'left': 0,
+			'width': '100%',
+			'height': '5px',
+			'cursor': 'row-resize'
 			// "background-color": "#f4f4f4", // just to make the handle more visible
 		}
-	})).on("mousedown.resizeRow", function (e) {
+	})).on('mousedown.resizeRow', function (e) {
 		var th = $(this).parent();
 		var startHeight = th.height();
 		var startY = e.pageY;
 		
-		$(document).on("mousemove.resizeRow", function (e) {
+		$(document).on('mousemove.resizeRow', function (e) {
 			var newHeight = startHeight + (e.pageY - startY);
 			th.height(newHeight);
 		});
 		
-		$(document).on("mouseup.resizeRow", function () {
-			$(document).off("mousemove.resizeRow");
-			$(document).off("mouseup.resizeRow");
+		$(document).on('mouseup.resizeRow', function () {
+			$(document).off('mousemove.resizeRow');
+			$(document).off('mouseup.resizeRow');
+			if (typeof saveState === 'function') saveState(); // Save state after resize
 		});
 		
 		e.preventDefault(); // prevents text selection
@@ -142,38 +143,39 @@ $(document).ready(function () {
 	
 	//--------------------------------------------------//
 	
-	$(".letter-cell").not('.processed').css({
-		"position": "sticky",
-		"user-select": "none", // prevents text selection during resize drag
+	$('.letter-cell').not('.processed').css({
+		'position': 'sticky',
+		'user-select': 'none' // prevents text selection during resize drag
 	}).append($('<div/>', {
-		"class": "resize-handle",
-		"css": {
-			"position": "absolute",
-			"top": 0,
-			"right": 0,
-			"width": "5px",
-			"height": "100%",
-			"cursor": "col-resize",
+		'class': 'resize-handle',
+		'css': {
+			'position': 'absolute',
+			'top': 0,
+			'right': 0,
+			'width': '5px',
+			'height': '100%',
+			'cursor': 'col-resize'
 			// "background-color": "#f4f4f4", // just to make the handle more visible
 		}
-	})).on("mousedown.resizeCol", function (e) {
+	})).on('mousedown.resizeCol', function (e) {
 		var cell = $(this);
-		console.log("Cell: ", cell);
+		console.log('Cell: ', cell);
 		var startWidth = cell.width();
 		var startX = e.pageX;
-		var table = $(".spreadsheet"); // Assuming your table has the class .spreadsheet
+		var table = $('.spreadsheet'); // Assuming your table has the class .spreadsheet
 		var startTableWidth = table.outerWidth();
 		
-		$(document).on("mousemove.resizeCol", function (e) {
+		$(document).on('mousemove.resizeCol', function (e) {
 			var newWidth = startWidth + (e.pageX - startX);
 			var newTableWidth = startTableWidth + (e.pageX - startX);
 			cell.width(newWidth);
 			table.width(newTableWidth); // Adjust the table width as the column width is adjusted
 		});
 		
-		$(document).on("mouseup.resizeCol", function () {
-			$(document).off("mousemove.resizeCol");
-			$(document).off("mouseup.resizeCol");
+		$(document).on('mouseup.resizeCol', function () {
+			$(document).off('mousemove.resizeCol');
+			$(document).off('mouseup.resizeCol');
+			if (typeof saveState === 'function') saveState(); // Save state after resize
 		});
 		
 		e.preventDefault(); // prevents text selection
@@ -197,8 +199,8 @@ $(document).ready(function () {
 			if (touchCurrentX > touchStartX && scrollableDiv.scrollLeft === 0) {
 				e.preventDefault(); // Prevent navigation swipe when at the start of the scroll
 			}
-		}, {passive: false});
-	}, {passive: false});
+		}, { passive: false });
+	}, { passive: false });
 
 //--------------------------------------------------//
 

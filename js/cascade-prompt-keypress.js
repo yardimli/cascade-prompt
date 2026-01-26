@@ -1,37 +1,45 @@
 //--------------------------------------------------//
 //----------------- Document Ready -----------------//
 $(document).ready(function () {
-	$(".text-cell").keydown(function (e) {
-		if (e.key === "Enter") {
+	$('.text-cell').keydown(function (e) {
+		if (e.key === 'Enter') {
 			e.preventDefault(); // Prevent the default Enter behavior
 			e.stopPropagation();
-			console.log("Cell Enter key pressed");
+			console.log('Cell Enter key pressed');
 			
 			var $this = $(this);
-			var $nextRow = $this.closest("tr").next("tr"); // Find the next row
+			var $nextRow = $this.closest('tr').next('tr'); // Find the next row
 			
 			stopEditing();
+			if (typeof saveState === 'function') saveState(); // Save on Enter
 			
 			// Find the cell directly below in the next row and start editing, if it exists
 			if ($nextRow.length) {
 				var cellIndex = $this.index(); // Current cell's index
-				var $nextCell = $nextRow.find("td").eq(cellIndex - 1); // Adjust index for td elements
+				var $nextCell = $nextRow.find('td').eq(cellIndex - 1); // Adjust index for td elements
 				if ($nextCell.length) {
-					higlightCell($nextCell);
+					highlightCell($nextCell);
 					// makeCellEditable($nextCell); // Make the next cell editable
 				}
 			}
 		}
 	});
 	
+	// Sync typing in cell with formula bar
+	$('.text-cell').on('keyup', function() {
+		if (isEditing) {
+			$('#formula-input').val($(this).text());
+		}
+	});
+	
 	//--------------------------------------------------//
 	
 	$(document).keydown(function (e) {
-		console.log("isEditing: ", isEditing);
+		console.log('isEditing: ', isEditing);
 		if (isEditing) return; // Skip navigation if we are in editing mode
 		
 		isSelecting = false;
-		$(".spreadsheet .area-selected-cell").removeClass("area-selected-cell");
+		$('.spreadsheet .area-selected-cell').removeClass('area-selected-cell');
 		startCell = null;
 		endCell = null;
 		updateSelection();
@@ -46,9 +54,9 @@ $(document).ready(function () {
 		var cellIndex = $selectedCell.index();
 		
 		switch (e.key) {
-			case "Enter":
+			case 'Enter':
 				e.preventDefault(); // Prevent the default Enter behavior
-				console.log("Document Enter key pressed");
+				console.log('Document Enter key pressed');
 				if (!isEditing) {
 					makeCellEditable($selectedCell);
 				}
@@ -57,13 +65,13 @@ $(document).ready(function () {
 				// Prevent default to avoid horizontal scroll
 				e.preventDefault();
 				if (cellIndex > 1) { // Check if there's a cell to the left
-					higlightCell($selectedCell.prev());
+					highlightCell($selectedCell.prev());
 				}
 				break;
 			case 'ArrowRight':
 				e.preventDefault();
 				if (cellIndex < $row.children('td').length) { // Check if there's a cell to the right
-					higlightCell($selectedCell.next());
+					highlightCell($selectedCell.next());
 				} else {
 					// Add a new column if at the last cell
 					// addNewColumn();
@@ -73,14 +81,14 @@ $(document).ready(function () {
 				e.preventDefault();
 				if (rowIndex > 0) { // Check if there's a row above
 					var $prevRow = $rows.eq(rowIndex);
-					higlightCell($prevRow.find('td').eq(cellIndex - 1));
+					highlightCell($prevRow.find('td').eq(cellIndex - 1));
 				}
 				break;
 			case 'ArrowDown':
 				e.preventDefault();
 				if (rowIndex < $rows.length - 1) { // Check if there's a row below
 					var $nextRow = $rows.eq(rowIndex + 2);
-					higlightCell($nextRow.find('td').eq(cellIndex - 1));
+					highlightCell($nextRow.find('td').eq(cellIndex - 1));
 				} else {
 					// Add a new row if at the last cell
 					// addNewRow();
