@@ -1,13 +1,23 @@
+DONE:
+
 - replace contenteditable for cells with a an input textarea that starts in size of the cell but grows vertically and horizontally as needed
 - make the cell input overflow:hidden and add a tooltip that shows the full content on hover if the content is larger than the cell so the content of the cell wont effect the table layout
-
 
 - on the top menu add a merge and unmerge button with icons
 - allow user to merge selected cells using menu buttons. use colspan and rowspan attributes to achieve this, if cells contain data merge the data with a separator (e.g. space or comma)
 - allow user to unmerge merged cells using a context menu, when unmerging keep all data in the top-left cell of the merged area and clear the rest. unmerge button should only work if a merged cell is selected
 
-- add array structure to store multiple sheets within a project, only store cells with content along with the height and width of rows and columns, store merged cell info (start row/col, colspan, rowspan)
-- add tab at the bottom allow user to create new sheets and navigate between sheets.
+TODO:
+
+- add array structure to store multiple sheets within a project, only store cells with content along with the height and width of rows and columns, store merged cell info (start row/col, colspan, rowspan) and total number of rows and columns for each sheet
+- add tab at the bottom allow user to create new sheets and navigate between existing sheets.
 
 - add php backend to save/load projects (save as json to projects folder) and load from there, create a modal to manage projects (load/delete) and to create new projects and save current project (first time) or save as...
 - add a top menu bar with file/edit/view/help main menus and relevant submenus, create placeholders for future functionality
+
+
+
+--------- BUGS:
+
+when merging cells row height resize acts weirdly for the rows that intersect with merged cells
+when unmerging cells the new cells are not editable until page refresh

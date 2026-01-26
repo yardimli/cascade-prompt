@@ -314,8 +314,13 @@ $(document).ready(function () {
 		});
 		
 		$(document).on('mouseup.resizeRow', function () {
+			var th = $(this);
+			var rowIndex = th.parent().index();
+			var rowHeight = th.height();
+			
 			$(document).off('mousemove.resizeRow');
 			$(document).off('mouseup.resizeRow');
+			updateRowHeight(rowIndex, rowHeight);
 			if (typeof saveState === 'function') saveState(); // Save state after resize
 		});
 		
@@ -355,15 +360,7 @@ $(document).ready(function () {
 			cell.width(newWidth);
 			table.width(newTableWidth); // Adjust the table width as the column width is adjusted
 			
-			// Update column width using helper in cascade-prompt.js (if available) or inline logic
-			if (typeof updateColumnWidth === 'function') {
-				updateColumnWidth(colIndex, newWidth);
-			} else {
-				// Fallback if helper not found (though it should be)
-				$('.spreadsheet tbody tr').each(function () {
-					$(this).find('td[data-col="' + colIndex + '"]').find('.content-cut').css('width', newWidth + 'px');
-				});
-			}
+			updateColumnWidth(colIndex, newWidth);
 		});
 		
 		$(document).on('mouseup.resizeCol', function () {

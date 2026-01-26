@@ -273,7 +273,7 @@ function loadState() {
 		$('.letter-cell').each(function (index) {
 			if (state.colWidths[index]) {
 				var w = state.colWidths[index];
-				$(this).css('width', w + 'px');
+				$(this).css('width', (w-2) + 'px');
 				tableWidth += w;
 			}
 		});
@@ -289,8 +289,6 @@ function loadState() {
 			if (state.rowHeights[index]) {
 				var h = state.rowHeights[index];
 				$(this).css('height', h + 'px');
-				// Apply height to all .content-cut divs in this row
-				$(this).parent().find('.content-cut').css('height', h + 'px');
 			}
 		});
 	}
@@ -350,6 +348,12 @@ function loadState() {
 			updateColumnWidth(index, w);
 		});
 	}
+	
+	if (state.rowHeights) {
+		state.rowHeights.forEach(function (h, index) {
+			updateRowHeight(index, h)
+		})
+	}
 }
 
 // Helper to update column width including merged cells
@@ -390,6 +394,46 @@ function updateColumnWidth(colIndex, newWidth) {
 			}
 		}
 	});
+}
+
+function updateRowHeight (rowIndex, newHeight) {
+	// Update the header cell height
+	$('.counter-cell').eq(rowIndex).css('height', newHeight + 'px')
+	
+	// 1. Handle cells starting in this row
+	var $row = $('.spreadsheet tbody tr').eq(rowIndex)
+	$row.find('td.text-cell').each(function () {
+		var $cell = $(this)
+		var rowspan = parseInt($cell.attr('rowspan')) || 1
+		
+		if (rowspan === 1) {
+			// Simple cell, matches row height
+			$cell.find('.content-cut').css('height', newHeight + 'px')
+		} else {
+			// Merged cell starting here: recalculate total height based on range
+			var totalHeight = getRowHeightRange(rowIndex, rowIndex + rowspan - 1)
+			$cell.find('.content-cut').css('height', totalHeight + 'px')
+		}
+	})
+	
+	// 2. Handle cells starting in previous rows that span into this row
+	// We iterate rows above the current one to find any overlapping merges
+	$('.spreadsheet tbody tr').slice(0, rowIndex).each(function () {
+		var $prevRow = $(this)
+		var prevRowIndex = $prevRow.index()
+		
+		// Find cells in this previous row that have a rowspan
+		$prevRow.find('td[rowspan]').each(function () {
+			var $pCell = $(this)
+			var span = parseInt($pCell.attr('rowspan')) || 1
+			
+			// Check if this merged cell overlaps the resized row
+			if (prevRowIndex + span > rowIndex) {
+				var totalHeight = getRowHeightRange(prevRowIndex, prevRowIndex + span - 1)
+				$pCell.find('.content-cut').css('height', totalHeight + 'px')
+			}
+		})
+	})
 }
 
 function resetState() {
