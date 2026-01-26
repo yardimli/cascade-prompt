@@ -1,6 +1,38 @@
 var isChangingTableCellWidth = false;
 
 // --------------------------------------------------//
+// Theme Management Functions
+// --------------------------------------------------//
+
+/**
+ * Initialize theme from localStorage or system preference
+ */
+function initTheme () {
+	const savedTheme = localStorage.getItem('cascade_theme');
+	if (savedTheme) {
+		document.documentElement.setAttribute('data-theme', savedTheme);
+	} else {
+		// Check system preference
+		if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+			document.documentElement.setAttribute('data-theme', 'dark');
+		} else {
+			document.documentElement.setAttribute('data-theme', 'light');
+		}
+	}
+}
+
+/**
+ * Toggle between light and dark modes
+ */
+function toggleTheme () {
+	const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+	const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+	
+	document.documentElement.setAttribute('data-theme', newTheme);
+	localStorage.setItem('cascade_theme', newTheme);
+}
+
+// --------------------------------------------------//
 function scrollToViewWithOffsets (cell) {
 	const container = document.querySelector('.spreadsheet-container');
 	const containerRect = container.getBoundingClientRect();
@@ -440,6 +472,17 @@ function attachResizeHandlers () {
 // --------------------------------------------------//
 // ----------------- Document Ready -----------------//
 document.addEventListener('DOMContentLoaded', function () {
+	// Initialize Theme
+	initTheme();
+	
+	// Theme Toggle Listener
+	const themeBtn = document.getElementById('theme-toggle-btn');
+	if (themeBtn) {
+		themeBtn.addEventListener('click', function () {
+			toggleTheme();
+		});
+	}
+	
 	// Merge Button Listener
 	document.getElementById('merge-btn').addEventListener('click', function () {
 		mergeCells();

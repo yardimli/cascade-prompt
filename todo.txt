@@ -23,6 +23,7 @@ DONE:
 TODO:
 
 - implement undo/redo functionality for cell edits, merges/unmerges, row/column resizing, and sheet changes. maintain a history stack to track changes and allow users to revert or reapply actions. create a new history javascript file to manage this functionality.
+
 - make html formatting buttons work.
 - add cell border, color and background color options in the top menu for better cell customization, apply to cursor or selected cells.
 

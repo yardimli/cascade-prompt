@@ -43,7 +43,7 @@
 
 </head>
 
-<body class="bg-light" style="margin-left: 0px; padding-left: 0px; overflow: hidden;">
+<body style="margin-left: 0px; padding-left: 0px; overflow: hidden;">
 
 <!-- Top Menu Bar -->
 <div class="top-menu-bar">
@@ -83,6 +83,8 @@
 	<div class="menu-item">
 		View
 		<div class="dropdown-content">
+			<div class="menu-dropdown-item" id="theme-toggle-btn">Light/Dark Mode</div>
+			<div class="dropdown-divider"></div>
 			<div class="menu-dropdown-item">Freeze Rows (Coming Soon)</div>
 			<div class="menu-dropdown-item">Freeze Columns (Coming Soon)</div>
 			<div class="dropdown-divider"></div>
@@ -102,34 +104,34 @@
 <!-- Toolbar -->
 <div class="toolbar-container">
 	<button type="button" class="btn btn-sm btn-outline-info">
-		<i class="bi bi-arrow-counterclockwise" style="color:black;"></i>
+		<i class="bi bi-arrow-counterclockwise"></i>
 	</button>
 	<button type="button" class="btn btn-sm btn-outline-info">
-		<i class="bi bi-arrow-clockwise" style="color:black;"></i>
+		<i class="bi bi-arrow-clockwise"></i>
 	</button>
 	<button type="button" class="btn btn-sm btn-outline-info">
-		<i class="bi bi-type-bold" style="color:black;"></i>
+		<i class="bi bi-type-bold"></i>
 	</button>
 	<button type="button" class="btn btn-sm btn-outline-info">
-		<i class="bi bi-type-italic" style="color:black;"></i>
+		<i class="bi bi-type-italic"></i>
 	</button>
 	<button type="button" class="btn btn-sm btn-outline-info">
-		<i class="bi bi-type-strikethrough" style="color:black;"></i>
+		<i class="bi bi-type-strikethrough"></i>
 	</button>
 	<button type="button" class="btn btn-sm btn-outline-info">
-		<i class="bi bi-paint-bucket" style="color:black;"></i>
+		<i class="bi bi-paint-bucket"></i>
 	</button>
 	<button type="button" class="btn btn-sm btn-outline-info">
-		<i class="bi bi-grid" style="color:black;"></i>
+		<i class="bi bi-grid"></i>
 	</button>
 	<button type="button" class="btn btn-sm btn-outline-info">
-		<i class="bi bi-justify-left" style="color:black;"></i>
+		<i class="bi bi-justify-left"></i>
 	</button>
 	<button type="button" class="btn btn-sm btn-outline-info" id="merge-btn" title="Merge Cells" disabled>
-		<i class="bi bi-arrows-collapse" style="color:black;"></i>
+		<i class="bi bi-arrows-collapse"></i>
 	</button>
 	<button type="button" class="btn btn-sm btn-outline-info" id="unmerge-btn" title="Unmerge Cells" disabled>
-		<i class="bi bi-arrows-expand" style="color:black;"></i>
+		<i class="bi bi-arrows-expand"></i>
 	</button>
 </div>
 
@@ -143,7 +145,7 @@
 	<!-- Overlay Textarea for Editing -->
 	<textarea id="cell-editor"></textarea>
 	
-	<div id="selection-helper" class="active-animation no-select"></div>
+	<div id="selection-helper" class="no-select"></div>
 	<table class="spreadsheet no-select">
 		<thead>
 		<tr>
