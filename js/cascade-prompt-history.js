@@ -30,6 +30,16 @@ var HistoryManager = {
 			// Deep clone the data object
 			const stateSnapshot = JSON.parse(JSON.stringify(SheetDataManager.data));
 			
+			// Optimization: Deduplication
+			// Don't push if the state hasn't actually changed from the last undo state
+			if (this.undoStack.length > 0) {
+				const lastState = this.undoStack[this.undoStack.length - 1];
+				if (JSON.stringify(lastState) === JSON.stringify(stateSnapshot)) {
+					console.log('History state identical to previous. Skipping push.');
+					return;
+				}
+			}
+			
 			this.undoStack.push(stateSnapshot);
 			
 			// Limit stack size
@@ -99,7 +109,7 @@ var HistoryManager = {
 		SheetDataManager.renderSheet(activeIndex);
 		SheetDataManager.renderTabs();
 		
-		// Mark as modified since we changed state (unless we track save state in history, which is complex)
+		// Mark as modified since we changed state
 		SheetDataManager.setModified(true);
 	},
 	
@@ -108,6 +118,5 @@ var HistoryManager = {
 	 */
 	updateUI: function () {
 		// This could toggle CSS classes on toolbar buttons if they had IDs
-		// For now, we just log or handle menu items if needed
 	}
 };

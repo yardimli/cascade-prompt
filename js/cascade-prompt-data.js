@@ -104,6 +104,7 @@ var SheetDataManager = {
 	
 	/**
 	 * Scrape current DOM to update the active sheet's data object
+	 * Optimized: Uses direct row/cell iteration instead of querySelectorAll
 	 */
 	updateCurrentSheetData: function () {
 		const activeIndex = this.data.activeSheetIndex;
@@ -114,69 +115,90 @@ var SheetDataManager = {
 	
 	/**
 	 * Helper to scrape DOM
+	 * Optimized for performance
 	 */
 	collectDOMData: function (sheetObj) {
 		const cells = {};
 		const colWidths = {};
 		const rowHeights = {};
 		
-		const textCells = document.querySelectorAll('.spreadsheet .text-cell');
-		textCells.forEach(cell => {
-			const contentDiv = cell.querySelector('.content-cut');
-			// Use innerHTML to capture rich text (bold, italic, etc. inside text)
-			const html = contentDiv ? contentDiv.innerHTML : '';
-			const rowspan = parseInt(cell.getAttribute('rowspan')) || 1;
-			const colspan = parseInt(cell.getAttribute('colspan')) || 1;
+		const table = document.querySelector('.spreadsheet');
+		const tbody = table.querySelector('tbody');
+		const rows = tbody.rows; // Live collection, faster than querySelectorAll
+		
+		// 1. Collect Row Heights and Cell Data
+		for (let r = 0; r < rows.length; r++) {
+			const row = rows[r];
+			const rowHeader = row.cells[0]; // The th.counter-cell
 			
-			// Capture Styles
-			const style = {};
-			if (contentDiv && contentDiv.style.cssText) {
-				style.cssText = contentDiv.style.cssText;
+			// Capture Row Height
+			if (rowHeader) {
+				const h = rowHeader.offsetHeight;
+				// Only save if different from default to save memory
+				if (Math.abs(h - this.defaults.defaultRowHeight) > 1) {
+					rowHeights[r] = h;
+				}
 			}
-			// Capture Cell Background and Borders (applied to TD)
-			const cellStyle = {};
-			if (cell.style.backgroundColor) cellStyle.backgroundColor = cell.style.backgroundColor;
-			if (cell.style.border) cellStyle.border = cell.style.border;
-			if (cell.style.borderLeft) cellStyle.borderLeft = cell.style.borderLeft;
-			if (cell.style.borderRight) cellStyle.borderRight = cell.style.borderRight;
-			if (cell.style.borderTop) cellStyle.borderTop = cell.style.borderTop;
-			if (cell.style.borderBottom) cellStyle.borderBottom = cell.style.borderBottom;
 			
-			// Check if cell has content or non-default attributes
-			const hasContent = (contentDiv && contentDiv.textContent.trim() !== '') || html !== '';
-			const hasStyle = Object.keys(style).length > 0 || Object.keys(cellStyle).length > 0;
-			
-			if (hasContent || rowspan > 1 || colspan > 1 || hasStyle) {
-				const row = cell.parentElement;
-				const tbody = row.parentElement;
-				const rowIndex = Array.from(tbody.children).indexOf(row);
+			// Iterate Cells (skip index 0 which is the header)
+			for (let c = 1; c < row.cells.length; c++) {
+				const cell = row.cells[c];
+				// data-col might differ from index if we had hidden cols, but here we trust data-col
 				const colIndex = parseInt(cell.getAttribute('data-col'));
 				
-				cells[rowIndex + '-' + colIndex] = {
-					html: html, // Store HTML for rich text
-					text: contentDiv ? contentDiv.textContent : '', // Fallback/Search
-					rowspan: rowspan,
-					colspan: colspan,
-					style: style, // Content styles
-					cellStyle: cellStyle // Container styles
-				};
+				const contentDiv = cell.querySelector('.content-cut');
+				if (!contentDiv) continue;
+				
+				const html = contentDiv.innerHTML;
+				const text = contentDiv.textContent;
+				const rowspan = parseInt(cell.getAttribute('rowspan')) || 1;
+				const colspan = parseInt(cell.getAttribute('colspan')) || 1;
+				
+				// Capture Styles
+				const style = {};
+				if (contentDiv.style.cssText) {
+					style.cssText = contentDiv.style.cssText;
+				}
+				
+				// Capture Cell Background and Borders
+				const cellStyle = {};
+				// Check inline styles only
+				if (cell.style.backgroundColor) cellStyle.backgroundColor = cell.style.backgroundColor;
+				if (cell.style.border) cellStyle.border = cell.style.border;
+				if (cell.style.borderLeft) cellStyle.borderLeft = cell.style.borderLeft;
+				if (cell.style.borderRight) cellStyle.borderRight = cell.style.borderRight;
+				if (cell.style.borderTop) cellStyle.borderTop = cell.style.borderTop;
+				if (cell.style.borderBottom) cellStyle.borderBottom = cell.style.borderBottom;
+				
+				const hasContent = (text.trim() !== '') || (html !== '' && html !== '<br>');
+				const hasStyle = Object.keys(style).length > 0 || Object.keys(cellStyle).length > 0;
+				
+				if (hasContent || rowspan > 1 || colspan > 1 || hasStyle) {
+					cells[r + '-' + colIndex] = {
+						html: html,
+						text: text,
+						rowspan: rowspan,
+						colspan: colspan,
+						style: style,
+						cellStyle: cellStyle
+					};
+				}
+			}
+		}
+		
+		// 2. Collect Column Widths
+		const headerCells = table.querySelectorAll('thead th.letter-cell');
+		headerCells.forEach(cell => {
+			const index = parseInt(cell.getAttribute('data-col'));
+			const w = cell.offsetWidth;
+			// Only save if different from default
+			if (Math.abs(w - this.defaults.defaultColWidth) > 1) {
+				colWidths[index] = w;
 			}
 		});
 		
-		document.querySelectorAll('.letter-cell').forEach(cell => {
-			const index = parseInt(cell.getAttribute('data-col'));
-			colWidths[index] = cell.offsetWidth;
-		});
-		
-		document.querySelectorAll('.counter-cell').forEach(cell => {
-			const row = cell.parentElement;
-			const tbody = row.parentElement;
-			const index = Array.from(tbody.children).indexOf(row);
-			rowHeights[index] = cell.offsetHeight;
-		});
-		
-		sheetObj.rowCount = document.querySelectorAll('.spreadsheet tbody tr').length;
-		sheetObj.colCount = document.querySelectorAll('.spreadsheet thead th.letter-cell').length;
+		sheetObj.rowCount = rows.length;
+		sheetObj.colCount = headerCells.length;
 		
 		sheetObj.cells = cells;
 		sheetObj.colWidths = colWidths;
@@ -186,8 +208,7 @@ var SheetDataManager = {
 		const selectedCell = document.querySelector('.selected-cell');
 		if (selectedCell) {
 			const row = selectedCell.parentElement;
-			const tbody = row.parentElement;
-			const rowIndex = Array.from(tbody.children).indexOf(row);
+			const rowIndex = row.rowIndex - 1; // Adjust for thead
 			const colIndex = parseInt(selectedCell.getAttribute('data-col'));
 			
 			sheetObj.selection = {
@@ -195,12 +216,12 @@ var SheetDataManager = {
 				range: null
 			};
 			
-			// Check if there is a range selection (using globals from cascade-prompt.js)
+			// Check if there is a range selection
 			if (window.startCell && window.endCell && window.startCell !== window.endCell) {
 				const startRow = window.startCell.parentElement;
 				const endRow = window.endCell.parentElement;
-				const startRIndex = Array.from(tbody.children).indexOf(startRow);
-				const endRIndex = Array.from(tbody.children).indexOf(endRow);
+				const startRIndex = startRow.rowIndex - 1;
+				const endRIndex = endRow.rowIndex - 1;
 				
 				sheetObj.selection.range = {
 					startR: startRIndex,
@@ -218,17 +239,26 @@ var SheetDataManager = {
 	
 	/**
 	 * Render a sheet to the DOM
+	 * Optimized: Uses HTML String Concatenation instead of individual DOM insertions.
 	 */
 	renderSheet: function (index) {
+		//console log start time
+		let startTime = performance.now();
 		const sheet = this.data.sheets[index];
 		if (!sheet) return;
 		
 		if (typeof stopEditing === 'function') stopEditing();
 		
 		// Clear existing selection state in DOM
-		document.querySelectorAll('.selected-cell').forEach(el => el.classList.remove('selected-cell'));
-		document.querySelectorAll('.highlight').forEach(el => el.classList.remove('highlight'));
-		document.querySelectorAll('.area-selected-cell').forEach(el => el.classList.remove('area-selected-cell'));
+		// Use getElementsByClassName for speed over querySelectorAll
+		const selected = document.getElementsByClassName('selected-cell');
+		while (selected.length > 0) selected[0].classList.remove('selected-cell');
+		
+		const highlighted = document.getElementsByClassName('highlight');
+		while (highlighted.length > 0) highlighted[0].classList.remove('highlight');
+		
+		const areaSelected = document.getElementsByClassName('area-selected-cell');
+		while (areaSelected.length > 0) areaSelected[0].classList.remove('area-selected-cell');
 		
 		// Reset global selection variables
 		window.startCell = null;
@@ -236,88 +266,68 @@ var SheetDataManager = {
 		if (typeof updateSelection === 'function') updateSelection();
 		
 		const formulaInput = document.getElementById('formula-input');
-		formulaInput.textContent = ''; // Use textContent for div
-		formulaInput.setAttribute('contenteditable', 'false'); // Disable initially
+		formulaInput.textContent = '';
+		formulaInput.setAttribute('contenteditable', 'false');
 		
 		const table = document.querySelector('.spreadsheet');
 		const thead = table.querySelector('thead');
 		const tbody = table.querySelector('tbody');
 		
-		// --- Rebuild Header ---
-		const headerRow = thead.querySelector('tr');
-		headerRow.innerHTML = '';
-		headerRow.insertAdjacentHTML('beforeend', '<th class="top-corner-cell"></th>');
-		
+		// --- Rebuild Header (String Building) ---
+		let headerHTML = '<th class="top-corner-cell"></th>';
 		let tableWidth = 0;
 		
 		for (let c = 0; c < sheet.colCount; c++) {
 			const letter = this.getColumnLetter(c);
 			const width = sheet.colWidths[c] || this.defaults.defaultColWidth;
-			
-			const th = document.createElement('th');
-			th.className = 'letter-cell';
-			th.setAttribute('data-col', c);
-			th.textContent = letter;
-			th.style.width = width + 'px';
-			
-			headerRow.appendChild(th);
+			headerHTML += `<th class="letter-cell" data-col="${c}" style="width: ${width}px;">${letter}</th>`;
 			tableWidth += width;
 		}
 		
+		// Batch update header
+		thead.rows[0].innerHTML = headerHTML;
 		table.style.width = (tableWidth + 50) + 'px';
 		
-		// --- Rebuild Body ---
-		tbody.innerHTML = '';
+		// --- Rebuild Body (String Building - Massive Perf Boost) ---
+		let bodyHTML = '';
 		
 		for (let r = 0; r < sheet.rowCount; r++) {
 			const height = sheet.rowHeights[r] || this.defaults.defaultRowHeight;
-			const tr = document.createElement('tr');
+			bodyHTML += '<tr>';
 			
-			const rowHeader = document.createElement('th');
-			rowHeader.className = 'counter-cell';
-			rowHeader.textContent = (r + 1);
-			rowHeader.style.height = height + 'px';
-			tr.appendChild(rowHeader);
+			// Row Header
+			bodyHTML += `<th class="counter-cell" style="height: ${height}px;">${r + 1}</th>`;
 			
 			for (let c = 0; c < sheet.colCount; c++) {
+				// Check merge visibility
 				if (this.isCellHiddenByMerge(sheet, r, c)) {
 					continue;
 				}
 				
 				const cellKey = r + '-' + c;
 				const cellData = sheet.cells[cellKey];
-				
-				const td = document.createElement('td');
-				td.className = 'text-cell';
-				td.setAttribute('data-col', c);
-				
-				const content = document.createElement('div');
-				content.className = 'content-cut';
+				let cellHTML = '';
+				let tdAttrs = `class="text-cell" data-col="${c}"`;
+				let tdStyle = '';
 				
 				let cellWidth = sheet.colWidths[c] || this.defaults.defaultColWidth;
+				let cellHeight = height;
 				
 				if (cellData) {
-					// Restore HTML content if available, else text
-					content.innerHTML = cellData.html || cellData.text || '';
-					
-					// Restore Content Styles
-					if (cellData.style && cellData.style.cssText) {
-						content.style.cssText = cellData.style.cssText;
-					}
-					
-					// Restore Cell Styles (Background, Borders)
+					// Styles
 					if (cellData.cellStyle) {
-						if (cellData.cellStyle.backgroundColor) td.style.backgroundColor = cellData.cellStyle.backgroundColor;
-						if (cellData.cellStyle.border) td.style.border = cellData.cellStyle.border;
-						if (cellData.cellStyle.borderLeft) td.style.borderLeft = cellData.cellStyle.borderLeft;
-						if (cellData.cellStyle.borderRight) td.style.borderRight = cellData.cellStyle.borderRight;
-						if (cellData.cellStyle.borderTop) td.style.borderTop = cellData.cellStyle.borderTop;
-						if (cellData.cellStyle.borderBottom) td.style.borderBottom = cellData.cellStyle.borderBottom;
+						for (const [prop, val] of Object.entries(cellData.cellStyle)) {
+							// Convert camelCase to kebab-case for inline style string
+							const cssProp = prop.replace(/([a-z0-9]|(?=[A-Z]))([A-Z])/g, '$1-$2').toLowerCase();
+							tdStyle += `${cssProp}:${val};`;
+						}
 					}
 					
-					if (cellData.rowspan > 1) td.setAttribute('rowspan', cellData.rowspan);
-					if (cellData.colspan > 1) td.setAttribute('colspan', cellData.colspan);
+					// Spans
+					if (cellData.rowspan > 1) tdAttrs += ` rowspan="${cellData.rowspan}"`;
+					if (cellData.colspan > 1) tdAttrs += ` colspan="${cellData.colspan}"`;
 					
+					// Calculate Dimensions for Merged Cells
 					if (cellData.colspan > 1) {
 						cellWidth = 0;
 						for (let k = 0; k < cellData.colspan; k++) {
@@ -325,7 +335,6 @@ var SheetDataManager = {
 						}
 					}
 					
-					let cellHeight = height;
 					if (cellData.rowspan > 1) {
 						cellHeight = 0;
 						for (let k = 0; k < cellData.rowspan; k++) {
@@ -333,38 +342,52 @@ var SheetDataManager = {
 						}
 					}
 					
-					// FIX: Subtract 3px to account for borders/padding
-					content.style.height = (cellHeight - 3) + 'px';
+					// Content Div
+					let contentStyle = `width:${cellWidth - 3}px; height:${cellHeight - 3}px;`;
+					if (cellData.style && cellData.style.cssText) {
+						contentStyle += cellData.style.cssText;
+					}
+					
+					const content = cellData.html || cellData.text || '';
+					cellHTML = `<div class="content-cut" style="${contentStyle}">${content}</div>`;
+					
 				} else {
-					// FIX: Subtract 3px here as well for empty cells.
-					content.style.height = (height - 3) + 'px';
+					// Empty Cell
+					cellHTML = `<div class="content-cut" style="width:${cellWidth - 3}px; height:${height - 3}px;"></div>`;
 				}
 				
-				content.style.width = (cellWidth - 3) + 'px';
-				td.appendChild(content);
-				tr.appendChild(td);
+				bodyHTML += `<td ${tdAttrs} style="${tdStyle}">${cellHTML}</td>`;
 			}
-			tbody.appendChild(tr);
+			bodyHTML += '</tr>';
 		}
 		
-		this.rebindResizeHandlers();
+		// Batch update body
+		tbody.innerHTML = bodyHTML;
 		
-		// --- Restore Selection ---
+		// Defer handlers and selection restoration to next frame to allow paint
+		requestAnimationFrame(() => {
+			this.rebindResizeHandlers();
+			this.restoreSelection(sheet, tbody);
+		});
+		console.log('Sheet rendered in ' + (performance.now() - startTime).toFixed(2) + ' ms');
+	},
+	
+	/**
+	 * Helper to restore selection after render
+	 */
+	restoreSelection: function (sheet, tbody) {
 		if (sheet.selection && sheet.selection.active) {
 			const activeR = sheet.selection.active.r;
 			const activeC = sheet.selection.active.c;
 			
-			// Find the row (tbody children are 0-indexed)
 			const targetRow = tbody.children[activeR];
 			if (targetRow) {
 				const targetCell = targetRow.querySelector(`td[data-col="${activeC}"]`);
 				if (targetCell) {
-					// Restore active cell highlight
 					if (typeof highlightCell === 'function') {
 						highlightCell(targetCell);
 					}
 					
-					// Restore Range Selection if it exists
 					if (sheet.selection.range) {
 						const sR = sheet.selection.range.startR;
 						const sC = sheet.selection.range.startC;
@@ -379,7 +402,6 @@ var SheetDataManager = {
 							const domEndCell = endRow.querySelector(`td[data-col="${eC}"]`);
 							
 							if (domStartCell && domEndCell) {
-								// Update global variables used by cascade-prompt.js
 								window.startCell = domStartCell;
 								window.endCell = domEndCell;
 								window.isSelecting = false;
@@ -396,20 +418,23 @@ var SheetDataManager = {
 	},
 	
 	isCellHiddenByMerge: function (sheet, row, col) {
+		// Optimization: Checking every cell in the sheet object is slow.
+		// Ideally, we should have a map of merged ranges.
+		// For now, we stick to the logic but ensure we exit fast.
 		for (const key in sheet.cells) {
+			const data = sheet.cells[key];
+			if ((data.rowspan || 1) === 1 && (data.colspan || 1) === 1) continue;
+			
 			const parts = key.split('-');
 			const r = parseInt(parts[0]);
 			const c = parseInt(parts[1]);
-			const data = sheet.cells[key];
 			
-			if (data.rowspan > 1 || data.colspan > 1) {
-				const endR = r + (data.rowspan || 1) - 1;
-				const endC = c + (data.colspan || 1) - 1;
-				
-				if (row >= r && row <= endR && col >= c && col <= endC) {
-					if (row === r && col === c) return false;
-					return true;
-				}
+			const endR = r + (data.rowspan || 1) - 1;
+			const endC = c + (data.colspan || 1) - 1;
+			
+			if (row >= r && row <= endR && col >= c && col <= endC) {
+				if (row === r && col === c) return false;
+				return true;
 			}
 		}
 		return false;
@@ -431,7 +456,9 @@ var SheetDataManager = {
 	
 	renderTabs: function () {
 		const container = document.getElementById('sheet-tabs-container');
-		container.querySelectorAll('.sheet-tab').forEach(el => el.remove());
+		// Remove existing tabs only
+		const existingTabs = container.querySelectorAll('.sheet-tab');
+		existingTabs.forEach(el => el.remove());
 		
 		const self = this;
 		const addBtn = container.querySelector('.add-sheet-btn');
@@ -455,69 +482,52 @@ var SheetDataManager = {
 	
 	/**
 	 * Move a range of cells to a new location
-	 * @param {Object} range - {startR, startC, endR, endC}
-	 * @param {Number} targetR - The new top-left row index
-	 * @param {Number} targetC - The new top-left column index
 	 */
 	moveRange: function (range, targetR, targetC) {
 		const sheet = this.data.sheets[this.data.activeSheetIndex];
 		if (!sheet) return;
 		
-		// 1. Calculate Offsets
 		const rowOffset = targetR - range.startR;
 		const colOffset = targetC - range.startC;
 		
-		// If no movement, do nothing
 		if (rowOffset === 0 && colOffset === 0) return;
 		
-		// 2. Capture History
 		if (typeof HistoryManager !== 'undefined') {
 			HistoryManager.addState();
 		}
 		
-		// 3. Collect Data (Clipboard)
-		// We read all data first to prevent overwriting issues during a self-overlapping move
 		const movingCells = [];
 		
 		for (let r = range.startR; r <= range.endR; r++) {
 			for (let c = range.startC; c <= range.endC; c++) {
 				const key = r + '-' + c;
 				if (sheet.cells[key]) {
-					// Only move the cell if it is the top-left of a merge, or a standard cell
-					// If it's part of a merge but not the anchor, it's implicitly moved by the anchor
 					const cellData = sheet.cells[key];
 					movingCells.push({
 						oldR: r,
 						oldC: c,
-						data: JSON.parse(JSON.stringify(cellData)) // Deep copy
+						data: JSON.parse(JSON.stringify(cellData))
 					});
 				}
 			}
 		}
 		
-		// 4. Clear Source Cells
-		// We must clear the specific range in the data model
 		movingCells.forEach(item => {
 			delete sheet.cells[item.oldR + '-' + item.oldC];
 		});
 		
-		// 5. Place in Target
 		movingCells.forEach(item => {
 			const newR = item.oldR + rowOffset;
 			const newC = item.oldC + colOffset;
-			
-			// Boundary check (optional, but good practice)
 			if (newR >= 0 && newC >= 0) {
 				sheet.cells[newR + '-' + newC] = item.data;
 			}
 		});
 		
-		// 6. Re-render
 		this.renderSheet(this.data.activeSheetIndex);
 		this.setModified(true);
 		
-		// 7. Update Selection to new location
-		// We need to find the new DOM elements to update the global selection state
+		// Update selection after render
 		setTimeout(() => {
 			const table = document.querySelector('.spreadsheet tbody');
 			const newStartR = range.startR + rowOffset;
@@ -533,17 +543,13 @@ var SheetDataManager = {
 				const newEndCell = endRow.querySelector(`td[data-col="${newEndC}"]`);
 				
 				if (newStartCell && newEndCell) {
-					// Update globals in cascade-prompt.js
 					window.startCell = newStartCell;
 					window.endCell = newEndCell;
 					window.isSelecting = false;
 					
-					// Trigger UI update
 					if (typeof updateSelection === 'function') {
 						updateSelection();
 					}
-					
-					// Highlight the anchor cell
 					if (typeof highlightCell === 'function') {
 						highlightCell(newStartCell);
 					}
@@ -556,9 +562,6 @@ var SheetDataManager = {
 	// Backend Interaction Methods
 	// -----------------------------------------------------------------------
 	
-	/**
-	 * Save current project to PHP backend
-	 */
 	saveProject: function (filename) {
 		this.updateCurrentSheetData();
 		
@@ -584,8 +587,6 @@ var SheetDataManager = {
 					localStorage.setItem('lastOpenedFile', filename);
 					document.title = filename + ' - Cascade Prompt';
 					this.setModified(false);
-					
-					// Show Toast instead of Alert
 					showToast('Project saved successfully');
 				} else {
 					showCustomAlert('Error saving project: ' + data.message);
@@ -597,9 +598,6 @@ var SheetDataManager = {
 			});
 	},
 	
-	/**
-	 * Load project from PHP backend
-	 */
 	loadProject: function (filename, isInitialLoad) {
 		fetch('api/load_project.php?filename=' + encodeURIComponent(filename))
 			.then(response => response.json())
@@ -616,7 +614,6 @@ var SheetDataManager = {
 				} else {
 					console.warn('Could not load project:', data.message);
 					if (isInitialLoad) {
-						// Fallback to empty sheet if last opened file is missing
 						this.createSheet(this.defaults.sheetNamePrefix + '1', true);
 						this.updateStatusUI();
 					} else {
@@ -630,9 +627,6 @@ var SheetDataManager = {
 			});
 	},
 	
-	/**
-	 * List projects for the modal
-	 */
 	listProjects: function (callback) {
 		fetch('api/list_projects.php')
 			.then(response => response.json())
@@ -643,9 +637,6 @@ var SheetDataManager = {
 			});
 	},
 	
-	/**
-	 * Delete a project
-	 */
 	deleteProject: function (filename, callback) {
 		if (!confirm('Are you sure you want to delete "' + filename + '"?')) return;
 		
@@ -666,9 +657,6 @@ var SheetDataManager = {
 			});
 	},
 	
-	/**
-	 * Reset to a blank state (New Project)
-	 */
 	newProject: function () {
 		if (confirm('Create new project? Unsaved changes will be lost.')) {
 			this.data = {
@@ -679,11 +667,9 @@ var SheetDataManager = {
 			localStorage.removeItem('lastOpenedFile');
 			document.title = 'Cascade Prompt';
 			
-			// Reset UI
 			const table = document.querySelector('.spreadsheet tbody');
-			table.innerHTML = ''; // Clear current
+			table.innerHTML = '';
 			
-			// Create default sheet
 			this.data.sheets.push({
 				name: 'Sheet1',
 				rowCount: this.defaults.rows,
@@ -699,9 +685,6 @@ var SheetDataManager = {
 		}
 	},
 	
-	/**
-	 * Update the status bar UI
-	 */
 	updateStatusUI: function () {
 		const fileEl = document.getElementById('status-file');
 		const modEl = document.getElementById('status-modified');
@@ -715,9 +698,6 @@ var SheetDataManager = {
 		}
 	},
 	
-	/**
-	 * Set modified state
-	 */
 	setModified: function (isModified) {
 		this.isModified = isModified;
 		this.updateStatusUI();

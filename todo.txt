@@ -24,10 +24,10 @@ DONE:
 
 - allow user to drag the selected cells to a new location. merged cells should be moved as a whole. overwrite any existing cells in the target location. clear the original cells after the move.
 
-TODO:
-
 - make html formatting buttons work.
 - add cell border, color and background color options in the top menu for better cell customization, apply to cursor or selected cells.
+
+TODO:
 
 - add copy/paste functionality for cells and ranges of cells using keyboard shortcuts (Ctrl+C, Ctrl+V). ensure that formatting and merged cell states are preserved during copy/paste operations.
 
@@ -42,3 +42,4 @@ when merging cells row height resize acts weirdly for the rows that intersect wi
 when unmerging cells the new cells are not editable until page refresh
 new sheets row heights are different than the first sheet, should have some default height
 switching sheets is slow.
+border tool is not working correctly with cells merged and unmerged.

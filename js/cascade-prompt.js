@@ -26,9 +26,15 @@ function highlightCell (cell) {
 	console.log('1) Cell Col: ' + cellIndex + ', Row Index: ' + rowIndex);
 	
 	// Remove previous highlights and selection
-	document.querySelectorAll('.spreadsheet .highlight').forEach(el => el.classList.remove('highlight'));
-	document.querySelectorAll('.spreadsheet .selected-cell').forEach(el => el.classList.remove('selected-cell'));
-	document.querySelectorAll('.spreadsheet .edit-cell').forEach(el => el.classList.remove('edit-cell'));
+	// Optimization: Use getElementsByClassName for live collection speed
+	const highlights = document.getElementsByClassName('highlight');
+	while (highlights.length > 0) highlights[0].classList.remove('highlight');
+	
+	const selected = document.getElementsByClassName('selected-cell');
+	while (selected.length > 0) selected[0].classList.remove('selected-cell');
+	
+	const editing = document.getElementsByClassName('edit-cell');
+	while (editing.length > 0) editing[0].classList.remove('edit-cell');
 	
 	// Highlight the column header
 	const letterCell = document.querySelector('.letter-cell[data-col="' + cellIndex + '"]');
@@ -42,7 +48,6 @@ function highlightCell (cell) {
 	cell.classList.add('selected-cell');
 	
 	// Update Formula Bar - Read from inner div
-	// Fix: Use textContent for div, and manage contenteditable instead of disabled
 	const cellContent = cell.querySelector('.content-cut').textContent;
 	const formulaInput = document.getElementById('formula-input');
 	formulaInput.textContent = cellContent;
@@ -143,7 +148,9 @@ function snapToCell (position, dimensionArray) {
 // --------------------------------------------------//
 // Update the selection rectangle based on start and end cells
 function updateSelection () {
-	document.querySelectorAll('.spreadsheet .area-selected-cell').forEach(el => el.classList.remove('area-selected-cell'));
+	// Optimization: Use getElementsByClassName for faster clearing
+	const areaSelected = document.getElementsByClassName('area-selected-cell');
+	while (areaSelected.length > 0) areaSelected[0].classList.remove('area-selected-cell');
 	
 	const helperDiv = document.getElementById('selection-helper');
 	const mergeBtn = document.getElementById('merge-btn');
@@ -172,7 +179,6 @@ function updateSelection () {
 	const tableRows = document.querySelectorAll('.spreadsheet tr');
 	
 	// Loop through relevant rows (adjusting for thead which is row 0)
-	// The logic assumes startRow/endRow are indices in the whole table
 	for (let i = startRow; i <= endRow; i++) {
 		const row = tableRows[i];
 		if (!row) continue;
@@ -183,7 +189,6 @@ function updateSelection () {
 	}
 	
 	// Disable formula bar if multiple cells are selected
-	// Fix: Use textContent and contenteditable
 	formulaInput.textContent = '';
 	formulaInput.setAttribute('contenteditable', 'false');
 	
