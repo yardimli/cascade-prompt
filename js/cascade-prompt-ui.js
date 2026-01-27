@@ -79,21 +79,17 @@ function makeCellEditable (cell) {
 	
 	// Get the inner content div
 	const contentDiv = cell.querySelector('.content-cut');
-	const currentText = contentDiv.textContent;
+	// Use innerHTML to preserve formatting
+	const currentHTML = contentDiv.innerHTML;
 	
 	// Get cell position relative to container
-	// In vanilla, we need offsetLeft/Top relative to the offsetParent (the table or container)
-	// However, the editor is absolute positioned.
 	const width = cell.offsetWidth;
 	const height = cell.offsetHeight;
 	
-	// Calculate position relative to the document or closest positioned ancestor
-	// Since #cell-editor is absolute, we need coordinates relative to its offset parent.
-	// Assuming .spreadsheet-container is relative/absolute, or we use offsets relative to the cell.
 	const cellLeft = cell.offsetLeft;
 	const cellTop = cell.offsetTop;
 	
-	// Setup the overlay textarea
+	// Setup the overlay editor (div contenteditable)
 	const editor = document.getElementById('cell-editor');
 	editor.style.top = cellTop + 'px';
 	editor.style.left = cellLeft + 'px';
@@ -103,8 +99,19 @@ function makeCellEditable (cell) {
 	editor.style.minHeight = height + 'px';
 	editor.style.display = 'block';
 	
+	// Copy computed styles from the content div to the editor
+	// This ensures font, alignment, color match exactly while editing
+	const computedStyle = window.getComputedStyle(contentDiv);
+	editor.style.textAlign = computedStyle.textAlign;
+	editor.style.fontWeight = computedStyle.fontWeight;
+	editor.style.fontStyle = computedStyle.fontStyle;
+	editor.style.color = computedStyle.color;
+	editor.style.fontSize = computedStyle.fontSize;
+	editor.style.fontFamily = computedStyle.fontFamily;
+	
 	// Load content and focus
-	editor.value = currentText;
+	editor.innerHTML = currentHTML;
+	editor.contentEditable = true;
 	editor.focus();
 	
 	// Hide the inner div content while editing so it doesn't duplicate visually
@@ -113,9 +120,6 @@ function makeCellEditable (cell) {
 	isEditing = true;
 	
 	// Auto-resize logic
-	// Remove old listener first to avoid duplicates (though typically we'd use a named function)
-	// Here we just overwrite the oninput property or add listener.
-	// Since we want to remove it later, a named handler is better, but for simplicity:
 	editor.oninput = function () {
 		this.style.height = 'auto';
 		this.style.width = 'auto';
@@ -147,27 +151,33 @@ function stopEditing () {
 	const editor = document.getElementById('cell-editor');
 	
 	if (editingCell) {
-		// Get value from textarea
-		const newValue = editor.value;
+		// Get value from editor div
+		const newHTML = editor.innerHTML;
 		
 		// Update the inner div
 		const contentDiv = editingCell.querySelector('.content-cut');
-		const oldValue = contentDiv.textContent;
+		const oldHTML = contentDiv.innerHTML;
 		
 		// Only save history if value changed
-		if (newValue !== oldValue) {
+		if (newHTML !== oldHTML) {
 			// Capture state BEFORE updating the DOM with new value
-			// This ensures Undo reverts to the old value
 			if (typeof HistoryManager !== 'undefined') {
 				HistoryManager.addState();
 			}
 		}
 		
-		contentDiv.textContent = newValue;
+		contentDiv.innerHTML = newHTML;
 		contentDiv.style.visibility = 'visible'; // Make visible again
 		
+		// Copy styles back from editor to contentDiv if they changed via toolbar
+		// (e.g. user clicked Bold while editing)
+		contentDiv.style.fontWeight = editor.style.fontWeight;
+		contentDiv.style.fontStyle = editor.style.fontStyle;
+		contentDiv.style.textAlign = editor.style.textAlign;
+		contentDiv.style.color = editor.style.color;
+		
 		// Reset and hide editor
-		editor.value = '';
+		editor.innerHTML = '';
 		editor.style.display = 'none';
 		editor.style.width = '';
 		editor.style.height = '';
@@ -551,6 +561,6 @@ document.addEventListener('DOMContentLoaded', function () {
 			}
 		}, { passive: false });
 	}, { passive: false });
-
-// --------------------------------------------------//
+	
+	// --------------------------------------------------//
 });

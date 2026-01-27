@@ -42,10 +42,11 @@ function highlightCell (cell) {
 	cell.classList.add('selected-cell');
 	
 	// Update Formula Bar - Read from inner div
+	// Fix: Use textContent for div, and manage contenteditable instead of disabled
 	const cellContent = cell.querySelector('.content-cut').textContent;
 	const formulaInput = document.getElementById('formula-input');
-	formulaInput.value = cellContent;
-	formulaInput.disabled = false;
+	formulaInput.textContent = cellContent;
+	formulaInput.setAttribute('contenteditable', 'true');
 	
 	scrollToViewWithOffsets(cell);
 	
@@ -182,8 +183,9 @@ function updateSelection () {
 	}
 	
 	// Disable formula bar if multiple cells are selected
-	formulaInput.value = '';
-	formulaInput.disabled = true;
+	// Fix: Use textContent and contenteditable
+	formulaInput.textContent = '';
+	formulaInput.setAttribute('contenteditable', 'false');
 	
 	// Calculate dimensions
 	const container = document.querySelector('.spreadsheet-container');
@@ -393,7 +395,8 @@ document.addEventListener('DOMContentLoaded', function () {
 	});
 	
 	formulaInput.addEventListener('input', function () {
-		const val = this.value;
+		// Fix: Use textContent for div
+		const val = this.textContent;
 		const selected = document.querySelector('.selected-cell');
 		const areaSelected = document.querySelector('.area-selected-cell');
 		
@@ -406,6 +409,7 @@ document.addEventListener('DOMContentLoaded', function () {
 	// Handle Enter in Formula Bar
 	formulaInput.addEventListener('keydown', function (e) {
 		if (e.key === 'Enter') {
+			e.preventDefault(); // Prevent newline in formula bar
 			formulaBarDirty = false; // Reset dirty flag on commit
 			const selected = document.querySelector('.selected-cell');
 			if (selected) {

@@ -30,8 +30,8 @@
 	
 	<!-- Scripts -->
 	<script src="js/cascade-prompt-data.js"></script>
-	<!-- Added History Manager -->
 	<script src="js/cascade-prompt-history.js"></script>
+	<script src="js/cascade-prompt-formatting.js"></script> <!-- Added Formatting Manager -->
 	<script src="js/cascade-prompt.js"></script>
 	<script src="js/cascade-prompt-keypress.js"></script>
 	<script src="js/cascade-prompt-ui.js"></script>
@@ -65,7 +65,6 @@
 	<div class="menu-item">
 		Edit
 		<div class="dropdown-content">
-			<!-- Updated Undo/Redo calls -->
 			<div class="menu-dropdown-item" onclick="HistoryManager.undo()">Undo <span class="shortcut-key">Ctrl+Z</span></div>
 			<div class="menu-dropdown-item" onclick="HistoryManager.redo()">Redo <span class="shortcut-key">Ctrl+Y</span></div>
 			<div class="dropdown-divider"></div>
@@ -99,31 +98,73 @@
 
 <!-- Toolbar -->
 <div class="toolbar-container">
-	<!-- Updated Undo/Redo buttons -->
 	<button type="button" class="btn btn-sm btn-outline-info" onclick="HistoryManager.undo()" title="Undo">
 		<i class="bi bi-arrow-counterclockwise"></i>
 	</button>
 	<button type="button" class="btn btn-sm btn-outline-info" onclick="HistoryManager.redo()" title="Redo">
 		<i class="bi bi-arrow-clockwise"></i>
 	</button>
-	<button type="button" class="btn btn-sm btn-outline-info">
+	
+	<div style="width: 1px; height: 20px; background: var(--border-color); margin: 0 5px;"></div>
+	
+	<!-- Text Formatting -->
+	<button type="button" class="btn btn-sm btn-outline-info" onclick="FormatManager.toggleStyle('bold')" title="Bold">
 		<i class="bi bi-type-bold"></i>
 	</button>
-	<button type="button" class="btn btn-sm btn-outline-info">
+	<button type="button" class="btn btn-sm btn-outline-info" onclick="FormatManager.toggleStyle('italic')" title="Italic">
 		<i class="bi bi-type-italic"></i>
 	</button>
-	<button type="button" class="btn btn-sm btn-outline-info">
-		<i class="bi bi-type-strikethrough"></i>
-	</button>
-	<button type="button" class="btn btn-sm btn-outline-info">
-		<i class="bi bi-paint-bucket"></i>
-	</button>
-	<button type="button" class="btn btn-sm btn-outline-info">
-		<i class="bi bi-grid"></i>
-	</button>
-	<button type="button" class="btn btn-sm btn-outline-info">
+	
+	<div style="width: 1px; height: 20px; background: var(--border-color); margin: 0 5px;"></div>
+	
+	<!-- Colors -->
+	<div style="position:relative; display:inline-block;">
+		<input type="color" id="text-color-picker" class="color-picker-input" onchange="FormatManager.setTextColor(this.value)">
+		<button type="button" class="btn btn-sm btn-outline-info" onclick="FormatManager.triggerColorPicker('text-color-picker')" title="Text Color">
+			<i class="bi bi-palette"></i>
+		</button>
+	</div>
+	<div style="position:relative; display:inline-block;">
+		<input type="color" id="bg-color-picker" class="color-picker-input" onchange="FormatManager.setBackgroundColor(this.value)">
+		<button type="button" class="btn btn-sm btn-outline-info" onclick="FormatManager.triggerColorPicker('bg-color-picker')" title="Fill Color">
+			<i class="bi bi-paint-bucket"></i>
+		</button>
+	</div>
+	
+	<!-- Borders -->
+	<div class="border-dropdown" id="border-dropdown">
+		<button type="button" class="btn btn-sm btn-outline-info" id="btn-borders" onclick="FormatManager.toggleBorderMenu()" title="Borders">
+			<i class="bi bi-border-all"></i>
+		</button>
+		<div class="border-dropdown-content">
+			<div class="border-option" onclick="FormatManager.setBorder('all')" title="All Borders"><i class="bi bi-border-all"></i></div>
+			<div class="border-option" onclick="FormatManager.setBorder('outer')" title="Outer Borders"><i class="bi bi-border-outer"></i></div>
+			<div class="border-option" onclick="FormatManager.setBorder('none')" title="No Borders"><i class="bi bi-border-none"></i></div>
+			<div class="border-option" onclick="FormatManager.setBorder('top')" title="Top Border"><i class="bi bi-border-top"></i></div>
+			<div class="border-option" onclick="FormatManager.setBorder('bottom')" title="Bottom Border"><i class="bi bi-border-bottom"></i></div>
+			<div class="border-option" onclick="FormatManager.setBorder('left')" title="Left Border"><i class="bi bi-border-left"></i></div>
+			<div class="border-option" onclick="FormatManager.setBorder('right')" title="Right Border"><i class="bi bi-border-right"></i></div>
+			<!-- Border Color Trigger -->
+			<div class="border-option" onclick="FormatManager.triggerColorPicker('border-color-picker')" title="Border Color"><i class="bi bi-palette2"></i></div>
+			<input type="color" id="border-color-picker" class="color-picker-input" onchange="FormatManager.setBorder('all', this.value)">
+		</div>
+	</div>
+	
+	<div style="width: 1px; height: 20px; background: var(--border-color); margin: 0 5px;"></div>
+	
+	<!-- Alignment -->
+	<button type="button" class="btn btn-sm btn-outline-info" onclick="FormatManager.setAlignment('left')" title="Align Left">
 		<i class="bi bi-justify-left"></i>
 	</button>
+	<button type="button" class="btn btn-sm btn-outline-info" onclick="FormatManager.setAlignment('center')" title="Align Center">
+		<i class="bi bi-text-center"></i>
+	</button>
+	<button type="button" class="btn btn-sm btn-outline-info" onclick="FormatManager.setAlignment('right')" title="Align Right">
+		<i class="bi bi-justify-right"></i>
+	</button>
+	
+	<div style="width: 1px; height: 20px; background: var(--border-color); margin: 0 5px;"></div>
+	
 	<button type="button" class="btn btn-sm btn-outline-info" id="merge-btn" title="Merge Cells" disabled>
 		<i class="bi bi-arrows-collapse"></i>
 	</button>
@@ -135,12 +176,13 @@
 <!-- Formula Bar -->
 <div class="formula-bar-container">
 	<div class="formula-icon">fx</div>
-	<input type="text" id="formula-input" class="formula-input" placeholder="Select a cell..." disabled>
+	<!-- Changed to div contenteditable to support rich text display if needed, though usually formula bars are plain text -->
+	<div id="formula-input" class="formula-input" contenteditable="false" placeholder="Select a cell..."></div>
 </div>
 
 <div class="spreadsheet-container" id="spreadsheet-container">
-	<!-- Overlay Textarea for Editing -->
-	<textarea id="cell-editor"></textarea>
+	<!-- Overlay Editor (Changed from textarea to div) -->
+	<div id="cell-editor" contenteditable="true"></div>
 	
 	<div id="selection-helper" class="no-select"></div>
 	<table class="spreadsheet no-select">

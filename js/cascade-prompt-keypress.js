@@ -4,39 +4,42 @@ document.addEventListener('DOMContentLoaded', function () {
 	const cellEditor = document.getElementById('cell-editor');
 	const formulaInput = document.getElementById('formula-input');
 	
-	// Listener for the overlay textarea
+	// Listener for the overlay editor (div contenteditable)
 	cellEditor.addEventListener('keydown', function (e) {
 		if (e.key === 'Enter') {
-			e.preventDefault(); // Prevent the default Enter behavior (newline)
-			e.stopPropagation();
-			console.log('Cell Editor Enter key pressed');
-			
-			// Identify the currently edited cell
-			const editingCell = document.querySelector('.edit-cell');
-			if (editingCell) {
-				const currentRow = editingCell.closest('tr');
-				const nextRow = currentRow ? currentRow.nextElementSibling : null; // Find the next row
+			if (!e.shiftKey) { // Allow Shift+Enter for new lines
+				e.preventDefault(); // Prevent default div behavior
+				e.stopPropagation();
+				console.log('Cell Editor Enter key pressed');
 				
-				stopEditing();
-				if (typeof saveState === 'function') saveState(); // Save on Enter
-				
-				// Find the cell directly below in the next row and start editing, if it exists
-				if (nextRow) {
-					const cellCol = parseInt(editingCell.getAttribute('data-col')); // Use data-col
-					const nextCell = nextRow.querySelector('td[data-col="' + cellCol + '"]');
-					if (nextCell) {
-						highlightCell(nextCell);
-						// makeCellEditable(nextCell); // Optional: Make the next cell editable immediately
+				// Identify the currently edited cell
+				const editingCell = document.querySelector('.edit-cell');
+				if (editingCell) {
+					const currentRow = editingCell.closest('tr');
+					const nextRow = currentRow ? currentRow.nextElementSibling : null; // Find the next row
+					
+					stopEditing();
+					if (typeof saveState === 'function') saveState(); // Save on Enter
+					
+					// Find the cell directly below in the next row and start editing, if it exists
+					if (nextRow) {
+						const cellCol = parseInt(editingCell.getAttribute('data-col')); // Use data-col
+						const nextCell = nextRow.querySelector('td[data-col="' + cellCol + '"]');
+						if (nextCell) {
+							highlightCell(nextCell);
+							// makeCellEditable(nextCell); // Optional: Make the next cell editable immediately
+						}
 					}
 				}
 			}
 		}
 	});
 	
-	// Sync typing in overlay textarea with formula bar
-	cellEditor.addEventListener('keyup', function () {
+	// Sync typing in overlay editor with formula bar
+	cellEditor.addEventListener('input', function () {
 		if (isEditing) {
-			formulaInput.value = this.value;
+			// For formula bar, we just show text content
+			formulaInput.textContent = this.textContent;
 		}
 	});
 	
@@ -53,6 +56,17 @@ document.addEventListener('DOMContentLoaded', function () {
 			if (e.key === 'y') {
 				e.preventDefault();
 				if (typeof HistoryManager !== 'undefined') HistoryManager.redo();
+				return;
+			}
+			// Formatting Shortcuts
+			if (e.key === 'b') {
+				e.preventDefault();
+				if (typeof FormatManager !== 'undefined') FormatManager.toggleStyle('bold');
+				return;
+			}
+			if (e.key === 'i') {
+				e.preventDefault();
+				if (typeof FormatManager !== 'undefined') FormatManager.toggleStyle('italic');
 				return;
 			}
 		}

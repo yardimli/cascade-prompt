@@ -147,21 +147,28 @@ body {
     border-radius: 4px 0 0 4px;
 }
 
+/* Updated Formula Input to support contenteditable behavior if needed, or just styling */
 .formula-input {
     flex-grow: 1;
     border: none;
     outline: none;
-    padding: 0 8px;
+    padding: 4px 8px; /* Adjusted padding */
     height: 100%;
     font-size: 14px;
     border-radius: 0 4px 4px 0;
     background-color: var(--bg-surface); /* Added */
     color: var(--text-main); /* Added */
+    white-space: nowrap;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
 }
 
-.formula-input:disabled {
+/* When disabled (simulated via pointer-events or class) */
+.formula-input[contenteditable="false"] {
     background-color: var(--bg-disabled); /* Updated */
     cursor: not-allowed;
+    color: var(--text-secondary);
 }
 
 .spreadsheet-container {
@@ -248,8 +255,10 @@ body {
     overflow: hidden;
     padding: 2px 5px;
     box-sizing: border-box;
-    white-space: normal;
+    white-space: pre-wrap; /* Changed from normal to pre-wrap to preserve spacing */
     display: block;
+    font-family: inherit;
+    font-size: inherit;
 }
 
 .letter-cell, .text-cell {
@@ -257,7 +266,7 @@ body {
     min-width: 200px;
 }
 
-/* Style for the overlay textarea */
+/* Style for the overlay editor (now a div) */
 #cell-editor {
     position: absolute;
     display: none;
@@ -274,6 +283,8 @@ body {
     box-sizing: border-box;
     min-width: 50px;
     min-height: 20px;
+    white-space: pre-wrap; /* Allow wrapping */
+    outline: none;
 }
 
 .edit-cell {
@@ -521,11 +532,66 @@ body {
     border-radius: 20px;
     padding: 5px 20px;
     border: 1px solid var(--border-light); /* Updated */
+    display: flex;
+    align-items: center;
+    gap: 5px;
 }
 
 /* Toolbar Icons */
 .toolbar-container i {
     color: var(--icon-color) !important; /* Added override for dark mode */
+}
+
+/* Color Picker Inputs (Hidden but clickable via label/button) */
+.color-picker-input {
+    width: 0;
+    height: 0;
+    opacity: 0;
+    position: absolute;
+    pointer-events: none;
+}
+
+/* Border Dropdown */
+.border-dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.border-dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: var(--bg-surface);
+    min-width: 120px;
+    box-shadow: 0 8px 24px var(--shadow-color);
+    z-index: 1002;
+    top: 100%;
+    left: 0;
+    border-radius: 4px;
+    padding: 5px;
+    border: 1px solid var(--border-light);
+    margin-top: 5px;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 5px;
+}
+
+.border-dropdown.active .border-dropdown-content {
+    display: grid;
+}
+
+.border-option {
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border-radius: 4px;
+    border: 1px solid transparent;
+}
+
+.border-option:hover {
+    background-color: var(--bg-hover);
+    border-color: var(--border-light);
 }
 
 /* Project List in Modal */

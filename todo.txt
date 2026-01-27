@@ -22,20 +22,22 @@ DONE:
 
 - implement undo/redo functionality for cell edits, merges/unmerges, row/column resizing, and sheet changes. maintain a history stack to track changes and allow users to revert or reapply actions. create a new history javascript file to manage this functionality.
 
-TODO:
-
 - allow user to drag the selected cells to a new location. merged cells should be moved as a whole. overwrite any existing cells in the target location. clear the original cells after the move.
 
+TODO:
 
 - make html formatting buttons work.
 - add cell border, color and background color options in the top menu for better cell customization, apply to cursor or selected cells.
 
 - add copy/paste functionality for cells and ranges of cells using keyboard shortcuts (Ctrl+C, Ctrl+V). ensure that formatting and merged cell states are preserved during copy/paste operations.
 
+- add button to toolbar to create a =llm() formula, it should open a dialog where user can input prompt (textarea) select language model to use. in the prompt user can use #A-17 to reference other cells which will be replaced with the content of the cell when sending the prompt to the llm.
+add textarea where user inputs json structure of results expect (as a table key: value pairs) so the response can be parsed correctly.
+add cell coordinates where result should be inserted.
+the json should be parsed an inserted into the specified area as rows and columns.
 
 --------- BUGS:
 
-row heights keep increase on reload of the page when navigating between sheet on each refresh
 when merging cells row height resize acts weirdly for the rows that intersect with merged cells
 when unmerging cells the new cells are not editable until page refresh
 new sheets row heights are different than the first sheet, should have some default height

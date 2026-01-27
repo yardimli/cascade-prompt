@@ -123,20 +123,42 @@ var SheetDataManager = {
 		const textCells = document.querySelectorAll('.spreadsheet .text-cell');
 		textCells.forEach(cell => {
 			const contentDiv = cell.querySelector('.content-cut');
-			const text = contentDiv ? contentDiv.textContent : '';
+			// Use innerHTML to capture rich text (bold, italic, etc. inside text)
+			const html = contentDiv ? contentDiv.innerHTML : '';
 			const rowspan = parseInt(cell.getAttribute('rowspan')) || 1;
 			const colspan = parseInt(cell.getAttribute('colspan')) || 1;
 			
-			if (text || rowspan > 1 || colspan > 1) {
+			// Capture Styles
+			const style = {};
+			if (contentDiv && contentDiv.style.cssText) {
+				style.cssText = contentDiv.style.cssText;
+			}
+			// Capture Cell Background and Borders (applied to TD)
+			const cellStyle = {};
+			if (cell.style.backgroundColor) cellStyle.backgroundColor = cell.style.backgroundColor;
+			if (cell.style.border) cellStyle.border = cell.style.border;
+			if (cell.style.borderLeft) cellStyle.borderLeft = cell.style.borderLeft;
+			if (cell.style.borderRight) cellStyle.borderRight = cell.style.borderRight;
+			if (cell.style.borderTop) cellStyle.borderTop = cell.style.borderTop;
+			if (cell.style.borderBottom) cellStyle.borderBottom = cell.style.borderBottom;
+			
+			// Check if cell has content or non-default attributes
+			const hasContent = (contentDiv && contentDiv.textContent.trim() !== '') || html !== '';
+			const hasStyle = Object.keys(style).length > 0 || Object.keys(cellStyle).length > 0;
+			
+			if (hasContent || rowspan > 1 || colspan > 1 || hasStyle) {
 				const row = cell.parentElement;
 				const tbody = row.parentElement;
 				const rowIndex = Array.from(tbody.children).indexOf(row);
 				const colIndex = parseInt(cell.getAttribute('data-col'));
 				
 				cells[rowIndex + '-' + colIndex] = {
-					text: text,
+					html: html, // Store HTML for rich text
+					text: contentDiv ? contentDiv.textContent : '', // Fallback/Search
 					rowspan: rowspan,
-					colspan: colspan
+					colspan: colspan,
+					style: style, // Content styles
+					cellStyle: cellStyle // Container styles
 				};
 			}
 		});
@@ -214,8 +236,8 @@ var SheetDataManager = {
 		if (typeof updateSelection === 'function') updateSelection();
 		
 		const formulaInput = document.getElementById('formula-input');
-		formulaInput.value = '';
-		formulaInput.disabled = true;
+		formulaInput.textContent = ''; // Use textContent for div
+		formulaInput.setAttribute('contenteditable', 'false'); // Disable initially
 		
 		const table = document.querySelector('.spreadsheet');
 		const thead = table.querySelector('thead');
@@ -275,7 +297,23 @@ var SheetDataManager = {
 				let cellWidth = sheet.colWidths[c] || this.defaults.defaultColWidth;
 				
 				if (cellData) {
-					content.textContent = cellData.text || '';
+					// Restore HTML content if available, else text
+					content.innerHTML = cellData.html || cellData.text || '';
+					
+					// Restore Content Styles
+					if (cellData.style && cellData.style.cssText) {
+						content.style.cssText = cellData.style.cssText;
+					}
+					
+					// Restore Cell Styles (Background, Borders)
+					if (cellData.cellStyle) {
+						if (cellData.cellStyle.backgroundColor) td.style.backgroundColor = cellData.cellStyle.backgroundColor;
+						if (cellData.cellStyle.border) td.style.border = cellData.cellStyle.border;
+						if (cellData.cellStyle.borderLeft) td.style.borderLeft = cellData.cellStyle.borderLeft;
+						if (cellData.cellStyle.borderRight) td.style.borderRight = cellData.cellStyle.borderRight;
+						if (cellData.cellStyle.borderTop) td.style.borderTop = cellData.cellStyle.borderTop;
+						if (cellData.cellStyle.borderBottom) td.style.borderBottom = cellData.cellStyle.borderBottom;
+					}
 					
 					if (cellData.rowspan > 1) td.setAttribute('rowspan', cellData.rowspan);
 					if (cellData.colspan > 1) td.setAttribute('colspan', cellData.colspan);
