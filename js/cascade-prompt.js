@@ -50,8 +50,19 @@ function highlightCell (cell) {
 	// Update Formula Bar - Read from inner div
 	const cellContent = cell.querySelector('.content-cut').textContent;
 	const formulaInput = document.getElementById('formula-input');
-	formulaInput.textContent = cellContent;
-	formulaInput.setAttribute('contenteditable', 'true');
+	
+	// --- NEW: Check for LLM Data to display special formula text ---
+	const sheet = SheetDataManager.data.sheets[SheetDataManager.data.activeSheetIndex];
+	const key = rowIndex + '-' + cellIndex;
+	if (sheet.cells[key] && sheet.cells[key].llm) {
+		const funcName = sheet.cells[key].llm.funcName || 'Run LLM';
+		formulaInput.textContent = `=LLM("${funcName}")`;
+		// Make it read-only for direct editing, force click to open dialog
+		formulaInput.setAttribute('contenteditable', 'false');
+	} else {
+		formulaInput.textContent = cellContent;
+		formulaInput.setAttribute('contenteditable', 'true');
+	}
 	
 	scrollToViewWithOffsets(cell);
 	
@@ -430,6 +441,14 @@ document.addEventListener('DOMContentLoaded', function () {
 					}
 				}
 			}
+		}
+	});
+	
+	// --- NEW: Handle Click on Formula Bar to open LLM Dialog ---
+	formulaInput.addEventListener('click', function () {
+		const text = this.textContent;
+		if (text.startsWith('=LLM(')) {
+			LLMManager.openFormulaBuilder();
 		}
 	});
 	

@@ -7,7 +7,10 @@
 var SheetDataManager = {
 	data: {
 		activeSheetIndex: 0,
-		sheets: []
+		sheets: [],
+		llmSettings: {
+			apiKey: '' // Store OpenRouter API Key here
+		}
 	},
 	
 	currentFileName: null, // Tracks the currently open file
@@ -154,21 +157,25 @@ var SheetDataManager = {
 				// --- Data Extraction ---
 				const html = contentDiv.innerHTML;
 				// Updated: Check innerText specifically as requested
-				const text = contentDiv.innerText.trim();
+				// Note: We need to be careful not to save the LLM button HTML as text content
+				// So we clone the node, remove the button, then get text
+				let text = '';
+				if (contentDiv.querySelector('.llm-run-btn')) {
+					const clone = contentDiv.cloneNode(true);
+					const btn = clone.querySelector('.llm-run-btn');
+					if (btn) btn.remove();
+					text = clone.innerText.trim();
+				} else {
+					text = contentDiv.innerText.trim();
+				}
+				
 				const rowspan = parseInt(cell.getAttribute('rowspan')) || 1;
 				const colspan = parseInt(cell.getAttribute('colspan')) || 1;
 				
 				// --- Style Extraction ---
 				const style = {};
-				// Only capture inline styles on the content div (e.g., bold, italic, color)
-				// We ignore width/height here because they are calculated on render
 				if (contentDiv.style.cssText) {
-					// Filter out width and height from cssText to avoid saving redundancy
-					// unless they are specifically set for rich text reasons, but usually
-					// the grid layout handles dimensions.
-					// For simplicity, we save cssText if it exists and isn't just width/height.
 					if (contentDiv.style.length > 0) {
-						// Check if it has styles other than width/height
 						let hasMeaningfulStyle = false;
 						for (let i = 0; i < contentDiv.style.length; i++) {
 							const prop = contentDiv.style[i];
@@ -192,20 +199,34 @@ var SheetDataManager = {
 				if (cell.style.borderTop) cellStyle.borderTop = cell.style.borderTop;
 				if (cell.style.borderBottom) cellStyle.borderBottom = cell.style.borderBottom;
 				
+				// --- LLM Config Extraction ---
+				// We store the LLM config in a data attribute on the cell or retrieve it from memory
+				// Since DOM scraping is destructive to memory objects if not careful, we rely on the
+				// existing sheetObj.cells if the DOM doesn't have the data attribute explicitly.
+				// However, the best way is to check if we have an existing memory object for this cell
+				// and preserve the 'llm' property.
+				let llmConfig = null;
+				const existingKey = r + '-' + colIndex;
+				if (sheetObj.cells[existingKey] && sheetObj.cells[existingKey].llm) {
+					llmConfig = sheetObj.cells[existingKey].llm;
+				}
+				
 				// --- Logic Update: Only save if meaningful data exists ---
 				const hasContent = (text !== ''); // Strict check on text content
 				const hasHtmlContent = (html !== '' && html !== '<br>' && html !== '<div></div>'); // Fallback for images/rich text
 				const hasStyle = Object.keys(style).length > 0 || Object.keys(cellStyle).length > 0;
 				const isMerged = rowspan > 1 || colspan > 1;
+				const hasLLM = llmConfig !== null;
 				
-				if (hasContent || hasHtmlContent || isMerged || hasStyle) {
+				if (hasContent || hasHtmlContent || isMerged || hasStyle || hasLLM) {
 					cells[r + '-' + colIndex] = {
-						html: html,
+						html: html, // Note: This might include the button HTML, but renderSheet cleans it up
 						text: text,
 						rowspan: rowspan,
 						colspan: colspan,
 						style: style,
-						cellStyle: cellStyle
+						cellStyle: cellStyle,
+						llm: llmConfig // Persist LLM config
 					};
 				}
 			}
@@ -373,7 +394,19 @@ var SheetDataManager = {
 						contentStyle += cellData.style.cssText;
 					}
 					
-					const content = cellData.html || cellData.text || '';
+					// Clean content (remove old buttons if saved in HTML)
+					let content = cellData.html || cellData.text || '';
+					// Simple regex to strip the button if it was accidentally saved in HTML
+					content = content.replace(/<button class="llm-run-btn".*?<\/button>/g, '');
+					
+					// Add LLM Button if config exists
+					if (cellData.llm) {
+						// NEW: Use Function Name from config, or default
+						const btnText = cellData.llm.funcName || 'Run LLM';
+						// NEW: Changed to ondblclick
+						content += `<button class="llm-run-btn" contenteditable="false" ondblclick="LLMManager.executeLLM(${r}, ${c}, event)" title="Double-click to Run LLM Formula">${btnText}</button>`;
+					}
+					
 					cellHTML = `<div class="content-cut" style="${contentStyle}">${content}</div>`;
 				} else {
 					// Empty Cell
@@ -628,6 +661,11 @@ var SheetDataManager = {
 			.then(data => {
 				if (data.success) {
 					this.data = data.data;
+					// Ensure llmSettings exists for older projects
+					if (!this.data.llmSettings) {
+						this.data.llmSettings = { apiKey: '' };
+					}
+					
 					this.currentFileName = filename;
 					localStorage.setItem('lastOpenedFile', filename);
 					document.title = filename + ' - Cascade Prompt';
@@ -685,7 +723,8 @@ var SheetDataManager = {
 		if (confirm('Create new project? Unsaved changes will be lost.')) {
 			this.data = {
 				activeSheetIndex: 0,
-				sheets: []
+				sheets: [],
+				llmSettings: { apiKey: '' }
 			};
 			this.currentFileName = null;
 			localStorage.removeItem('lastOpenedFile');

@@ -43,8 +43,17 @@ the json structure should be added to the prompt so the llm knows what to respon
 add cell coordinates where result should be inserted.
 the json should be parsed an inserted into the specified area as rows and columns.
 add a button to the cell when user clicks on the button the llm formula is exectued and the result is inserted into the sheet.
+- the llm functions should be a new javascript file.
+
+- add dropdown option to the sheet with formula (=dropdown("options","selection")) that allows user to create a dropdown in the cell with specified options and save the selected option in the cell data.
 
 - add sheet properties dialog where user can set number of rows and columns, default row height and column width, gridline visibility, etc.
+
+- add fal.ai api key to the llm settings dialog.
+- allow user to create =imagegen() formula that uses fal.ai to generate images based on a prompt from the sheet cell content.
+- allow user to add image to a cell from local file or url. images should resize to fit the cell but keep aspect ratio.
+- make the llm call support image inputs so user can reference images in the sheet when using llm formula. images should be added in a new input type where user enters comma seperated list of sheet cell coordinates that contain images. the images are uploaded are added as base64 data urls to the llm request.
+
 
 --------- BUGS:
 

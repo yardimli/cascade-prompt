@@ -32,7 +32,8 @@
 	<script src="js/cascade-prompt-data.js"></script>
 	<script src="js/cascade-prompt-history.js"></script>
 	<script src="js/cascade-prompt-formatting.js"></script>
-	<script src="js/cascade-prompt-clipboard.js"></script> <!-- Added Clipboard Manager -->
+	<script src="js/cascade-prompt-clipboard.js"></script>
+	<script src="js/cascade-prompt-llm.js"></script> <!-- Added LLM Manager -->
 	<script src="js/cascade-prompt.js"></script>
 	<script src="js/cascade-prompt-keypress.js"></script>
 	<script src="js/cascade-prompt-ui.js"></script>
@@ -58,6 +59,8 @@
 			<div class="menu-dropdown-item" onclick="performSave()">Save <span class="shortcut-key">Ctrl+S</span></div>
 			<div class="menu-dropdown-item" onclick="openProjectModal('save-as')">Save As...</div>
 			<div class="dropdown-divider"></div>
+			<div class="menu-dropdown-item" onclick="LLMManager.openSettings()">LLM Settings...</div>
+			<div class="dropdown-divider"></div>
 			<div class="menu-dropdown-item" onclick="window.print()">Print <span class="shortcut-key">Ctrl+P</span></div>
 		</div>
 	</div>
@@ -69,10 +72,11 @@
 			<div class="menu-dropdown-item" onclick="HistoryManager.undo()">Undo <span class="shortcut-key">Ctrl+Z</span></div>
 			<div class="menu-dropdown-item" onclick="HistoryManager.redo()">Redo <span class="shortcut-key">Ctrl+Y</span></div>
 			<div class="dropdown-divider"></div>
-			<!-- Updated Clipboard Actions -->
 			<div class="menu-dropdown-item" onclick="ClipboardManager.cut()">Cut <span class="shortcut-key">Ctrl+X</span></div>
 			<div class="menu-dropdown-item" onclick="ClipboardManager.copy(false)">Copy <span class="shortcut-key">Ctrl+C</span></div>
 			<div class="menu-dropdown-item" onclick="ClipboardManager.paste()">Paste <span class="shortcut-key">Ctrl+V</span></div>
+			<div class="dropdown-divider"></div>
+			<div class="menu-dropdown-item" onclick="LLMManager.openFormulaBuilder()">Insert LLM Formula</div>
 		</div>
 	</div>
 	
@@ -109,7 +113,7 @@
 	
 	<div style="width: 1px; height: 20px; background: var(--border-color); margin: 0 5px;"></div>
 	
-	<!-- Clipboard Toolbar Buttons (New) -->
+	<!-- Clipboard Toolbar Buttons -->
 	<button type="button" class="btn btn-sm btn-outline-info" onclick="ClipboardManager.cut()" title="Cut (Ctrl+X)">
 		<i class="bi bi-scissors"></i>
 	</button>
@@ -186,17 +190,23 @@
 	<button type="button" class="btn btn-sm btn-outline-info" id="unmerge-btn" title="Unmerge Cells" disabled>
 		<i class="bi bi-arrows-expand"></i>
 	</button>
+	
+	<div style="width: 1px; height: 20px; background: var(--border-color); margin: 0 5px;"></div>
+	
+	<!-- LLM Button -->
+	<button type="button" class="btn btn-sm btn-outline-primary" onclick="LLMManager.openFormulaBuilder()" title="Insert LLM Formula">
+		<i class="bi bi-robot"></i> LLM
+	</button>
 </div>
 
 <!-- Formula Bar -->
 <div class="formula-bar-container">
 	<div class="formula-icon">fx</div>
-	<!-- Changed to div contenteditable to support rich text display if needed, though usually formula bars are plain text -->
 	<div id="formula-input" class="formula-input" contenteditable="false" placeholder="Select a cell..."></div>
 </div>
 
 <div class="spreadsheet-container" id="spreadsheet-container">
-	<!-- Overlay Editor (Changed from textarea to div) -->
+	<!-- Overlay Editor -->
 	<div id="cell-editor" contenteditable="true"></div>
 	
 	<div id="selection-helper" class="no-select"></div>
@@ -245,6 +255,11 @@
 			<span id="status-file">Untitled</span>
 			<span id="status-modified" style="display:none; margin-left:2px;">*</span>
 		</div>
+		<!-- NEW: LLM Status Indicator -->
+		<div class="status-item" id="status-llm-busy" style="display:none; color: var(--accent-color); align-items: center;">
+			<div class="llm-spinner" style="border-top-color: var(--accent-color); border-color: rgba(128,128,128,0.3); width: 12px; height: 12px; margin-right: 5px; border-width: 2px;"></div>
+			<span id="status-llm-text">Processing...</span>
+		</div>
 	</div>
 	<div class="status-right">
 		<span style="font-size: 10px; color: #999;">Ready</span>
@@ -286,6 +301,85 @@
 			<div class="modal-footer">
 				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
 				<button type="button" class="btn btn-primary" id="modal-action-btn">Save</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- LLM Settings Modal -->
+<div class="modal fade" id="llmSettingsModal" tabindex="-1" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title">LLM Settings</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body">
+				<div class="mb-3">
+					<label for="llm-api-key" class="form-label">OpenRouter API Key:</label>
+					<input type="password" class="form-control" id="llm-api-key" placeholder="sk-or-...">
+					<div class="form-text">Your key is saved within the project file.</div>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+				<button type="button" class="btn btn-primary" onclick="LLMManager.saveSettings()">Save Settings</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- LLM Formula Builder Modal -->
+<div class="modal fade" id="llmFormulaModal" tabindex="-1" aria-hidden="true">
+	<div class="modal-dialog modal-lg">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title">Insert LLM Formula</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body">
+				<div class="row">
+					<div class="col-md-6 mb-3">
+						<label for="llm-model-select" class="form-label">Model:</label>
+						<div class="input-group">
+							<select class="form-select" id="llm-model-select">
+								<option value="">Select a model...</option>
+							</select>
+							<button class="btn btn-outline-secondary" type="button" id="refresh-models-btn" onclick="LLMManager.fetchModels()" title="Refresh Models">
+								<i class="bi bi-arrow-clockwise"></i>
+							</button>
+						</div>
+					</div>
+					<div class="col-md-6 mb-3">
+						<label for="llm-target-cell" class="form-label">Target Cell (Output):</label>
+						<input type="text" class="form-control" id="llm-target-cell" placeholder="e.g. A1">
+						<div class="form-text">Where the data will be inserted.</div>
+					</div>
+				</div>
+				
+				<!-- NEW: Function Name Input -->
+				<div class="mb-3">
+					<label for="llm-func-name" class="form-label">Function Name (Button Text):</label>
+					<input type="text" class="form-control" id="llm-func-name" placeholder="Run LLM">
+				</div>
+				
+				<div class="mb-3">
+					<label for="llm-prompt" class="form-label">Prompt:</label>
+					<textarea class="form-control" id="llm-prompt" rows="4" placeholder="Describe what you want. Use #A-17 to reference cell A17."></textarea>
+					<div class="form-text">Use #Column-Row (e.g., #A-1) to insert cell data.</div>
+				</div>
+				
+				<div class="mb-3">
+					<label for="llm-json-schema" class="form-label">Expected JSON Structure:</label>
+					<textarea class="form-control" id="llm-json-schema" rows="4" style="font-family: monospace; font-size: 12px;">{
+  "Key": "Value"
+}</textarea>
+					<div class="form-text">Define the JSON keys you expect. The result will be parsed into the sheet.</div>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+				<button type="button" class="btn btn-primary" onclick="LLMManager.insertFormula()">Insert Formula</button>
 			</div>
 		</div>
 	</div>

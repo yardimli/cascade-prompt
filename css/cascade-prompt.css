@@ -695,3 +695,53 @@ body {
     background-color: var(--bg-app);
     color: var(--text-main);
 }
+
+/* -------------------------------------------------- /
+/ LLM Features Styles /
+/ -------------------------------------------------- */
+.llm-run-btn {
+    display: inline-block;
+    margin-left: 5px;
+    padding: 2px 6px;
+    font-size: 10px;
+    background-color: var(--accent-color);
+    color: var(--text-inverse);
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    vertical-align: middle;
+    user-select: none;
+    z-index: 5;
+    position: relative;
+}
+.llm-run-btn:hover {
+    background-color: var(--accent-hover);
+    color: var(--text-main);
+}
+.llm-run-btn i {
+    pointer-events: none;
+}
+/* Spinner for LLM loading */
+.llm-spinner {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-radius: 50%;
+    border-top-color: #fff;
+    animation: spin 1s ease-in-out infinite;
+}
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+/* Modal specific tweaks */
+#llm-models-list {
+    max-height: 200px;
+    overflow-y: auto;
+}
+.llm-variable-highlight {
+    background-color: rgba(255, 255, 0, 0.2);
+    font-weight: bold;
+    padding: 0 2px;
+    border-radius: 2px;
+}

@@ -46,6 +46,11 @@ document.addEventListener('DOMContentLoaded', function () {
 	// --------------------------------------------------//
 	
 	document.addEventListener('keydown', function (e) {
+		// --- NEW: Disable keypress if a modal is open ---
+		if (document.body.classList.contains('modal-open')) {
+			return;
+		}
+		
 		// Handle Shortcuts (Ctrl or Cmd)
 		if ((e.ctrlKey || e.metaKey) && !isEditing) {
 			
