@@ -27,14 +27,24 @@ DONE:
 - make html formatting buttons work.
 - add cell border, color and background color options in the top menu for better cell customization, apply to cursor or selected cells.
 
+- improve rendering and performance for ui and file operations.
+
+- add copy/paste functionality for cells and ranges of cells using keyboard shortcuts (Ctrl+C, Ctrl+V). ensure that formatting and merged cell states are preserved during copy/paste operations. add copy, paste, cut buttons to the top toolbar and make the menu items in the edit menu functional.
+
 TODO:
 
-- add copy/paste functionality for cells and ranges of cells using keyboard shortcuts (Ctrl+C, Ctrl+V). ensure that formatting and merged cell states are preserved during copy/paste operations.
 
-- add button to toolbar to create a =llm() formula, it should open a dialog where user can input prompt (textarea) select language model to use. in the prompt user can use #A-17 to reference other cells which will be replaced with the content of the cell when sending the prompt to the llm.
-add textarea where user inputs json structure of results expect (as a table key: value pairs) so the response can be parsed correctly.
+- add project llm settings dialog where user can input openrouter api key. it should be saved in the project json file. add menu item to the file menu to open the dialog.
+
+- add button to toolbar and file menu item to create a =llm() formula, it should open a dialog where user can input prompt (textarea) select language model to use (add refresh button besides the llm model dropdown to get all models from openrouter, save model list to localstorage).
+In the prompt user can use #A-17 to reference other cells which will be replaced with the content of the cell when sending the prompt to the llm.
+Add textarea where user inputs json structure of results expect (as a table key: value pairs) so the response can be parsed correctly.
+the json structure should be added to the prompt so the llm knows what to respond with.
 add cell coordinates where result should be inserted.
 the json should be parsed an inserted into the specified area as rows and columns.
+add a button to the cell when user clicks on the button the llm formula is exectued and the result is inserted into the sheet.
+
+- add sheet properties dialog where user can set number of rows and columns, default row height and column width, gridline visibility, etc.
 
 --------- BUGS:
 

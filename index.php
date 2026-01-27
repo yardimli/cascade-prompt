@@ -31,7 +31,8 @@
 	<!-- Scripts -->
 	<script src="js/cascade-prompt-data.js"></script>
 	<script src="js/cascade-prompt-history.js"></script>
-	<script src="js/cascade-prompt-formatting.js"></script> <!-- Added Formatting Manager -->
+	<script src="js/cascade-prompt-formatting.js"></script>
+	<script src="js/cascade-prompt-clipboard.js"></script> <!-- Added Clipboard Manager -->
 	<script src="js/cascade-prompt.js"></script>
 	<script src="js/cascade-prompt-keypress.js"></script>
 	<script src="js/cascade-prompt-ui.js"></script>
@@ -68,9 +69,10 @@
 			<div class="menu-dropdown-item" onclick="HistoryManager.undo()">Undo <span class="shortcut-key">Ctrl+Z</span></div>
 			<div class="menu-dropdown-item" onclick="HistoryManager.redo()">Redo <span class="shortcut-key">Ctrl+Y</span></div>
 			<div class="dropdown-divider"></div>
-			<div class="menu-dropdown-item" onclick="document.execCommand('cut')">Cut <span class="shortcut-key">Ctrl+X</span></div>
-			<div class="menu-dropdown-item" onclick="document.execCommand('copy')">Copy <span class="shortcut-key">Ctrl+C</span></div>
-			<div class="menu-dropdown-item" onclick="document.execCommand('paste')">Paste <span class="shortcut-key">Ctrl+V</span></div>
+			<!-- Updated Clipboard Actions -->
+			<div class="menu-dropdown-item" onclick="ClipboardManager.cut()">Cut <span class="shortcut-key">Ctrl+X</span></div>
+			<div class="menu-dropdown-item" onclick="ClipboardManager.copy(false)">Copy <span class="shortcut-key">Ctrl+C</span></div>
+			<div class="menu-dropdown-item" onclick="ClipboardManager.paste()">Paste <span class="shortcut-key">Ctrl+V</span></div>
 		</div>
 	</div>
 	
@@ -103,6 +105,19 @@
 	</button>
 	<button type="button" class="btn btn-sm btn-outline-info" onclick="HistoryManager.redo()" title="Redo">
 		<i class="bi bi-arrow-clockwise"></i>
+	</button>
+	
+	<div style="width: 1px; height: 20px; background: var(--border-color); margin: 0 5px;"></div>
+	
+	<!-- Clipboard Toolbar Buttons (New) -->
+	<button type="button" class="btn btn-sm btn-outline-info" onclick="ClipboardManager.cut()" title="Cut (Ctrl+X)">
+		<i class="bi bi-scissors"></i>
+	</button>
+	<button type="button" class="btn btn-sm btn-outline-info" onclick="ClipboardManager.copy(false)" title="Copy (Ctrl+C)">
+		<i class="bi bi-files"></i>
+	</button>
+	<button type="button" class="btn btn-sm btn-outline-info" onclick="ClipboardManager.paste()" title="Paste (Ctrl+V)">
+		<i class="bi bi-clipboard"></i>
 	</button>
 	
 	<div style="width: 1px; height: 20px; background: var(--border-color); margin: 0 5px;"></div>

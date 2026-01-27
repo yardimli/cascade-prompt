@@ -46,8 +46,10 @@ document.addEventListener('DOMContentLoaded', function () {
 	// --------------------------------------------------//
 	
 	document.addEventListener('keydown', function (e) {
-		// Handle Undo/Redo Shortcuts
+		// Handle Shortcuts (Ctrl or Cmd)
 		if ((e.ctrlKey || e.metaKey) && !isEditing) {
+			
+			// Undo / Redo
 			if (e.key === 'z') {
 				e.preventDefault();
 				if (typeof HistoryManager !== 'undefined') HistoryManager.undo();
@@ -58,6 +60,7 @@ document.addEventListener('DOMContentLoaded', function () {
 				if (typeof HistoryManager !== 'undefined') HistoryManager.redo();
 				return;
 			}
+			
 			// Formatting Shortcuts
 			if (e.key === 'b') {
 				e.preventDefault();
@@ -67,6 +70,25 @@ document.addEventListener('DOMContentLoaded', function () {
 			if (e.key === 'i') {
 				e.preventDefault();
 				if (typeof FormatManager !== 'undefined') FormatManager.toggleStyle('italic');
+				return;
+			}
+			
+			// Clipboard Shortcuts (New)
+			if (e.key === 'c') {
+				// Don't prevent default immediately if we want system clipboard to work natively,
+				// but we are handling it manually in ClipboardManager for rich data.
+				e.preventDefault();
+				if (typeof ClipboardManager !== 'undefined') ClipboardManager.copy(false);
+				return;
+			}
+			if (e.key === 'x') {
+				e.preventDefault();
+				if (typeof ClipboardManager !== 'undefined') ClipboardManager.cut();
+				return;
+			}
+			if (e.key === 'v') {
+				e.preventDefault();
+				if (typeof ClipboardManager !== 'undefined') ClipboardManager.paste();
 				return;
 			}
 		}
