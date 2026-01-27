@@ -1,6 +1,7 @@
 /**
  * Cascade Prompt Data Manager
  * Handles data structure, persistence (PHP Backend), and DOM rendering.
+ * Updated to StandardJS formatting with semicolons.
  */
 
 var SheetDataManager = {
@@ -115,7 +116,8 @@ var SheetDataManager = {
 	
 	/**
 	 * Helper to scrape DOM
-	 * Optimized for performance
+	 * Optimized for performance and sparse data saving.
+	 * Only saves cells with actual data or formatting.
 	 */
 	collectDOMData: function (sheetObj) {
 		const cells = {};
@@ -149,20 +151,40 @@ var SheetDataManager = {
 				const contentDiv = cell.querySelector('.content-cut');
 				if (!contentDiv) continue;
 				
+				// --- Data Extraction ---
 				const html = contentDiv.innerHTML;
-				const text = contentDiv.textContent;
+				// Updated: Check innerText specifically as requested
+				const text = contentDiv.innerText.trim();
 				const rowspan = parseInt(cell.getAttribute('rowspan')) || 1;
 				const colspan = parseInt(cell.getAttribute('colspan')) || 1;
 				
-				// Capture Styles
+				// --- Style Extraction ---
 				const style = {};
+				// Only capture inline styles on the content div (e.g., bold, italic, color)
+				// We ignore width/height here because they are calculated on render
 				if (contentDiv.style.cssText) {
-					style.cssText = contentDiv.style.cssText;
+					// Filter out width and height from cssText to avoid saving redundancy
+					// unless they are specifically set for rich text reasons, but usually
+					// the grid layout handles dimensions.
+					// For simplicity, we save cssText if it exists and isn't just width/height.
+					if (contentDiv.style.length > 0) {
+						// Check if it has styles other than width/height
+						let hasMeaningfulStyle = false;
+						for (let i = 0; i < contentDiv.style.length; i++) {
+							const prop = contentDiv.style[i];
+							if (prop !== 'width' && prop !== 'height') {
+								hasMeaningfulStyle = true;
+								break;
+							}
+						}
+						if (hasMeaningfulStyle) {
+							style.cssText = contentDiv.style.cssText;
+						}
+					}
 				}
 				
-				// Capture Cell Background and Borders
+				// Capture Cell Background and Borders (applied to TD)
 				const cellStyle = {};
-				// Check inline styles only
 				if (cell.style.backgroundColor) cellStyle.backgroundColor = cell.style.backgroundColor;
 				if (cell.style.border) cellStyle.border = cell.style.border;
 				if (cell.style.borderLeft) cellStyle.borderLeft = cell.style.borderLeft;
@@ -170,10 +192,13 @@ var SheetDataManager = {
 				if (cell.style.borderTop) cellStyle.borderTop = cell.style.borderTop;
 				if (cell.style.borderBottom) cellStyle.borderBottom = cell.style.borderBottom;
 				
-				const hasContent = (text.trim() !== '') || (html !== '' && html !== '<br>');
+				// --- Logic Update: Only save if meaningful data exists ---
+				const hasContent = (text !== ''); // Strict check on text content
+				const hasHtmlContent = (html !== '' && html !== '<br>' && html !== '<div></div>'); // Fallback for images/rich text
 				const hasStyle = Object.keys(style).length > 0 || Object.keys(cellStyle).length > 0;
+				const isMerged = rowspan > 1 || colspan > 1;
 				
-				if (hasContent || rowspan > 1 || colspan > 1 || hasStyle) {
+				if (hasContent || hasHtmlContent || isMerged || hasStyle) {
 					cells[r + '-' + colIndex] = {
 						html: html,
 						text: text,
@@ -242,8 +267,8 @@ var SheetDataManager = {
 	 * Optimized: Uses HTML String Concatenation instead of individual DOM insertions.
 	 */
 	renderSheet: function (index) {
-		//console log start time
-		let startTime = performance.now();
+		// console log start time
+		const startTime = performance.now();
 		const sheet = this.data.sheets[index];
 		if (!sheet) return;
 		
@@ -350,7 +375,6 @@ var SheetDataManager = {
 					
 					const content = cellData.html || cellData.text || '';
 					cellHTML = `<div class="content-cut" style="${contentStyle}">${content}</div>`;
-					
 				} else {
 					// Empty Cell
 					cellHTML = `<div class="content-cut" style="width:${cellWidth - 3}px; height:${height - 3}px;"></div>`;
