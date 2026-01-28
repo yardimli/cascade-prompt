@@ -3,3 +3,4 @@
 .scp/settings.yaml
 projects/*.json
 notes.txt
+api/llm-log.json

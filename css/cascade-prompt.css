@@ -488,6 +488,11 @@ body {
     display: block;
 }
 
+/* NEW: Active state for click-toggled dropdowns (like Font Size) */
+.dropdown-content.active {
+    display: block;
+}
+
 .menu-dropdown-item {
     padding: 8px 16px;
     text-decoration: none;
@@ -701,39 +706,64 @@ body {
 / -------------------------------------------------- */
 .llm-run-btn {
     display: inline-block;
-    margin-left: 5px;
+    margin: 0; /* Updated: Remove margin to fill cell */
     padding: 2px 6px;
-    font-size: 10px;
-    background-color: var(--accent-color);
-    color: var(--text-inverse);
+    font-size: inherit; /* Updated: Inherit font size */
+    font-family: inherit; /* Updated: Inherit font family */
+    font-weight: inherit; /* Updated: Inherit font weight */
+    font-style: inherit; /* Updated: Inherit font style */
+
+    /* Updated: Background and color handling */
+    background-color: transparent; /* Make transparent so TD background shows through */
+    color: inherit; /* Inherit text color from parent */
+
     border: none;
-    border-radius: 3px;
+    border-radius: 0; /* Updated: Remove radius to look like a cell */
     cursor: pointer;
     vertical-align: middle;
     user-select: none;
     z-index: 5;
     position: relative;
+    width: 100%; /* Updated: Fill width */
+    height: 100%; /* Updated: Fill height */
+
+    /* Flex to center text */
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
+
+/* Default style if no parent style is applied (Optional, or rely on TD default) */
+/* We add a specific class if we want the 'default' button look back,
+   but the request implies the button takes the cell's style.
+   If the cell is plain, the button is plain text centered.
+   To keep it looking like a "button" by default, we might need a default class,
+   but making it transparent fulfills "background applied to button" via the cell.
+*/
+
 .llm-run-btn:hover {
-    background-color: var(--accent-hover);
-    color: var(--text-main);
+    background-color: rgba(0, 0, 0, 0.05); /* Slight hover effect */
 }
+
 .llm-run-btn i {
     pointer-events: none;
 }
+
 /* Spinner for LLM loading */
 .llm-spinner {
     display: inline-block;
-    width: 10px;
-    height: 10px;
-    border: 2px solid rgba(255,255,255,0.3);
+    width: 14px; /* Slightly larger */
+    height: 14px;
+    border: 2px solid currentColor; /* Use current text color */
     border-radius: 50%;
-    border-top-color: #fff;
+    border-top-color: transparent;
     animation: spin 1s ease-in-out infinite;
 }
+
 @keyframes spin {
     to { transform: rotate(360deg); }
 }
+
 /* Modal specific tweaks */
 #llm-models-list {
     max-height: 200px;
@@ -744,4 +774,34 @@ body {
     font-weight: bold;
     padding: 0 2px;
     border-radius: 2px;
+}
+
+/* -------------------------------------------------- /
+/ Color Picker Modal Styles /
+/ -------------------------------------------------- */
+.color-palette-grid {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 5px;
+    margin-bottom: 15px;
+}
+
+.color-swatch {
+    width: 100%;
+    aspect-ratio: 1;
+    border-radius: 4px;
+    cursor: pointer;
+    border: 1px solid var(--border-color);
+    transition: transform 0.1s;
+}
+
+.color-swatch:hover {
+    transform: scale(1.1);
+    z-index: 2;
+    box-shadow: 0 2px 5px var(--shadow-color);
+}
+
+.color-swatch.selected {
+    border: 2px solid var(--text-main);
+    transform: scale(0.9);
 }

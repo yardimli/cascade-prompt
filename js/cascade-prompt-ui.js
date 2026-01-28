@@ -70,6 +70,14 @@ function makeCellEditable (cell) {
 		highlightCell(cell);
 	}
 	
+	// --- NEW: Prevent editing if cell contains LLM button ---
+	if (cell.querySelector('.llm-run-btn')) {
+		if (typeof showToast === 'function') {
+			showToast('LLM Button cells cannot be edited directly.');
+		}
+		return;
+	}
+	
 	if (!cell.classList.contains('edit-cell')) {
 		cell.classList.add('edit-cell');
 	}
@@ -175,6 +183,7 @@ function stopEditing () {
 		contentDiv.style.fontStyle = editor.style.fontStyle;
 		contentDiv.style.textAlign = editor.style.textAlign;
 		contentDiv.style.color = editor.style.color;
+		contentDiv.style.fontSize = editor.style.fontSize; // Added: Font Size
 		
 		// Reset and hide editor
 		editor.innerHTML = '';

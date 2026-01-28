@@ -107,7 +107,7 @@ var LLMManager = {
 	 * Fetch Models from OpenRouter via PHP Proxy
 	 */
 	fetchModels: function () {
-		// UPDATED: Check if project is saved
+		// Check if project is saved
 		if (!SheetDataManager.currentFileName) {
 			showCustomAlert('Please save your project first (Ctrl+S) to use LLM features.');
 			return;
@@ -117,7 +117,7 @@ var LLMManager = {
 		const icon = btn.querySelector('i');
 		icon.classList.add('spin-anim'); // Add CSS animation class if exists
 		
-		// UPDATED: Call local PHP proxy with filename
+		// Call local PHP proxy with filename
 		fetch('api/llm_proxy.php', {
 			method: 'POST',
 			headers: {
@@ -130,14 +130,14 @@ var LLMManager = {
 		})
 			.then(response => response.json())
 			.then(data => {
-				if (data.data) {
+				if (data.success && data.data) {
 					this.models = data.data.map(m => ({ id: m.id, name: m.name }));
 					localStorage.setItem('openrouter_models', JSON.stringify(this.models));
 					this.populateModelSelect();
 					showToast('Models list updated');
-				} else if (data.error) {
+				} else {
 					// Handle proxy or API errors
-					showCustomAlert('Error fetching models: ' + data.error.message);
+					showCustomAlert('Error fetching models: ' + (data.message || 'Unknown error'));
 				}
 			})
 			.catch(err => {
@@ -173,6 +173,14 @@ var LLMManager = {
 		
 		if (!prompt || !model || !targetStr) {
 			showCustomAlert('Please fill in all required fields.');
+			return;
+		}
+		
+		// Validate Schema JSON syntax
+		try {
+			JSON.parse(schema);
+		} catch (e) {
+			showCustomAlert('Invalid JSON Schema syntax: ' + e.message);
 			return;
 		}
 		
@@ -244,17 +252,10 @@ var LLMManager = {
 	executeLLM: function (r, c, event) {
 		if (event) event.stopPropagation(); // Prevent cell selection logic
 		
-		// UPDATED: Check if project is saved
+		// Check if project is saved
 		if (!SheetDataManager.currentFileName) {
 			showCustomAlert('Please save your project first (Ctrl+S) to run LLM functions.');
 			return;
-		}
-		
-		// Warn if there are unsaved changes, as the server reads from disk
-		if (SheetDataManager.isModified) {
-			// Optional: You could auto-save here, but for now we just warn or proceed.
-			// If the user just changed the API key but didn't save, the server will fail.
-			// Let's rely on the server error message if the key is missing/old.
 		}
 		
 		const sheet = SheetDataManager.data.sheets[SheetDataManager.data.activeSheetIndex];
@@ -303,10 +304,9 @@ var LLMManager = {
 		});
 		
 		// Append JSON instruction
-		finalPrompt += '\n\nIMPORTANT: Respond ONLY with valid JSON matching this structure:\n' + cellData.llm.jsonSchema;
+		finalPrompt += '\n\nIMPORTANT: Respond ONLY with valid JSON matching this structure, repeat the structure for each result:\n' + cellData.llm.jsonSchema;
 		
 		// 2. Call API via PHP Proxy
-		// UPDATED: Send filename instead of apiKey
 		fetch('api/llm_proxy.php', {
 			method: 'POST',
 			headers: {
@@ -321,26 +321,32 @@ var LLMManager = {
 				]
 			})
 		})
-			.then(response => {
-				if (!response.ok) {
-					// Handle HTTP errors specifically
-					return response.json().then(errData => {
-						throw new Error(errData.error ? errData.error.message : 'HTTP ' + response.status);
-					});
-				}
-				return response.json();
-			})
+			.then(response => response.json())
 			.then(data => {
-				if (data.choices && data.choices.length > 0) {
-					const content = data.choices[0].message.content;
-					this.parseAndInsert(content, cellData.llm.targetRow, cellData.llm.targetCol);
-				} else if (data.error) {
-					showCustomAlert('LLM Error: ' + data.error.message);
+				if (data.success && data.data) {
+					// 3. Validate Structure against Schema
+					const isValid = this.validateStructure(data.data, cellData.llm.jsonSchema);
+					
+					if (isValid) {
+						this.parseAndInsert(data.data, cellData.llm.targetRow, cellData.llm.targetCol);
+						if (data.usage) {
+							console.log('Token Usage:', data.usage);
+						}
+					} else {
+						showCustomAlert('<b>Structure Mismatch:</b><br>The LLM returned JSON that does not match your requested schema.<br><br>Please try again or refine your prompt.');
+						console.warn('Returned Data:', data.data);
+						console.warn('Expected Schema:', cellData.llm.jsonSchema);
+					}
+				} else {
+					showCustomAlert('LLM Error: ' + (data.message || 'Unknown error'));
+					if (data.raw_content) {
+						console.error('Raw Content:', data.raw_content);
+					}
 				}
 			})
 			.catch(err => {
 				console.error(err);
-				showCustomAlert('LLM Error: ' + err.message);
+				showCustomAlert('Network or Script Error: ' + err.message);
 			})
 			.finally(() => {
 				// Restore button
@@ -356,21 +362,56 @@ var LLMManager = {
 	},
 	
 	/**
-	 * Parse JSON response and insert into sheet
+	 * Compare keys of returned data against schema
 	 */
-	parseAndInsert: function (jsonString, startR, startC) {
-		// Clean markdown code blocks if present
-		const cleanJson = jsonString.replace(/```json/g, '').replace(/```/g, '').trim();
-		
-		let jsonData;
+	validateStructure: function (returnedData, schemaString) {
 		try {
-			jsonData = JSON.parse(cleanJson);
+			const schema = JSON.parse(schemaString);
+			
+			// Helper to get keys recursively (simplified for depth 1 or 2)
+			const getKeys = (obj) => {
+				if (Array.isArray(obj)) {
+					if (obj.length > 0 && typeof obj[0] === 'object') {
+						return Object.keys(obj[0]).sort();
+					}
+					return []; // Array of primitives
+				}
+				if (typeof obj === 'object' && obj !== null) {
+					return Object.keys(obj).sort();
+				}
+				return [];
+			};
+			
+			const schemaKeys = getKeys(schema);
+			const dataKeys = getKeys(returnedData);
+			
+			// If schema is empty or simple, be lenient
+			if (schemaKeys.length === 0) return true;
+			
+			// Compare keys
+			if (JSON.stringify(schemaKeys) !== JSON.stringify(dataKeys)) {
+				// Fallback: If returned data is an array but schema was object, check if array items match schema keys
+				if (Array.isArray(returnedData) && !Array.isArray(schema)) {
+					const itemKeys = getKeys(returnedData);
+					if (JSON.stringify(itemKeys) === JSON.stringify(Object.keys(schema).sort())) {
+						return true;
+					}
+				}
+				return false;
+			}
+			
+			return true;
 		} catch (e) {
-			console.error('JSON Parse Error', e);
-			showCustomAlert('Failed to parse LLM response as JSON. See console.');
-			return;
+			console.error('Validation Logic Error', e);
+			return true; // Allow if we can't validate
 		}
-		
+	},
+	
+	/**
+	 * Insert structured data into sheet
+	 * @param {Object|Array} jsonData - The parsed JSON object from PHP
+	 */
+	parseAndInsert: function (jsonData, startR, startC) {
 		if (typeof HistoryManager !== 'undefined') HistoryManager.addState();
 		
 		const sheet = SheetDataManager.data.sheets[SheetDataManager.data.activeSheetIndex];
@@ -382,16 +423,22 @@ var LLMManager = {
 			rowsToInsert = jsonData;
 		} else if (typeof jsonData === 'object') {
 			// If simple key-value, treat as one row? Or vertical?
-			// Let's assume vertical for single object (Key | Value)
-			// Actually, let's just make it a single row of values if it's flat,
-			// or if the user provided a table structure in schema, follow that.
+			// Let's assume vertical for single object (Key | Value) if it's flat.
+			// Or if the user provided a table structure in schema, follow that.
 			// Simplest generic approach: Array of objects = Table. Single Object = Key/Value pairs vertically.
 			
-			// Let's check schema hint. If schema was { "k": "v" }, user likely expects that object.
-			// We will output keys in col 1, values in col 2.
-			Object.keys(jsonData).forEach(k => {
-				rowsToInsert.push({ key: k, value: jsonData[k] });
-			});
+			// Check if values are complex objects (nested)
+			const hasComplexValues = Object.values(jsonData).some(v => typeof v === 'object' && v !== null);
+			
+			if (!hasComplexValues) {
+				// Flat object -> Vertical Key/Value list
+				Object.keys(jsonData).forEach(k => {
+					rowsToInsert.push({ key: k, value: jsonData[k] });
+				});
+			} else {
+				// Complex object -> Treat as single row, columns are keys
+				rowsToInsert.push(jsonData);
+			}
 		}
 		
 		// Insert Data
@@ -400,7 +447,7 @@ var LLMManager = {
 			let cOffset = 0;
 			
 			// If rowObj is primitive (array of strings), handle that
-			if (typeof rowObj !== 'object') {
+			if (typeof rowObj !== 'object' || rowObj === null) {
 				this.setCellValue(sheet, currentRow, startC, rowObj);
 			} else {
 				// Object

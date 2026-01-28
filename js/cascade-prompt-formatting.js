@@ -5,6 +5,7 @@
 
 var FormatManager = {
 	savedRange: null, // Stores {sR, eR, sC, eC} to persist selection across focus loss
+	activeColorMode: null, // 'text' or 'background' or 'border'
 	
 	/**
 	 * Apply a style command (Bold, Italic)
@@ -33,6 +34,65 @@ var FormatManager = {
 	},
 	
 	/**
+	 * Set Font Size
+	 * @param {string} size - 'small', 'normal', 'large', 'xl'
+	 */
+	setFontSize: function (size) {
+		if (typeof HistoryManager !== 'undefined') HistoryManager.addState();
+		
+		let pixelSize = '14px'; // Default
+		switch (size) {
+			case 'small': pixelSize = '11px'; break;
+			case 'normal': pixelSize = '14px'; break;
+			case 'large': pixelSize = '18px'; break;
+			case 'xl': pixelSize = '24px'; break;
+		}
+		
+		if (isEditing) {
+			// For cell editing, update the editor directly
+			const editor = document.getElementById('cell-editor');
+			if (editor) editor.style.fontSize = pixelSize;
+		} else {
+			this.applyToSelection(function (cell) {
+				const contentDiv = cell.querySelector('.content-cut');
+				if (contentDiv) {
+					contentDiv.style.fontSize = pixelSize;
+				}
+			});
+			if (typeof saveState === 'function') saveState();
+		}
+	},
+	
+	/**
+	 * Toggle the Font Size Menu (and handle closing on outside click)
+	 */
+	toggleFontSizeMenu: function (btn) {
+		// Save selection context just in case
+		this.saveSelectionContext();
+		
+		const dropdownContent = btn.nextElementSibling;
+		const isActive = dropdownContent.classList.contains('active');
+		
+		// Close all other open dropdowns (like borders)
+		document.querySelectorAll('.border-dropdown.active').forEach(el => el.classList.remove('active'));
+		document.querySelectorAll('.dropdown-content.active').forEach(el => el.classList.remove('active'));
+		
+		if (!isActive) {
+			dropdownContent.classList.add('active');
+			
+			// Close on click outside
+			const closeMenu = function (e) {
+				if (!dropdownContent.contains(e.target) && !btn.contains(e.target)) {
+					dropdownContent.classList.remove('active');
+					document.removeEventListener('click', closeMenu);
+				}
+			};
+			// Delay adding listener to avoid immediate close
+			setTimeout(() => document.addEventListener('click', closeMenu), 0);
+		}
+	},
+	
+	/**
 	 * Set Text Alignment
 	 * @param {string} align - 'left', 'center', 'right'
 	 */
@@ -53,38 +113,94 @@ var FormatManager = {
 	},
 	
 	/**
-	 * Set Text Color
-	 * @param {string} color - Hex code
+	 * Open the Color Picker Dialog
+	 * @param {string} mode - 'text', 'background', 'border'
 	 */
-	setTextColor: function (color) {
-		if (typeof HistoryManager !== 'undefined') HistoryManager.addState();
+	openColorDialog: function (mode) {
+		this.activeColorMode = mode;
+		this.saveSelectionContext();
 		
-		if (isEditing) {
-			document.execCommand('foreColor', false, color);
-		} else {
-			// Use saved context if available (from color picker trigger)
-			this.applyToSelection(function (cell) {
-				const contentDiv = cell.querySelector('.content-cut');
-				if (contentDiv) {
-					contentDiv.style.color = color;
-				}
-			}, true);
-			if (typeof saveState === 'function') saveState();
-		}
+		const modalEl = document.getElementById('colorPickerModal');
+		const modalTitle = document.getElementById('colorPickerTitle');
+		const colorInput = document.getElementById('modal-color-input');
+		
+		// Set Title
+		if (mode === 'text') modalTitle.textContent = 'Text Color';
+		else if (mode === 'background') modalTitle.textContent = 'Background Color';
+		else if (mode === 'border') modalTitle.textContent = 'Border Color';
+		
+		// Reset input to default black or white
+		colorInput.value = '#000000';
+		
+		const modal = new bootstrap.Modal(modalEl);
+		modal.show();
 	},
 	
 	/**
-	 * Set Cell Background Color
-	 * @param {string} color - Hex code
+	 * Apply Color from Dialog
 	 */
-	setBackgroundColor: function (color) {
+	applyColorDialog: function () {
+		const colorInput = document.getElementById('modal-color-input');
+		const color = colorInput.value;
+		const mode = this.activeColorMode;
+		
 		if (typeof HistoryManager !== 'undefined') HistoryManager.addState();
 		
-		// Background color always applies to the cell, even if editing text
-		this.applyToSelection(function (cell) {
-			cell.style.backgroundColor = color;
-		}, true);
+		if (mode === 'text') {
+			if (isEditing) {
+				document.execCommand('foreColor', false, color);
+			} else {
+				this.applyToSelection(function (cell) {
+					const contentDiv = cell.querySelector('.content-cut');
+					if (contentDiv) contentDiv.style.color = color;
+				}, true); // Use saved context
+			}
+		} else if (mode === 'background') {
+			this.applyToSelection(function (cell) {
+				cell.style.backgroundColor = color;
+			}, true);
+		} else if (mode === 'border') {
+			this.setBorder('all', color); // Default to all borders when using generic picker
+		}
+		
 		if (typeof saveState === 'function') saveState();
+		
+		// Close Modal
+		const modalEl = document.getElementById('colorPickerModal');
+		const modal = bootstrap.Modal.getInstance(modalEl);
+		modal.hide();
+	},
+	
+	/**
+	 * Reset Color (Transparent/Default)
+	 */
+	resetColorDialog: function () {
+		const mode = this.activeColorMode;
+		
+		if (typeof HistoryManager !== 'undefined') HistoryManager.addState();
+		
+		if (mode === 'text') {
+			if (isEditing) {
+				document.execCommand('removeFormat', false, 'foreColor');
+			} else {
+				this.applyToSelection(function (cell) {
+					const contentDiv = cell.querySelector('.content-cut');
+					if (contentDiv) contentDiv.style.color = ''; // Reset
+				}, true);
+			}
+		} else if (mode === 'background') {
+			this.applyToSelection(function (cell) {
+				cell.style.backgroundColor = ''; // Reset
+			}, true);
+		} else if (mode === 'border') {
+			this.setBorder('none');
+		}
+		
+		if (typeof saveState === 'function') saveState();
+		
+		const modalEl = document.getElementById('colorPickerModal');
+		const modal = bootstrap.Modal.getInstance(modalEl);
+		modal.hide();
 	},
 	
 	/**
@@ -205,14 +321,6 @@ var FormatManager = {
 				callback(selected);
 			}
 		}
-	},
-	
-	/**
-	 * Trigger the hidden color input
-	 */
-	triggerColorPicker: function (inputId) {
-		this.saveSelectionContext();
-		document.getElementById(inputId).click();
 	},
 	
 	/**

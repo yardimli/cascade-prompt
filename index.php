@@ -134,21 +134,28 @@
 		<i class="bi bi-type-italic"></i>
 	</button>
 	
+	<!-- Font Size Dropdown -->
+	<div class="border-dropdown" style="margin-left: 2px;">
+		<button type="button" class="btn btn-sm btn-outline-info" onclick="FormatManager.toggleFontSizeMenu(this)" title="Font Size">
+			<i class="bi bi-type"></i>
+		</button>
+		<div class="dropdown-content" style="min-width: 100px; padding: 5px;">
+			<div class="menu-dropdown-item" onclick="FormatManager.setFontSize('small'); this.parentElement.classList.remove('active')">Small</div>
+			<div class="menu-dropdown-item" onclick="FormatManager.setFontSize('normal'); this.parentElement.classList.remove('active')">Normal</div>
+			<div class="menu-dropdown-item" onclick="FormatManager.setFontSize('large'); this.parentElement.classList.remove('active')">Large</div>
+			<div class="menu-dropdown-item" onclick="FormatManager.setFontSize('xl'); this.parentElement.classList.remove('active')">Extra Large</div>
+		</div>
+	</div>
+	
 	<div style="width: 1px; height: 20px; background: var(--border-color); margin: 0 5px;"></div>
 	
-	<!-- Colors -->
-	<div style="position:relative; display:inline-block;">
-		<input type="color" id="text-color-picker" class="color-picker-input" onchange="FormatManager.setTextColor(this.value)">
-		<button type="button" class="btn btn-sm btn-outline-info" onclick="FormatManager.triggerColorPicker('text-color-picker')" title="Text Color">
-			<i class="bi bi-palette"></i>
-		</button>
-	</div>
-	<div style="position:relative; display:inline-block;">
-		<input type="color" id="bg-color-picker" class="color-picker-input" onchange="FormatManager.setBackgroundColor(this.value)">
-		<button type="button" class="btn btn-sm btn-outline-info" onclick="FormatManager.triggerColorPicker('bg-color-picker')" title="Fill Color">
-			<i class="bi bi-paint-bucket"></i>
-		</button>
-	</div>
+	<!-- Colors (Updated to use Modal) -->
+	<button type="button" class="btn btn-sm btn-outline-info" onclick="FormatManager.openColorDialog('text')" title="Text Color">
+		<i class="bi bi-palette"></i>
+	</button>
+	<button type="button" class="btn btn-sm btn-outline-info" onclick="FormatManager.openColorDialog('background')" title="Fill Color">
+		<i class="bi bi-paint-bucket"></i>
+	</button>
 	
 	<!-- Borders -->
 	<div class="border-dropdown" id="border-dropdown">
@@ -164,8 +171,7 @@
 			<div class="border-option" onclick="FormatManager.setBorder('left')" title="Left Border"><i class="bi bi-border-left"></i></div>
 			<div class="border-option" onclick="FormatManager.setBorder('right')" title="Right Border"><i class="bi bi-border-right"></i></div>
 			<!-- Border Color Trigger -->
-			<div class="border-option" onclick="FormatManager.triggerColorPicker('border-color-picker')" title="Border Color"><i class="bi bi-palette2"></i></div>
-			<input type="color" id="border-color-picker" class="color-picker-input" onchange="FormatManager.setBorder('all', this.value)">
+			<div class="border-option" onclick="FormatManager.openColorDialog('border')" title="Border Color"><i class="bi bi-palette2"></i></div>
 		</div>
 	</div>
 	
@@ -380,6 +386,25 @@
 			<div class="modal-footer">
 				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
 				<button type="button" class="btn btn-primary" onclick="LLMManager.insertFormula()">Insert Formula</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- Color Picker Modal -->
+<div class="modal fade" id="colorPickerModal" tabindex="-1" aria-hidden="true">
+	<div class="modal-dialog modal-sm">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="colorPickerTitle">Select Color</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body text-center">
+				<input type="color" id="modal-color-input" class="form-control form-control-color w-100" value="#000000" title="Choose your color">
+				<div class="mt-3 d-flex justify-content-between">
+					<button type="button" class="btn btn-outline-secondary btn-sm" onclick="FormatManager.resetColorDialog()">Reset</button>
+					<button type="button" class="btn btn-primary btn-sm" onclick="FormatManager.applyColorDialog()">Apply</button>
+				</div>
 			</div>
 		</div>
 	</div>

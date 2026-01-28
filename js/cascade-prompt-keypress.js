@@ -98,6 +98,52 @@ document.addEventListener('DOMContentLoaded', function () {
 			}
 		}
 		
+		// --- NEW: Delete Key to clear content ---
+		if (e.key === 'Delete' && !isEditing) {
+			e.preventDefault();
+			if (typeof HistoryManager !== 'undefined') HistoryManager.addState();
+			
+			const sheet = SheetDataManager.data.sheets[SheetDataManager.data.activeSheetIndex];
+			
+			// Helper to clear a specific cell element
+			const clearCell = (cell) => {
+				const r = cell.parentElement.rowIndex - 1;
+				const c = parseInt(cell.getAttribute('data-col'));
+				const key = r + '-' + c;
+				
+				// Clear DOM
+				const contentDiv = cell.querySelector('.content-cut');
+				if (contentDiv) {
+					contentDiv.innerHTML = '';
+					contentDiv.textContent = '';
+				}
+				
+				// Clear Data
+				if (sheet.cells[key]) {
+					// Preserve style, remove content
+					sheet.cells[key].text = '';
+					sheet.cells[key].html = '';
+					// Also remove LLM config if present
+					if (sheet.cells[key].llm) {
+						delete sheet.cells[key].llm;
+					}
+				}
+			};
+			
+			// Apply to selection
+			const areaCells = document.querySelectorAll('.area-selected-cell');
+			if (areaCells.length > 0) {
+				areaCells.forEach(clearCell);
+			} else {
+				const selected = document.querySelector('.selected-cell');
+				if (selected) clearCell(selected);
+			}
+			
+			SheetDataManager.setModified(true);
+			if (typeof updateSelection === 'function') updateSelection(); // Refresh visual state if needed
+			return;
+		}
+		
 		console.log('isEditing: ', isEditing);
 		if (isEditing) return; // Skip navigation if we are in editing mode
 		
