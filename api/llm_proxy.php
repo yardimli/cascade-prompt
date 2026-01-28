@@ -65,6 +65,11 @@
 	curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 	curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
 
+// Fix for SSL certificate issues on local environments (Windows/XAMPP/WAMP)
+// In production, you should configure php.ini curl.cainfo instead of disabling verification.
+	curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+	curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+
 // Handle Actions
 	if ($action === 'models') {
 		// Fetch Models
@@ -95,7 +100,7 @@
 	$httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 	$curlError = curl_error($ch);
 
-	curl_close($ch);
+// curl_close($ch); // Removed: Deprecated in PHP 8.5+ and unnecessary in PHP 8.0+
 
 // Error Handling
 	if ($curlError) {

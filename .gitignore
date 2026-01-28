@@ -2,3 +2,4 @@
 /.idea
 .scp/settings.yaml
 projects/*.json
+notes.txt
