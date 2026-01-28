@@ -131,7 +131,7 @@ var LLMManager = {
 			.then(response => response.json())
 			.then(data => {
 				if (data.success && data.data) {
-					this.models = data.data.map(m => ({ id: m.id, name: m.name }));
+					this.models = data.data.map(m => ({id: m.id, name: m.name}));
 					localStorage.setItem('openrouter_models', JSON.stringify(this.models));
 					this.populateModelSelect();
 					showToast('Models list updated');
@@ -317,7 +317,7 @@ var LLMManager = {
 				filename: SheetDataManager.currentFileName,
 				model: cellData.llm.model,
 				messages: [
-					{ role: 'user', content: finalPrompt }
+					{role: 'user', content: finalPrompt}
 				]
 			})
 		})
@@ -466,7 +466,7 @@ var LLMManager = {
 				const hasComplexValues = Object.values(jsonData).some(v => typeof v === 'object' && v !== null);
 				if (!hasComplexValues) {
 					Object.keys(jsonData).forEach(k => {
-						rowsToInsert.push({ key: k, value: jsonData[k] });
+						rowsToInsert.push({key: k, value: jsonData[k]});
 					});
 				} else {
 					rowsToInsert.push(jsonData);

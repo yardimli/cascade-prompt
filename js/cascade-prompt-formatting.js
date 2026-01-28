@@ -45,10 +45,18 @@ var FormatManager = {
 		
 		let pixelSize = '14px'; // Default
 		switch (size) {
-			case 'small': pixelSize = '11px'; break;
-			case 'normal': pixelSize = '14px'; break;
-			case 'large': pixelSize = '18px'; break;
-			case 'xl': pixelSize = '24px'; break;
+			case 'small':
+				pixelSize = '11px';
+				break;
+			case 'normal':
+				pixelSize = '14px';
+				break;
+			case 'large':
+				pixelSize = '18px';
+				break;
+			case 'xl':
+				pixelSize = '24px';
+				break;
 		}
 		
 		if (isEditing) {
@@ -272,7 +280,7 @@ var FormatManager = {
 		}
 		
 		if (sR !== undefined) {
-			range = { minR: sR, maxR: eR, minC: sC, maxC: eC };
+			range = {minR: sR, maxR: eR, minC: sC, maxC: eC};
 		}
 		
 		this.applyToSelection(function (cell) {
@@ -318,7 +326,7 @@ var FormatManager = {
 	applyToSelection: function (callback, useSaved) {
 		// 1. Use Saved Context (from color picker)
 		if (useSaved && this.savedRange) {
-			const { sR, eR, sC, eC } = this.savedRange;
+			const {sR, eR, sC, eC} = this.savedRange;
 			const table = document.querySelector('.spreadsheet');
 			
 			// Iterate rows (start from sR, which is rowIndex)
@@ -379,7 +387,7 @@ var FormatManager = {
 				return;
 			}
 		}
-		this.savedRange = { sR, eR, sC, eC };
+		this.savedRange = {sR, eR, sC, eC};
 	},
 	
 	/**

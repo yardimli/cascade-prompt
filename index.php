@@ -6,7 +6,8 @@
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
 	<meta name="author" content="DSAThemes">
 	<meta name="description" content="Discover a new beginning.">
-	<meta name="keywords" content="Responsive, HTML5, DSAThemes, Landing, Software, Mobile App, SaaS, Startup, Creative, Digital Product">
+	<meta name="keywords"
+	      content="Responsive, HTML5, DSAThemes, Landing, Software, Mobile App, SaaS, Startup, Creative, Digital Product">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<meta name="csrf-token" content="">
 	
@@ -54,7 +55,8 @@
 		File
 		<div class="dropdown-content">
 			<div class="menu-dropdown-item" onclick="openProjectModal('new')">New...</div>
-			<div class="menu-dropdown-item" onclick="openProjectModal('open')">Open... <span class="shortcut-key">Ctrl+O</span></div>
+			<div class="menu-dropdown-item" onclick="openProjectModal('open')">Open... <span
+					class="shortcut-key">Ctrl+O</span></div>
 			<div class="dropdown-divider"></div>
 			<div class="menu-dropdown-item" onclick="performSave()">Save <span class="shortcut-key">Ctrl+S</span></div>
 			<div class="menu-dropdown-item" onclick="openProjectModal('save-as')">Save As...</div>
@@ -69,12 +71,17 @@
 	<div class="menu-item">
 		Edit
 		<div class="dropdown-content">
-			<div class="menu-dropdown-item" onclick="HistoryManager.undo()">Undo <span class="shortcut-key">Ctrl+Z</span></div>
-			<div class="menu-dropdown-item" onclick="HistoryManager.redo()">Redo <span class="shortcut-key">Ctrl+Y</span></div>
+			<div class="menu-dropdown-item" onclick="HistoryManager.undo()">Undo <span class="shortcut-key">Ctrl+Z</span>
+			</div>
+			<div class="menu-dropdown-item" onclick="HistoryManager.redo()">Redo <span class="shortcut-key">Ctrl+Y</span>
+			</div>
 			<div class="dropdown-divider"></div>
-			<div class="menu-dropdown-item" onclick="ClipboardManager.cut()">Cut <span class="shortcut-key">Ctrl+X</span></div>
-			<div class="menu-dropdown-item" onclick="ClipboardManager.copy(false)">Copy <span class="shortcut-key">Ctrl+C</span></div>
-			<div class="menu-dropdown-item" onclick="ClipboardManager.paste()">Paste <span class="shortcut-key">Ctrl+V</span></div>
+			<div class="menu-dropdown-item" onclick="ClipboardManager.cut()">Cut <span class="shortcut-key">Ctrl+X</span>
+			</div>
+			<div class="menu-dropdown-item" onclick="ClipboardManager.copy(false)">Copy <span
+					class="shortcut-key">Ctrl+C</span></div>
+			<div class="menu-dropdown-item" onclick="ClipboardManager.paste()">Paste <span class="shortcut-key">Ctrl+V</span>
+			</div>
 			<div class="dropdown-divider"></div>
 			<div class="menu-dropdown-item" onclick="LLMManager.openFormulaBuilder()">Insert LLM Formula</div>
 		</div>
@@ -97,7 +104,10 @@
 	<div class="menu-item">
 		Help
 		<div class="dropdown-content">
-			<div class="menu-dropdown-item" onclick="showCustomAlert('Cascade Prompt v1.0<br>Use Arrow keys to navigate.<br>Double click to edit.')">About</div>
+			<div class="menu-dropdown-item"
+			     onclick="showCustomAlert('Cascade Prompt v1.0<br>Use Arrow keys to navigate.<br>Double click to edit.')">
+				About
+			</div>
 		</div>
 	</div>
 </div>
@@ -117,7 +127,8 @@
 	<button type="button" class="btn btn-sm btn-outline-info" onclick="ClipboardManager.cut()" title="Cut (Ctrl+X)">
 		<i class="bi bi-scissors"></i>
 	</button>
-	<button type="button" class="btn btn-sm btn-outline-info" onclick="ClipboardManager.copy(false)" title="Copy (Ctrl+C)">
+	<button type="button" class="btn btn-sm btn-outline-info" onclick="ClipboardManager.copy(false)"
+	        title="Copy (Ctrl+C)">
 		<i class="bi bi-files"></i>
 	</button>
 	<button type="button" class="btn btn-sm btn-outline-info" onclick="ClipboardManager.paste()" title="Paste (Ctrl+V)">
@@ -130,61 +141,85 @@
 	<button type="button" class="btn btn-sm btn-outline-info" onclick="FormatManager.toggleStyle('bold')" title="Bold">
 		<i class="bi bi-type-bold"></i>
 	</button>
-	<button type="button" class="btn btn-sm btn-outline-info" onclick="FormatManager.toggleStyle('italic')" title="Italic">
+	<button type="button" class="btn btn-sm btn-outline-info" onclick="FormatManager.toggleStyle('italic')"
+	        title="Italic">
 		<i class="bi bi-type-italic"></i>
 	</button>
 	
 	<!-- Font Size Dropdown -->
 	<div class="border-dropdown" style="margin-left: 2px;">
-		<button type="button" class="btn btn-sm btn-outline-info" onclick="FormatManager.toggleFontSizeMenu(this)" title="Font Size">
+		<button type="button" class="btn btn-sm btn-outline-info" onclick="FormatManager.toggleFontSizeMenu(this)"
+		        title="Font Size">
 			<i class="bi bi-type"></i>
 		</button>
 		<div class="dropdown-content" style="min-width: 100px; padding: 5px;">
-			<div class="menu-dropdown-item" onclick="FormatManager.setFontSize('small'); this.parentElement.classList.remove('active')">Small</div>
-			<div class="menu-dropdown-item" onclick="FormatManager.setFontSize('normal'); this.parentElement.classList.remove('active')">Normal</div>
-			<div class="menu-dropdown-item" onclick="FormatManager.setFontSize('large'); this.parentElement.classList.remove('active')">Large</div>
-			<div class="menu-dropdown-item" onclick="FormatManager.setFontSize('xl'); this.parentElement.classList.remove('active')">Extra Large</div>
+			<div class="menu-dropdown-item"
+			     onclick="FormatManager.setFontSize('small'); this.parentElement.classList.remove('active')">Small
+			</div>
+			<div class="menu-dropdown-item"
+			     onclick="FormatManager.setFontSize('normal'); this.parentElement.classList.remove('active')">Normal
+			</div>
+			<div class="menu-dropdown-item"
+			     onclick="FormatManager.setFontSize('large'); this.parentElement.classList.remove('active')">Large
+			</div>
+			<div class="menu-dropdown-item"
+			     onclick="FormatManager.setFontSize('xl'); this.parentElement.classList.remove('active')">Extra Large
+			</div>
 		</div>
 	</div>
 	
 	<div style="width: 1px; height: 20px; background: var(--border-color); margin: 0 5px;"></div>
 	
 	<!-- Colors (Updated to use Modal) -->
-	<button type="button" class="btn btn-sm btn-outline-info" onclick="FormatManager.openColorDialog('text')" title="Text Color">
+	<button type="button" class="btn btn-sm btn-outline-info" onclick="FormatManager.openColorDialog('text')"
+	        title="Text Color">
 		<i class="bi bi-palette"></i>
 	</button>
-	<button type="button" class="btn btn-sm btn-outline-info" onclick="FormatManager.openColorDialog('background')" title="Fill Color">
+	<button type="button" class="btn btn-sm btn-outline-info" onclick="FormatManager.openColorDialog('background')"
+	        title="Fill Color">
 		<i class="bi bi-paint-bucket"></i>
 	</button>
 	
 	<!-- Borders -->
 	<div class="border-dropdown" id="border-dropdown">
-		<button type="button" class="btn btn-sm btn-outline-info" id="btn-borders" onclick="FormatManager.toggleBorderMenu()" title="Borders">
+		<button type="button" class="btn btn-sm btn-outline-info" id="btn-borders"
+		        onclick="FormatManager.toggleBorderMenu()" title="Borders">
 			<i class="bi bi-border-all"></i>
 		</button>
 		<div class="border-dropdown-content">
-			<div class="border-option" onclick="FormatManager.setBorder('all')" title="All Borders"><i class="bi bi-border-all"></i></div>
-			<div class="border-option" onclick="FormatManager.setBorder('outer')" title="Outer Borders"><i class="bi bi-border-outer"></i></div>
-			<div class="border-option" onclick="FormatManager.setBorder('none')" title="No Borders"><i class="bi bi-border-none"></i></div>
-			<div class="border-option" onclick="FormatManager.setBorder('top')" title="Top Border"><i class="bi bi-border-top"></i></div>
-			<div class="border-option" onclick="FormatManager.setBorder('bottom')" title="Bottom Border"><i class="bi bi-border-bottom"></i></div>
-			<div class="border-option" onclick="FormatManager.setBorder('left')" title="Left Border"><i class="bi bi-border-left"></i></div>
-			<div class="border-option" onclick="FormatManager.setBorder('right')" title="Right Border"><i class="bi bi-border-right"></i></div>
+			<div class="border-option" onclick="FormatManager.setBorder('all')" title="All Borders"><i
+					class="bi bi-border-all"></i></div>
+			<div class="border-option" onclick="FormatManager.setBorder('outer')" title="Outer Borders"><i
+					class="bi bi-border-outer"></i></div>
+			<div class="border-option" onclick="FormatManager.setBorder('none')" title="No Borders"><i
+					class="bi bi-border-none"></i></div>
+			<div class="border-option" onclick="FormatManager.setBorder('top')" title="Top Border"><i
+					class="bi bi-border-top"></i></div>
+			<div class="border-option" onclick="FormatManager.setBorder('bottom')" title="Bottom Border"><i
+					class="bi bi-border-bottom"></i></div>
+			<div class="border-option" onclick="FormatManager.setBorder('left')" title="Left Border"><i
+					class="bi bi-border-left"></i></div>
+			<div class="border-option" onclick="FormatManager.setBorder('right')" title="Right Border"><i
+					class="bi bi-border-right"></i></div>
 			<!-- Border Color Trigger -->
-			<div class="border-option" onclick="FormatManager.openColorDialog('border')" title="Border Color"><i class="bi bi-palette2"></i></div>
+			<div class="border-option" onclick="FormatManager.openColorDialog('border')" title="Border Color"><i
+					class="bi bi-palette2"></i></div>
 		</div>
 	</div>
 	
 	<div style="width: 1px; height: 20px; background: var(--border-color); margin: 0 5px;"></div>
 	
 	<!-- Alignment -->
-	<button type="button" class="btn btn-sm btn-outline-info" onclick="FormatManager.setAlignment('left')" title="Align Left">
+	<button type="button" class="btn btn-sm btn-outline-info" onclick="FormatManager.setAlignment('left')"
+	        title="Align Left">
 		<i class="bi bi-justify-left"></i>
 	</button>
-	<button type="button" class="btn btn-sm btn-outline-info" onclick="FormatManager.setAlignment('center')" title="Align Center">
+	<button type="button" class="btn btn-sm btn-outline-info" onclick="FormatManager.setAlignment('center')"
+	        title="Align Center">
 		<i class="bi bi-text-center"></i>
 	</button>
-	<button type="button" class="btn btn-sm btn-outline-info" onclick="FormatManager.setAlignment('right')" title="Align Right">
+	<button type="button" class="btn btn-sm btn-outline-info" onclick="FormatManager.setAlignment('right')"
+	        title="Align Right">
 		<i class="bi bi-justify-right"></i>
 	</button>
 	
@@ -200,7 +235,8 @@
 	<div style="width: 1px; height: 20px; background: var(--border-color); margin: 0 5px;"></div>
 	
 	<!-- LLM Button -->
-	<button type="button" class="btn btn-sm btn-outline-primary" onclick="LLMManager.openFormulaBuilder()" title="Insert LLM Formula">
+	<button type="button" class="btn btn-sm btn-outline-primary" onclick="LLMManager.openFormulaBuilder()"
+	        title="Insert LLM Formula">
 		<i class="bi bi-robot"></i> LLM
 	</button>
 </div>
@@ -262,8 +298,10 @@
 			<span id="status-modified" style="display:none; margin-left:2px;">*</span>
 		</div>
 		<!-- NEW: LLM Status Indicator -->
-		<div class="status-item" id="status-llm-busy" style="display:none; color: var(--accent-color); align-items: center;">
-			<div class="llm-spinner" style="border-top-color: var(--accent-color); border-color: rgba(128,128,128,0.3); width: 12px; height: 12px; margin-right: 5px; border-width: 2px;"></div>
+		<div class="status-item" id="status-llm-busy"
+		     style="display:none; color: var(--accent-color); align-items: center;">
+			<div class="llm-spinner"
+			     style="border-top-color: var(--accent-color); border-color: rgba(128,128,128,0.3); width: 12px; height: 12px; margin-right: 5px; border-width: 2px;"></div>
 			<span id="status-llm-text">Processing...</span>
 		</div>
 	</div>
@@ -351,7 +389,8 @@
 							<select class="form-select" id="llm-model-select">
 								<option value="">Select a model...</option>
 							</select>
-							<button class="btn btn-outline-secondary" type="button" id="refresh-models-btn" onclick="LLMManager.fetchModels()" title="Refresh Models">
+							<button class="btn btn-outline-secondary" type="button" id="refresh-models-btn"
+							        onclick="LLMManager.fetchModels()" title="Refresh Models">
 								<i class="bi bi-arrow-clockwise"></i>
 							</button>
 						</div>
@@ -371,7 +410,8 @@
 				
 				<div class="mb-3">
 					<label for="llm-prompt" class="form-label">Prompt:</label>
-					<textarea class="form-control" id="llm-prompt" rows="4" placeholder="Describe what you want. Use #A-17 to reference cell A17."></textarea>
+					<textarea class="form-control" id="llm-prompt" rows="4"
+					          placeholder="Describe what you want. Use #A-17 to reference cell A17."></textarea>
 					<div class="form-text">Use #Column-Row (e.g., #A-1) to insert cell data.</div>
 				</div>
 				
@@ -400,9 +440,12 @@
 				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 			</div>
 			<div class="modal-body text-center">
-				<input type="color" id="modal-color-input" class="form-control form-control-color w-100" value="#000000" title="Choose your color">
+				<input type="color" id="modal-color-input" class="form-control form-control-color w-100" value="#000000"
+				       title="Choose your color">
 				<div class="mt-3 d-flex justify-content-between">
-					<button type="button" class="btn btn-outline-secondary btn-sm" onclick="FormatManager.resetColorDialog()">Reset</button>
+					<button type="button" class="btn btn-outline-secondary btn-sm" onclick="FormatManager.resetColorDialog()">
+						Reset
+					</button>
 					<button type="button" class="btn btn-primary btn-sm" onclick="FormatManager.applyColorDialog()">Apply</button>
 				</div>
 			</div>
@@ -494,7 +537,7 @@
 		const noMsg = document.getElementById('no-projects-msg');
 		listGroup.innerHTML = '';
 		
-		SheetDataManager.listProjects(function(files) {
+		SheetDataManager.listProjects(function (files) {
 			if (files.length === 0) {
 				noMsg.style.display = 'block';
 			} else {
@@ -512,15 +555,15 @@
 					delBtn.className = 'btn btn-sm btn-outline-danger';
 					delBtn.innerHTML = '<i class="bi bi-trash"></i>';
 					delBtn.style.marginLeft = '10px';
-					delBtn.onclick = function(e) {
+					delBtn.onclick = function (e) {
 						e.stopPropagation();
-						SheetDataManager.deleteProject(file, function() {
+						SheetDataManager.deleteProject(file, function () {
 							loadProjectList(isSelectable);
 						});
 					};
 					item.appendChild(delBtn);
 					
-					item.onclick = function() {
+					item.onclick = function () {
 						// Highlight selection
 						document.querySelectorAll('.project-list-item').forEach(el => el.classList.remove('active'));
 						item.classList.add('active');
@@ -540,7 +583,7 @@
 	}
 	
 	// Modal Action Button
-	document.getElementById('modal-action-btn').addEventListener('click', function() {
+	document.getElementById('modal-action-btn').addEventListener('click', function () {
 		if (currentModalMode === 'save-as') {
 			const filename = document.getElementById('project-filename').value.trim();
 			if (filename) {
@@ -568,7 +611,7 @@
 	}
 	
 	// Keyboard Shortcuts for Save/Open
-	document.addEventListener('keydown', function(e) {
+	document.addEventListener('keydown', function (e) {
 		if ((e.ctrlKey || e.metaKey) && e.key === 's') {
 			e.preventDefault();
 			performSave();

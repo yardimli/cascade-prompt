@@ -7,7 +7,7 @@ var isChangingTableCellWidth = false;
 /**
  * Initialize theme from localStorage or system preference
  */
-function initTheme () {
+function initTheme() {
 	const savedTheme = localStorage.getItem('cascade_theme');
 	if (savedTheme) {
 		document.documentElement.setAttribute('data-theme', savedTheme);
@@ -24,7 +24,7 @@ function initTheme () {
 /**
  * Toggle between light and dark modes
  */
-function toggleTheme () {
+function toggleTheme() {
 	const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
 	const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
 	
@@ -33,7 +33,7 @@ function toggleTheme () {
 }
 
 // --------------------------------------------------//
-function scrollToViewWithOffsets (cell) {
+function scrollToViewWithOffsets(cell) {
 	const container = document.querySelector('.spreadsheet-container');
 	const containerRect = container.getBoundingClientRect();
 	const cellRect = cell.getBoundingClientRect();
@@ -64,7 +64,7 @@ function scrollToViewWithOffsets (cell) {
 }
 
 // --------------------------------------------------//
-function makeCellEditable (cell) {
+function makeCellEditable(cell) {
 	// Ensure cell is a DOM element
 	if (!cell.classList.contains('selected-cell')) {
 		highlightCell(cell);
@@ -152,7 +152,7 @@ function makeCellEditable (cell) {
 }
 
 // --------------------------------------------------//
-function stopEditing () {
+function stopEditing() {
 	if (!isEditing) return;
 	
 	const editingCell = document.querySelector('.edit-cell');
@@ -198,7 +198,7 @@ function stopEditing () {
 }
 
 // --------------------------------------------------//
-function addNewRow () {
+function addNewRow() {
 	// Capture history before adding row
 	if (typeof HistoryManager !== 'undefined') HistoryManager.addState();
 	
@@ -221,7 +221,7 @@ function addNewRow () {
 }
 
 // --------------------------------------------------//
-function addNewColumn () {
+function addNewColumn() {
 	// Capture history before adding column
 	if (typeof HistoryManager !== 'undefined') HistoryManager.addState();
 	
@@ -248,7 +248,7 @@ function addNewColumn () {
 }
 
 // --------------------------------------------------//
-function mergeCells () {
+function mergeCells() {
 	if (!startCell || !endCell || startCell === endCell) return;
 	
 	// Capture history before merging
@@ -319,7 +319,7 @@ function mergeCells () {
 }
 
 // --------------------------------------------------//
-function unmergeCells () {
+function unmergeCells() {
 	const cell = document.querySelector('.selected-cell');
 	if (!cell) return;
 	
@@ -405,7 +405,7 @@ function unmergeCells () {
 
 // --------------------------------------------------//
 // Function to attach resize handlers (extracted for re-use)
-function attachResizeHandlers () {
+function attachResizeHandlers() {
 	// Row Resizing
 	const counterCells = document.querySelectorAll('.counter-cell:not(.processed)');
 	counterCells.forEach(th => {
@@ -433,7 +433,7 @@ function attachResizeHandlers () {
 			
 			const row = th.parentElement;
 			
-			function onMouseMove (e) {
+			function onMouseMove(e) {
 				const newHeight = startHeight + (e.pageY - startY);
 				th.style.height = newHeight + 'px';
 				
@@ -444,7 +444,7 @@ function attachResizeHandlers () {
 				});
 			}
 			
-			function onMouseUp () {
+			function onMouseUp() {
 				const rowIndex = Array.from(row.parentElement.children).indexOf(row);
 				const rowHeight = th.offsetHeight;
 				
@@ -492,7 +492,7 @@ function attachResizeHandlers () {
 			
 			const colIndex = parseInt(cell.getAttribute('data-col'));
 			
-			function onMouseMove (e) {
+			function onMouseMove(e) {
 				const diff = e.pageX - startX;
 				const newWidth = startWidth + diff;
 				const newTableWidth = startTableWidth + diff;
@@ -503,7 +503,7 @@ function attachResizeHandlers () {
 				updateColumnWidth(colIndex, newWidth);
 			}
 			
-			function onMouseUp () {
+			function onMouseUp() {
 				document.removeEventListener('mousemove', onMouseMove);
 				document.removeEventListener('mouseup', onMouseUp);
 				if (typeof saveState === 'function') saveState();
@@ -568,8 +568,8 @@ document.addEventListener('DOMContentLoaded', function () {
 			if (touchCurrentX > touchStartX && scrollableDiv.scrollLeft === 0) {
 				e.preventDefault(); // Prevent navigation swipe when at the start of the scroll
 			}
-		}, { passive: false });
-	}, { passive: false });
+		}, {passive: false});
+	}, {passive: false});
 	
 	// --------------------------------------------------//
 });

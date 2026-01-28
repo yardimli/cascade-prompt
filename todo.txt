@@ -45,12 +45,12 @@ add a button to the cell when user clicks on the button the llm formula is exect
 
 TODO:
 
-- in the llm dialog make target cell selection easier with validation
+- in the llm dialog make target cell selection use validation dont allow user to type invalid cell coordinates
 - in the llm dialog validate the json structure input and show error if invalid
 - make the hint (.form-text) work with darkmode
-- when formula cells are selected formula-input mouse cursor should be pointer instead of disabled.
-- in the llm prompt editor when user enters #A-17 make that part highlighted to indicate its a cell reference with preview of the cell content on hover.
-- in the llm prompt editor allow user to enter cell ranges like #A-17:B20 and highlight that part with preview of the cell contents on hover and show content and number of cells in the range.
+- on the sheet when formula cell is selected the formula-input should show the mouse cursor as a pointer instead of disabled.
+- in the llm prompt editor when user enters #A17 make that part highlighted to indicate its a cell reference with preview of the cell content on hover.
+- in the llm prompt editor allow user to enter cell ranges like #A17:B17 and highlight that part with preview of the cell contents on hover and show content and number of cells in the range.
 
 - add dropdown option to the sheet with formula (=dropdown("options","selection")) that allows user to create a dropdown in the cell with specified options and save the selected option in the cell data.
 

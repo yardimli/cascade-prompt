@@ -73,7 +73,7 @@ var SheetDataManager = {
 			rowHeights: {},
 			// Initialize default selection state
 			selection: {
-				active: { r: 0, c: 0 }, // Default to A1
+				active: {r: 0, c: 0}, // Default to A1
 				range: null
 			}
 		};
@@ -273,7 +273,7 @@ var SheetDataManager = {
 			const colIndex = parseInt(selectedCell.getAttribute('data-col'));
 			
 			sheetObj.selection = {
-				active: { r: rowIndex, c: colIndex },
+				active: {r: rowIndex, c: colIndex},
 				range: null
 			};
 			
@@ -691,7 +691,7 @@ var SheetDataManager = {
 					this.data = data.data;
 					// Ensure llmSettings exists for older projects
 					if (!this.data.llmSettings) {
-						this.data.llmSettings = { apiKey: '' };
+						this.data.llmSettings = {apiKey: ''};
 					}
 					
 					this.currentFileName = filename;
@@ -735,7 +735,7 @@ var SheetDataManager = {
 			headers: {
 				'Content-Type': 'application/json'
 			},
-			body: JSON.stringify({ filename: filename })
+			body: JSON.stringify({filename: filename})
 		})
 			.then(response => response.json())
 			.then(data => {
@@ -752,7 +752,7 @@ var SheetDataManager = {
 			this.data = {
 				activeSheetIndex: 0,
 				sheets: [],
-				llmSettings: { apiKey: '' }
+				llmSettings: {apiKey: ''}
 			};
 			this.currentFileName = null;
 			localStorage.removeItem('lastOpenedFile');
@@ -768,7 +768,7 @@ var SheetDataManager = {
 				cells: {},
 				colWidths: {},
 				rowHeights: {},
-				selection: { active: { r: 0, c: 0 }, range: null }
+				selection: {active: {r: 0, c: 0}, range: null}
 			});
 			this.renderSheet(0);
 			this.renderTabs();

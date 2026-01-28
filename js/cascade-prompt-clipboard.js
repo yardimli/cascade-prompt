@@ -237,7 +237,7 @@ var ClipboardManager = {
 					
 					// Preserve existing style if possible, or init new
 					if (!sheet.cells[key]) {
-						sheet.cells[key] = { text: colData, html: colData };
+						sheet.cells[key] = {text: colData, html: colData};
 					} else {
 						sheet.cells[key].text = colData;
 						sheet.cells[key].html = colData;

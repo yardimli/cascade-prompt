@@ -5,17 +5,17 @@ var startCell = null;
 var endCell = null;
 
 var isDraggingSelection = false;
-var dragOffset = { top: 0, left: 0 };
+var dragOffset = {top: 0, left: 0};
 
 let draggingEdge = null;
-let initialMousePos = { top: 0, left: 0 };
-let initialHelperPos = { top: 0, left: 0 };
+let initialMousePos = {top: 0, left: 0};
+let initialHelperPos = {top: 0, left: 0};
 
-let initialStartCellIndex = { row: 0, col: 0 };
-let initialEndCellIndex = { row: 0, col: 0 };
+let initialStartCellIndex = {row: 0, col: 0};
+let initialEndCellIndex = {row: 0, col: 0};
 
 // --------------------------------------------------//
-function highlightCell (cell) {
+function highlightCell(cell) {
 	const cellIndex = parseInt(cell.getAttribute('data-col'));
 	// Row index from TR. Note: parentElement is TR.
 	const row = cell.parentElement;
@@ -91,7 +91,7 @@ function highlightCell (cell) {
 
 // --------------------------------------------------//
 // Helper to update status bar selection text
-function updateStatusSelection (rowIdx, colIdx) {
+function updateStatusSelection(rowIdx, colIdx) {
 	const statusSel = document.getElementById('status-selection');
 	if (statusSel) {
 		const colLetter = SheetDataManager.getColumnLetter(colIdx);
@@ -102,7 +102,7 @@ function updateStatusSelection (rowIdx, colIdx) {
 
 // --------------------------------------------------//
 // Function to get the cumulative width of columns in a given range
-function getColumnWidthRange (startCol, endCol) {
+function getColumnWidthRange(startCol, endCol) {
 	let totalWidth = 0;
 	for (let i = startCol; i <= endCol; i++) {
 		const cell = document.querySelector('.spreadsheet .letter-cell[data-col="' + i + '"]');
@@ -113,7 +113,7 @@ function getColumnWidthRange (startCol, endCol) {
 
 // --------------------------------------------------//
 // Function to get the cumulative height of rows in a given range
-function getRowHeightRange (startRow, endRow) {
+function getRowHeightRange(startRow, endRow) {
 	let totalHeight = 0;
 	const counterCells = document.querySelectorAll('.spreadsheet .counter-cell');
 	for (let i = startRow; i <= endRow; i++) {
@@ -124,7 +124,7 @@ function getRowHeightRange (startRow, endRow) {
 
 // --------------------------------------------------//
 // Function to get an array of column widths
-function getColumnWidths () {
+function getColumnWidths() {
 	const widths = [];
 	document.querySelectorAll('.spreadsheet .letter-cell').forEach(cell => {
 		widths.push(cell.offsetWidth);
@@ -134,7 +134,7 @@ function getColumnWidths () {
 
 // --------------------------------------------------//
 // Function to get an array of row heights
-function getRowHeights () {
+function getRowHeights() {
 	const heights = [];
 	document.querySelectorAll('.spreadsheet .counter-cell').forEach(cell => {
 		heights.push(cell.offsetHeight);
@@ -143,7 +143,7 @@ function getRowHeights () {
 }
 
 // --------------------------------------------------//
-function snapToCell (position, dimensionArray) {
+function snapToCell(position, dimensionArray) {
 	let cumulativeDimension = 0;
 	let previousCumulativeDimension = cumulativeDimension;
 	for (let i = 0; i < dimensionArray.length; i++) {
@@ -158,7 +158,7 @@ function snapToCell (position, dimensionArray) {
 
 // --------------------------------------------------//
 // Update the selection rectangle based on start and end cells
-function updateSelection () {
+function updateSelection() {
 	// Optimization: Use getElementsByClassName for faster clearing
 	const areaSelected = document.getElementsByClassName('area-selected-cell');
 	while (areaSelected.length > 0) areaSelected[0].classList.remove('area-selected-cell');
@@ -252,10 +252,10 @@ function updateSelection () {
 	
 	// Add edge elements
 	const edges = [
-		{ class: 'top', style: { top: '-3px', left: '0', width: '100%' } },
-		{ class: 'right', style: { top: '0', right: '-3px', height: '100%' } },
-		{ class: 'bottom', style: { bottom: '-3px', left: '0', width: '100%' } },
-		{ class: 'left', style: { top: '0', left: '-3px', height: '100%' } }
+		{class: 'top', style: {top: '-3px', left: '0', width: '100%'}},
+		{class: 'right', style: {top: '0', right: '-3px', height: '100%'}},
+		{class: 'bottom', style: {bottom: '-3px', left: '0', width: '100%'}},
+		{class: 'left', style: {top: '0', left: '-3px', height: '100%'}}
 	];
 	
 	edges.forEach(edgeData => {
@@ -270,7 +270,7 @@ function updateSelection () {
 // Persistence Functions (Delegated to SheetDataManager)
 // --------------------------------------------------//
 
-function saveState () {
+function saveState() {
 	if (SheetDataManager.currentFileName && !document.title.endsWith('*')) {
 		document.title += '*';
 	}
@@ -279,7 +279,7 @@ function saveState () {
 }
 
 // Helper to update column width including merged cells
-function updateColumnWidth (colIndex, newWidth) {
+function updateColumnWidth(colIndex, newWidth) {
 	// Update header
 	const header = document.querySelector('.letter-cell[data-col="' + colIndex + '"]');
 	if (header) header.style.width = newWidth + 'px';
@@ -318,7 +318,7 @@ function updateColumnWidth (colIndex, newWidth) {
 	});
 }
 
-function updateRowHeight (rowIndex, newHeight) {
+function updateRowHeight(rowIndex, newHeight) {
 	// Update the header cell height
 	const counterCells = document.querySelectorAll('.counter-cell');
 	if (counterCells[rowIndex]) {
@@ -355,7 +355,7 @@ function updateRowHeight (rowIndex, newHeight) {
 	}
 }
 
-function resetState () {
+function resetState() {
 	SheetDataManager.newProject();
 }
 
@@ -542,13 +542,13 @@ document.addEventListener('DOMContentLoaded', function () {
 	document.addEventListener('mousedown', function (e) {
 		if (e.target.classList.contains('selection-helper-edge')) {
 			draggingEdge = e.target;
-			initialMousePos = { top: e.pageY, left: e.pageX };
+			initialMousePos = {top: e.pageY, left: e.pageX};
 			
 			// Helper position
 			const rect = selectionHelper.getBoundingClientRect();
 			// We need offset relative to parent, but selectionHelper is absolute.
 			// We can use offsetLeft/Top
-			initialHelperPos = { top: selectionHelper.offsetTop, left: selectionHelper.offsetLeft };
+			initialHelperPos = {top: selectionHelper.offsetTop, left: selectionHelper.offsetLeft};
 			
 			initialStartCellIndex = {
 				row: startCell.parentElement.rowIndex,
