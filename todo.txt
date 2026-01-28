@@ -31,8 +31,6 @@ DONE:
 
 - add copy/paste functionality for cells and ranges of cells using keyboard shortcuts (Ctrl+C, Ctrl+V). ensure that formatting and merged cell states are preserved during copy/paste operations. add copy, paste, cut buttons to the top toolbar and make the menu items in the edit menu functional.
 
-TODO:
-
 
 - add project llm settings dialog where user can input openrouter api key. it should be saved in the project json file. add menu item to the file menu to open the dialog.
 
@@ -44,6 +42,15 @@ add cell coordinates where result should be inserted.
 the json should be parsed an inserted into the specified area as rows and columns.
 add a button to the cell when user clicks on the button the llm formula is exectued and the result is inserted into the sheet.
 - the llm functions should be a new javascript file.
+
+TODO:
+
+- in the llm dialog make target cell selection easier with validation
+- in the llm dialog validate the json structure input and show error if invalid
+- make the hint (.form-text) work with darkmode
+- when formula cells are selected formula-input mouse cursor should be pointer instead of disabled.
+- in the llm prompt editor when user enters #A-17 make that part highlighted to indicate its a cell reference with preview of the cell content on hover.
+- in the llm prompt editor allow user to enter cell ranges like #A-17:B20 and highlight that part with preview of the cell contents on hover and show content and number of cells in the range.
 
 - add dropdown option to the sheet with formula (=dropdown("options","selection")) that allows user to create a dropdown in the cell with specified options and save the selected option in the cell data.
 
@@ -62,3 +69,4 @@ when unmerging cells the new cells are not editable until page refresh
 new sheets row heights are different than the first sheet, should have some default height
 switching sheets is slow.
 border tool is not working correctly with cells merged and unmerged.
+double clicking on a field should adjust the textarea to fit the content not wait for a keyboard input.

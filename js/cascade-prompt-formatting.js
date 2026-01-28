@@ -23,10 +23,13 @@ var FormatManager = {
 				const contentDiv = cell.querySelector('.content-cut');
 				if (!contentDiv) return;
 				
+				const btn = contentDiv.querySelector('.llm-run-btn');
+				const target = btn || contentDiv;
+				
 				if (command === 'bold') {
-					contentDiv.style.fontWeight = (contentDiv.style.fontWeight === 'bold') ? 'normal' : 'bold';
+					target.style.fontWeight = (target.style.fontWeight === 'bold') ? 'normal' : 'bold';
 				} else if (command === 'italic') {
-					contentDiv.style.fontStyle = (contentDiv.style.fontStyle === 'italic') ? 'normal' : 'italic';
+					target.style.fontStyle = (target.style.fontStyle === 'italic') ? 'normal' : 'italic';
 				}
 			});
 			if (typeof saveState === 'function') saveState();
@@ -56,7 +59,9 @@ var FormatManager = {
 			this.applyToSelection(function (cell) {
 				const contentDiv = cell.querySelector('.content-cut');
 				if (contentDiv) {
-					contentDiv.style.fontSize = pixelSize;
+					const btn = contentDiv.querySelector('.llm-run-btn');
+					const target = btn || contentDiv;
+					target.style.fontSize = pixelSize;
 				}
 			});
 			if (typeof saveState === 'function') saveState();
@@ -105,7 +110,9 @@ var FormatManager = {
 			this.applyToSelection(function (cell) {
 				const contentDiv = cell.querySelector('.content-cut');
 				if (contentDiv) {
-					contentDiv.style.textAlign = align;
+					const btn = contentDiv.querySelector('.llm-run-btn');
+					const target = btn || contentDiv;
+					target.style.textAlign = align;
 				}
 			});
 			if (typeof saveState === 'function') saveState();
@@ -152,12 +159,22 @@ var FormatManager = {
 			} else {
 				this.applyToSelection(function (cell) {
 					const contentDiv = cell.querySelector('.content-cut');
-					if (contentDiv) contentDiv.style.color = color;
+					if (contentDiv) {
+						const btn = contentDiv.querySelector('.llm-run-btn');
+						const target = btn || contentDiv;
+						target.style.color = color;
+					}
 				}, true); // Use saved context
 			}
 		} else if (mode === 'background') {
 			this.applyToSelection(function (cell) {
-				cell.style.backgroundColor = color;
+				const contentDiv = cell.querySelector('.content-cut');
+				const btn = contentDiv ? contentDiv.querySelector('.llm-run-btn') : null;
+				if (btn) {
+					btn.style.backgroundColor = color;
+				} else {
+					cell.style.backgroundColor = color;
+				}
 			}, true);
 		} else if (mode === 'border') {
 			this.setBorder('all', color); // Default to all borders when using generic picker
@@ -185,12 +202,22 @@ var FormatManager = {
 			} else {
 				this.applyToSelection(function (cell) {
 					const contentDiv = cell.querySelector('.content-cut');
-					if (contentDiv) contentDiv.style.color = ''; // Reset
+					if (contentDiv) {
+						const btn = contentDiv.querySelector('.llm-run-btn');
+						const target = btn || contentDiv;
+						target.style.color = ''; // Reset
+					}
 				}, true);
 			}
 		} else if (mode === 'background') {
 			this.applyToSelection(function (cell) {
-				cell.style.backgroundColor = ''; // Reset
+				const contentDiv = cell.querySelector('.content-cut');
+				const btn = contentDiv ? contentDiv.querySelector('.llm-run-btn') : null;
+				if (btn) {
+					btn.style.backgroundColor = '';
+				} else {
+					cell.style.backgroundColor = ''; // Reset
+				}
 			}, true);
 		} else if (mode === 'border') {
 			this.setBorder('none');
@@ -326,7 +353,7 @@ var FormatManager = {
 	/**
 	 * Save the current selection indices before focus is lost (e.g. to color picker)
 	 */
-	saveSelectionContext: function() {
+	saveSelectionContext: function () {
 		let sR, sC, eR, eC;
 		
 		// Check global selection variables from cascade-prompt.js

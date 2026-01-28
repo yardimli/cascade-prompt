@@ -159,7 +159,8 @@ var SheetDataManager = {
 				// Note: We need to be careful not to save the LLM button HTML as text content
 				// So we clone the node, remove the button, then get text
 				let text = '';
-				if (contentDiv.querySelector('.llm-run-btn')) {
+				const llmBtn = contentDiv.querySelector('.llm-run-btn');
+				if (llmBtn) {
 					const clone = contentDiv.cloneNode(true);
 					const btn = clone.querySelector('.llm-run-btn');
 					if (btn) btn.remove();
@@ -184,12 +185,15 @@ var SheetDataManager = {
 				];
 				let cleanCssText = '';
 				
+				// Determine source of styles: Button if present, otherwise Div
+				const styleSource = llmBtn || contentDiv;
+				
 				allowedStyles.forEach(prop => {
 					// Check if the property is explicitly set on the element
-					if (contentDiv.style[prop]) {
+					if (styleSource.style[prop]) {
 						// Convert camelCase to kebab-case for CSS string
 						const kebabProp = prop.replace(/([a-z0-9]|(?=[A-Z]))([A-Z])/g, '$1-$2').toLowerCase();
-						cleanCssText += `${kebabProp}:${contentDiv.style[prop]};`;
+						cleanCssText += `${kebabProp}:${styleSource.style[prop]};`;
 					}
 				});
 				
@@ -399,21 +403,29 @@ var SheetDataManager = {
 						}
 					}
 					
-					// Content Div
-					let contentStyle = `width:${cellWidth - 3}px; height:${cellHeight - 3}px;`;
+					// Content Div Dimensions
+					let divStyle = `width:${cellWidth - 3}px; height:${cellHeight - 3}px;`;
+					
+					// User Styles
+					let userStyle = '';
 					if (cellData.style && cellData.style.cssText) {
-						contentStyle += cellData.style.cssText;
+						userStyle = cellData.style.cssText;
 					}
 					
 					// Clean content (remove old buttons if saved in HTML)
 					let content = cellData.html || cellData.text || '';
 					
-					// Add LLM Button if config exists
+					// NEW: Reconstruct LLM Button from config or placeholder
 					if (cellData.llm) {
 						// Use Function Name from config, or default
 						const btnText = cellData.llm.funcName || 'Run LLM';
-						// Replace content entirely with the button, ignoring previous text
-						content = `<button class="llm-run-btn" contenteditable="false" ondblclick="LLMManager.executeLLM(${r}, ${c}, event)" title="Double-click to Run LLM Formula">${btnText}</button>`;
+						
+						// Apply user styles to the button, dimensions to the div
+						// Replace content entirely with the button
+						content = `<button class="llm-run-btn" style="${userStyle}" contenteditable="false" ondblclick="LLMManager.executeLLM(${r}, ${c}, event)" title="Double-click to Run LLM Formula">${btnText}</button>`;
+						
+						// Wrapper div only gets dimensions
+						cellHTML = `<div class="content-cut" style="${divStyle}">${content}</div>`;
 					} else {
 						// Simple regex to strip the button if it was accidentally saved in HTML
 						content = content.replace(/<button class="llm-run-btn".*?<\/button>/g, '');
@@ -421,9 +433,9 @@ var SheetDataManager = {
 						if (content === '{{LLM_BUTTON}}') {
 							content = '';
 						}
+						// Normal Cell: User styles go on the wrapper div
+						cellHTML = `<div class="content-cut" style="${divStyle}${userStyle}">${content}</div>`;
 					}
-					
-					cellHTML = `<div class="content-cut" style="${contentStyle}">${content}</div>`;
 				} else {
 					// Empty Cell
 					cellHTML = `<div class="content-cut" style="width:${cellWidth - 3}px; height:${height - 3}px;"></div>`;
