@@ -43,8 +43,6 @@ the json should be parsed an inserted into the specified area as rows and column
 add a button to the cell when user clicks on the button the llm formula is exectued and the result is inserted into the sheet.
 - the llm functions should be a new javascript file.
 
-TODO:
-
 - in the llm dialog make target cell selection use validation dont allow user to type invalid cell coordinates
 - in the llm dialog validate the json structure input and show error if invalid
 - make the hint (.form-text) work with darkmode
@@ -52,9 +50,15 @@ TODO:
 - in the llm prompt editor when user enters #A17 make that part highlighted to indicate its a cell reference with preview of the cell content on hover.
 - in the llm prompt editor allow user to enter cell ranges like #A17:B17 and highlight that part with preview of the cell contents on hover and show content and number of cells in the range.
 
-- add dropdown option to the sheet with formula (=dropdown("options","selection")) that allows user to create a dropdown in the cell with specified options and save the selected option in the cell data.
+TODO:
 
-- add sheet properties dialog where user can set number of rows and columns, default row height and column width, gridline visibility, etc.
+- allow filter in llm dropdown to search for models by name. use select2.js library for the dropdown.
+
+- double clicking on a field should adjust the textarea to fit the content not wait for a keyboard input.
+
+- add dropdown option to the sheet with formula (=dropdown("options","selection")) that allows user to create a dropdown in the cell with specified options and save the selected option in the cell data. when used in the llm prompt the selected option should be used as the cell content.
+
+- add sheet properties dialog where user can set number of rows and columns, and name of sheet it should be alphanumeric with no spaces so it can be used in formulas. add menu item to edit menu to open the dialog.
 
 - add fal.ai api key to the llm settings dialog.
 - allow user to create =imagegen() formula that uses fal.ai to generate images based on a prompt from the sheet cell content.
@@ -69,4 +73,3 @@ when unmerging cells the new cells are not editable until page refresh
 new sheets row heights are different than the first sheet, should have some default height
 switching sheets is slow.
 border tool is not working correctly with cells merged and unmerged.
-double clicking on a field should adjust the textarea to fit the content not wait for a keyboard input.

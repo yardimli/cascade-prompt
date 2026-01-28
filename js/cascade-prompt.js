@@ -54,11 +54,17 @@ function highlightCell(cell) {
 	// --- NEW: Check for LLM Data to display special formula text ---
 	const sheet = SheetDataManager.data.sheets[SheetDataManager.data.activeSheetIndex];
 	const key = rowIndex + '-' + cellIndex;
+	
+	// Reset pointer cursor class
+	formulaInput.classList.remove('pointer-cursor');
+	
 	if (sheet.cells[key] && sheet.cells[key].llm) {
 		const funcName = sheet.cells[key].llm.funcName || 'Run LLM';
 		formulaInput.textContent = `=LLM("${funcName}")`;
 		// Make it read-only for direct editing, force click to open dialog
 		formulaInput.setAttribute('contenteditable', 'false');
+		// Add pointer cursor class
+		formulaInput.classList.add('pointer-cursor');
 	} else {
 		formulaInput.textContent = cellContent;
 		formulaInput.setAttribute('contenteditable', 'true');

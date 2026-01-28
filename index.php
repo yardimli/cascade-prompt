@@ -399,6 +399,7 @@
 						<label for="llm-target-cell" class="form-label">Target Cell (Output):</label>
 						<input type="text" class="form-control" id="llm-target-cell" placeholder="e.g. A1">
 						<div class="form-text">Where the data will be inserted.</div>
+						<div class="invalid-feedback">Invalid format. Use A1, B2, etc.</div>
 					</div>
 				</div>
 				
@@ -409,10 +410,11 @@
 				</div>
 				
 				<div class="mb-3">
-					<label for="llm-prompt" class="form-label">Prompt:</label>
-					<textarea class="form-control" id="llm-prompt" rows="4"
-					          placeholder="Describe what you want. Use #A-17 to reference cell A17."></textarea>
-					<div class="form-text">Use #Column-Row (e.g., #A-1) to insert cell data.</div>
+					<label for="llm-prompt-editor" class="form-label">Prompt:</label>
+					<!-- Replaced Textarea with ContentEditable Div for Highlighting -->
+					<div id="llm-prompt-editor" class="llm-prompt-editor" contenteditable="true"
+					     data-placeholder="Describe what you want. Use #A17 or #A1:B5 to reference cell data."></div>
+					<div class="form-text">Use #ColumnRow (e.g., #A1) or #Range (e.g., #A1:B5) to insert cell data. Hover highlighted vars to preview.</div>
 				</div>
 				
 				<div class="mb-3">
@@ -421,6 +423,7 @@
   "Key": "Value"
 }</textarea>
 					<div class="form-text">Define the JSON keys you expect. The result will be parsed into the sheet.</div>
+					<div class="invalid-feedback">Invalid JSON syntax.</div>
 				</div>
 			</div>
 			<div class="modal-footer">

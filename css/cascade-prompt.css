@@ -770,6 +770,77 @@ body {
     max-height: 200px;
     overflow-y: auto;
 }
+
+/* LLM Prompt Editor Styles */
+.llm-prompt-editor {
+    min-height: 100px;
+    max-height: 200px;
+    overflow-y: auto;
+    white-space: pre-wrap; /* Essential for handling newlines from innerText */
+    border: 1px solid var(--border-color);
+    border-radius: 0.375rem;
+    padding: 0.375rem 0.75rem;
+    background-color: var(--bg-surface);
+    color: var(--text-main);
+    font-family: inherit;
+    outline: none;
+}
+
+.llm-prompt-editor:focus {
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+/* Variable Highlight in Prompt */
+.llm-var-tag {
+    background-color: rgba(26, 115, 232, 0.2);
+    color: var(--accent-color);
+    border-radius: 3px;
+    padding: 0 2px;
+    font-weight: 600;
+    cursor: help;
+    border-bottom: 1px dotted var(--accent-color);
+}
+
+[data-theme="dark"] .llm-var-tag {
+    background-color: rgba(138, 180, 248, 0.3);
+    color: #8ab4f8;
+}
+
+/* Global Tooltip (Fixed Position) */
+.llm-var-tooltip-global {
+    display: none;
+    position: fixed;
+    z-index: 1070; /* Higher than modal (1055) */
+    background-color: var(--bg-tooltip);
+    color: var(--text-inverse);
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: pre-wrap;
+    max-width: 300px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    pointer-events: none; /* Let mouse pass through */
+    border: 1px solid var(--border-strong);
+}
+
+.llm-var-tag:hover .llm-var-tooltip {
+    visibility: visible;
+}
+
+/* Dark Mode Form Text Fix */
+[data-theme="dark"] .form-text {
+    color: var(--text-secondary) !important;
+}
+
+/* Formula Bar Pointer Cursor */
+.formula-input.pointer-cursor {
+    cursor: pointer !important;
+}
+.formula-input.pointer-cursor:hover {
+    background-color: var(--bg-hover);
+}
+
 .llm-variable-highlight {
     background-color: rgba(255, 255, 0, 0.2);
     font-weight: bold;
