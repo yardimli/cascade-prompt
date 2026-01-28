@@ -328,7 +328,7 @@ var LLMManager = {
 					const isValid = this.validateStructure(data.data, cellData.llm.jsonSchema);
 					
 					if (isValid) {
-						this.parseAndInsert(data.data, cellData.llm.targetRow, cellData.llm.targetCol);
+						this.parseAndInsert(data.data, cellData.llm.targetRow, cellData.llm.targetCol, cellData.llm.jsonSchema);
 						if (data.usage) {
 							console.log('Token Usage:', data.usage);
 						}
@@ -410,57 +410,102 @@ var LLMManager = {
 	/**
 	 * Insert structured data into sheet
 	 * @param {Object|Array} jsonData - The parsed JSON object from PHP
+	 * @param {number} startR - Row index
+	 * @param {number} startC - Column index
+	 * @param {string} schemaString - The JSON schema string
 	 */
-	parseAndInsert: function (jsonData, startR, startC) {
+	parseAndInsert: function (jsonData, startR, startC, schemaString) {
 		if (typeof HistoryManager !== 'undefined') HistoryManager.addState();
 		
 		const sheet = SheetDataManager.data.sheets[SheetDataManager.data.activeSheetIndex];
 		
-		// Determine structure. Is it an Array of Objects? Or a single Object?
+		// 1. Extract Headers from Schema
+		let headers = [];
+		try {
+			const schema = JSON.parse(schemaString);
+			
+			// Helper to get keys
+			const getKeys = (obj) => {
+				if (Array.isArray(obj)) {
+					if (obj.length > 0 && typeof obj[0] === 'object') {
+						return Object.keys(obj[0]);
+					}
+					return [];
+				}
+				if (typeof obj === 'object' && obj !== null) {
+					return Object.keys(obj);
+				}
+				return [];
+			};
+			
+			headers = getKeys(schema);
+		} catch (e) {
+			console.warn('Could not parse schema for headers', e);
+		}
+		
+		// 2. Insert Headers
+		if (headers.length > 0) {
+			headers.forEach((header, idx) => {
+				this.setCellValue(sheet, startR, startC + idx, header);
+			});
+			startR++; // Move data down
+		}
+		
+		// 3. Prepare Data Rows
 		let rowsToInsert = [];
 		
 		if (Array.isArray(jsonData)) {
 			rowsToInsert = jsonData;
 		} else if (typeof jsonData === 'object') {
-			// If simple key-value, treat as one row? Or vertical?
-			// Let's assume vertical for single object (Key | Value) if it's flat.
-			// Or if the user provided a table structure in schema, follow that.
-			// Simplest generic approach: Array of objects = Table. Single Object = Key/Value pairs vertically.
-			
-			// Check if values are complex objects (nested)
-			const hasComplexValues = Object.values(jsonData).some(v => typeof v === 'object' && v !== null);
-			
-			if (!hasComplexValues) {
-				// Flat object -> Vertical Key/Value list
-				Object.keys(jsonData).forEach(k => {
-					rowsToInsert.push({ key: k, value: jsonData[k] });
-				});
-			} else {
-				// Complex object -> Treat as single row, columns are keys
+			// If we have headers, treat as single horizontal row
+			if (headers.length > 0) {
 				rowsToInsert.push(jsonData);
+			} else {
+				// Fallback: Vertical Key/Value if no headers (schema was empty/invalid)
+				// Check complexity
+				const hasComplexValues = Object.values(jsonData).some(v => typeof v === 'object' && v !== null);
+				if (!hasComplexValues) {
+					Object.keys(jsonData).forEach(k => {
+						rowsToInsert.push({ key: k, value: jsonData[k] });
+					});
+				} else {
+					rowsToInsert.push(jsonData);
+				}
 			}
 		}
 		
-		// Insert Data
+		// 4. Insert Data
 		rowsToInsert.forEach((rowObj, rOffset) => {
 			const currentRow = startR + rOffset;
-			let cOffset = 0;
 			
-			// If rowObj is primitive (array of strings), handle that
 			if (typeof rowObj !== 'object' || rowObj === null) {
+				// Primitive value in array
 				this.setCellValue(sheet, currentRow, startC, rowObj);
 			} else {
 				// Object
-				Object.values(rowObj).forEach(val => {
-					const currentCol = startC + cOffset;
-					
-					// Handle nested objects/arrays by stringifying
-					let valStr = val;
-					if (typeof val === 'object') valStr = JSON.stringify(val);
-					
-					this.setCellValue(sheet, currentRow, currentCol, valStr);
-					cOffset++;
-				});
+				if (headers.length > 0) {
+					// Map by Header
+					headers.forEach((key, idx) => {
+						const currentCol = startC + idx;
+						const val = rowObj[key];
+						
+						let valStr = (val === undefined || val === null) ? '' : val;
+						if (typeof val === 'object') valStr = JSON.stringify(val);
+						
+						this.setCellValue(sheet, currentRow, currentCol, valStr);
+					});
+				} else {
+					// Map by Iteration (Fallback)
+					let cOffset = 0;
+					Object.values(rowObj).forEach(val => {
+						const currentCol = startC + cOffset;
+						let valStr = val;
+						if (typeof val === 'object') valStr = JSON.stringify(val);
+						
+						this.setCellValue(sheet, currentRow, currentCol, valStr);
+						cOffset++;
+					});
+				}
 			}
 		});
 		

@@ -155,7 +155,6 @@ var SheetDataManager = {
 				if (!contentDiv) continue;
 				
 				// --- Data Extraction ---
-				const html = contentDiv.innerHTML;
 				// Updated: Check innerText specifically as requested
 				// Note: We need to be careful not to save the LLM button HTML as text content
 				// So we clone the node, remove the button, then get text
@@ -172,22 +171,30 @@ var SheetDataManager = {
 				const rowspan = parseInt(cell.getAttribute('rowspan')) || 1;
 				const colspan = parseInt(cell.getAttribute('colspan')) || 1;
 				
-				// --- Style Extraction ---
+				// --- Style Extraction (Filtered) ---
+				// Only allow specific user settings to be saved in cssText
 				const style = {};
-				if (contentDiv.style.cssText) {
-					if (contentDiv.style.length > 0) {
-						let hasMeaningfulStyle = false;
-						for (let i = 0; i < contentDiv.style.length; i++) {
-							const prop = contentDiv.style[i];
-							if (prop !== 'width' && prop !== 'height') {
-								hasMeaningfulStyle = true;
-								break;
-							}
-						}
-						if (hasMeaningfulStyle) {
-							style.cssText = contentDiv.style.cssText;
-						}
+				const allowedStyles = [
+					'color',
+					'backgroundColor',
+					'fontWeight',
+					'fontStyle',
+					'fontSize',
+					'textAlign'
+				];
+				let cleanCssText = '';
+				
+				allowedStyles.forEach(prop => {
+					// Check if the property is explicitly set on the element
+					if (contentDiv.style[prop]) {
+						// Convert camelCase to kebab-case for CSS string
+						const kebabProp = prop.replace(/([a-z0-9]|(?=[A-Z]))([A-Z])/g, '$1-$2').toLowerCase();
+						cleanCssText += `${kebabProp}:${contentDiv.style[prop]};`;
 					}
+				});
+				
+				if (cleanCssText.length > 0) {
+					style.cssText = cleanCssText;
 				}
 				
 				// Capture Cell Background and Borders (applied to TD)
@@ -201,14 +208,18 @@ var SheetDataManager = {
 				
 				// --- LLM Config Extraction ---
 				// We store the LLM config in a data attribute on the cell or retrieve it from memory
-				// Since DOM scraping is destructive to memory objects if not careful, we rely on the
-				// existing sheetObj.cells if the DOM doesn't have the data attribute explicitly.
-				// However, the best way is to check if we have an existing memory object for this cell
-				// and preserve the 'llm' property.
 				let llmConfig = null;
 				const existingKey = r + '-' + colIndex;
 				if (sheetObj.cells[existingKey] && sheetObj.cells[existingKey].llm) {
 					llmConfig = sheetObj.cells[existingKey].llm;
+				}
+				
+				// Reconstruct HTML placeholder if LLM config exists
+				let html = contentDiv.innerHTML;
+				if (llmConfig) {
+					html = '{{LLM_BUTTON}}';
+					// Ensure text doesn't contain button markup remnants
+					if (!text) text = 'LLM Formula';
 				}
 				
 				// --- Logic Update: Only save if meaningful data exists ---
@@ -220,7 +231,7 @@ var SheetDataManager = {
 				
 				if (hasContent || hasHtmlContent || isMerged || hasStyle || hasLLM) {
 					cells[r + '-' + colIndex] = {
-						html: html, // Note: This might include the button HTML, but renderSheet cleans it up
+						html: html,
 						text: text,
 						rowspan: rowspan,
 						colspan: colspan,
@@ -396,15 +407,20 @@ var SheetDataManager = {
 					
 					// Clean content (remove old buttons if saved in HTML)
 					let content = cellData.html || cellData.text || '';
-					// Simple regex to strip the button if it was accidentally saved in HTML
-					content = content.replace(/<button class="llm-run-btn".*?<\/button>/g, '');
 					
 					// Add LLM Button if config exists
 					if (cellData.llm) {
-						// NEW: Use Function Name from config, or default
+						// Use Function Name from config, or default
 						const btnText = cellData.llm.funcName || 'Run LLM';
-						// NEW: Changed to ondblclick
-						content += `<button class="llm-run-btn" contenteditable="false" ondblclick="LLMManager.executeLLM(${r}, ${c}, event)" title="Double-click to Run LLM Formula">${btnText}</button>`;
+						// Replace content entirely with the button, ignoring previous text
+						content = `<button class="llm-run-btn" contenteditable="false" ondblclick="LLMManager.executeLLM(${r}, ${c}, event)" title="Double-click to Run LLM Formula">${btnText}</button>`;
+					} else {
+						// Simple regex to strip the button if it was accidentally saved in HTML
+						content = content.replace(/<button class="llm-run-btn".*?<\/button>/g, '');
+						// Remove placeholder if it exists without config
+						if (content === '{{LLM_BUTTON}}') {
+							content = '';
+						}
 					}
 					
 					cellHTML = `<div class="content-cut" style="${contentStyle}">${content}</div>`;

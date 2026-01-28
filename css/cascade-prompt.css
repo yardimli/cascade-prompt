@@ -705,44 +705,45 @@ body {
 / LLM Features Styles /
 / -------------------------------------------------- */
 .llm-run-btn {
-    display: inline-block;
-    margin: 0; /* Updated: Remove margin to fill cell */
-    padding: 2px 6px;
-    font-size: inherit; /* Updated: Inherit font size */
-    font-family: inherit; /* Updated: Inherit font family */
-    font-weight: inherit; /* Updated: Inherit font weight */
-    font-style: inherit; /* Updated: Inherit font style */
+    display: inline-flex; /* Changed to inline-flex */
+    align-items: center;
+    justify-content: center;
+    margin: 2px;
+    padding: 2px 8px;
 
-    /* Updated: Background and color handling */
-    background-color: transparent; /* Make transparent so TD background shows through */
-    color: inherit; /* Inherit text color from parent */
+    font-size: 11px;
+    font-family: inherit;
+    font-weight: 600;
+    text-align: center;
 
-    border: none;
-    border-radius: 0; /* Updated: Remove radius to look like a cell */
+    background-color: var(--bg-surface);
+    color: var(--accent-color);
+    border: 1px solid var(--accent-color);
+    border-radius: 4px;
+
     cursor: pointer;
-    vertical-align: middle;
     user-select: none;
     z-index: 5;
     position: relative;
-    width: 100%; /* Updated: Fill width */
-    height: 100%; /* Updated: Fill height */
 
-    /* Flex to center text */
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    /* Sizing */
+    width: calc(100% - 4px);
+    height: calc(100% - 4px);
+
+    box-shadow: 0 1px 2px var(--shadow-color);
+    transition: all 0.15s ease-in-out;
 }
 
-/* Default style if no parent style is applied (Optional, or rely on TD default) */
-/* We add a specific class if we want the 'default' button look back,
-   but the request implies the button takes the cell's style.
-   If the cell is plain, the button is plain text centered.
-   To keep it looking like a "button" by default, we might need a default class,
-   but making it transparent fulfills "background applied to button" via the cell.
-*/
-
 .llm-run-btn:hover {
-    background-color: rgba(0, 0, 0, 0.05); /* Slight hover effect */
+    background-color: var(--accent-color);
+    color: var(--text-inverse);
+    box-shadow: 0 2px 4px var(--shadow-color);
+    transform: translateY(-1px);
+}
+
+.llm-run-btn:active {
+    transform: translateY(0);
+    box-shadow: none;
 }
 
 .llm-run-btn i {
