@@ -52,7 +52,11 @@ function highlightCell(cell) {
 	cell.classList.add('selected-cell');
 	
 	// Update Formula Bar - Read from inner div
-	const cellContent = cell.querySelector('.content-cut').textContent;
+	const contentDiv = cell.querySelector('.content-cut');
+	const cellContent = contentDiv.textContent;
+	// Check for data-formula attribute (used for dropdowns)
+	const cellFormula = contentDiv.getAttribute('data-formula');
+	
 	const formulaInput = document.getElementById('formula-input');
 	
 	// --- NEW: Check for LLM Data to display special formula text ---
@@ -68,6 +72,13 @@ function highlightCell(cell) {
 		// Make it read-only for direct editing, force click to open dialog
 		formulaInput.setAttribute('contenteditable', 'false');
 		// Add pointer cursor class
+		formulaInput.classList.add('pointer-cursor');
+	} else if (cellFormula && cellFormula.toLowerCase().startsWith('=dropdown')) {
+		// --- NEW: Check for Dropdown Formula ---
+		// Display the raw formula in the bar instead of the selected value
+		formulaInput.textContent = cellFormula;
+		// Make read-only so user clicks to open modal
+		formulaInput.setAttribute('contenteditable', 'false');
 		formulaInput.classList.add('pointer-cursor');
 	} else {
 		formulaInput.textContent = cellContent;
@@ -454,11 +465,14 @@ document.addEventListener('DOMContentLoaded', function () {
 		}
 	});
 	
-	// --- NEW: Handle Click on Formula Bar to open LLM Dialog ---
+	// --- NEW: Handle Click on Formula Bar to open Dialogs (LLM or Dropdown) ---
 	formulaInput.addEventListener('click', function () {
 		const text = this.textContent;
 		if (text.startsWith('=LLM(')) {
 			LLMManager.openFormulaBuilder();
+		} else if (text.toLowerCase().startsWith('=dropdown(')) {
+			// Open Dropdown Modal if the formula indicates a dropdown
+			DropdownManager.openDropdownBuilder();
 		}
 	});
 	
