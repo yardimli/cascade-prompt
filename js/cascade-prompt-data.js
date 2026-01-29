@@ -384,7 +384,8 @@ export const SheetDataManager = {
 					
 					if (cellData.llm) {
 						const btnText = cellData.llm.funcName || 'Run LLM';
-						content = `<button class="llm-run-btn" style="${userStyle}" contenteditable="false" onclick="window.LLMManager.executeLLM(${r}, ${c}, event)" title="Click to Run LLM Formula">${btnText}</button>`;
+						// MODIFIED: Removed inline onclick, added pointer-events:none to allow single click selection on TD
+						content = `<button class="llm-run-btn" style="${userStyle}; pointer-events: none;" contenteditable="false" title="Double Click to Run LLM Formula">${btnText}</button>`;
 						cellHTML = `<div class="content-cut" style="${divStyle}">${content}</div>`;
 					} else {
 						const dropdownRegex = /^=dropdown\s*\(\s*"([^"]+)"(?:\s*,\s*"([^"]*)")?\s*\)$/i;

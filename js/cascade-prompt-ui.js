@@ -447,6 +447,7 @@ export function unmergeCells() {
 // --------------------------------------------------//
 export function attachResizeHandlers() {
 	// Row Resizing
+	console.log('Attaching row resize handlers...');
 	const counterCells = document.querySelectorAll('.counter-cell:not(.processed)');
 	counterCells.forEach(th => {
 		// Ensure relative positioning for absolute child
@@ -499,8 +500,10 @@ export function attachResizeHandlers() {
 	});
 	
 	// Column Resizing
+	console.log('Attaching column resize handlers...');
 	const letterCells = document.querySelectorAll('.letter-cell:not(.processed)');
 	letterCells.forEach(cell => {
+		console.log('Attaching resize handler to column', cell.getAttribute('data-col'));
 		const handle = document.createElement('div');
 		handle.className = 'resize-handle';
 		handle.style.zIndex = '50';

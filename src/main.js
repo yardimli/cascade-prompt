@@ -345,10 +345,19 @@ window.showToast = function (message) {
 // Initialize
 document.addEventListener('DOMContentLoaded', function () {
 	initTheme();
+	
+	// Listen for the custom event dispatched by renderSheet to re-attach handlers
+	document.addEventListener('sheetRendered', function () {
+		attachResizeHandlers();
+	});
+	
 	SheetDataManager.init();
 	HistoryManager.init();
 	LLMManager.init();
 	initKeypressListeners();
+	
+	// Attach handlers for the initial server-rendered table
+	attachResizeHandlers();
 	
 	const addSheetBtn = document.querySelector('.add-sheet-btn');
 	if (addSheetBtn) {
@@ -426,7 +435,18 @@ document.addEventListener('DOMContentLoaded', function () {
 	const spreadsheet = document.querySelector('.spreadsheet');
 	spreadsheet.addEventListener('dblclick', function (e) {
 		const cell = e.target.closest('.text-cell');
-		if (cell) makeCellEditable(cell);
+		if (cell) {
+			// Check for LLM Button
+			const llmBtn = cell.querySelector('.llm-run-btn');
+			if (llmBtn) {
+				const r = cell.parentElement.rowIndex - 1;
+				const c = parseInt(cell.getAttribute('data-col'));
+				LLMManager.executeLLM(r, c, e);
+			} else {
+				// Otherwise, standard edit/dropdown
+				makeCellEditable(cell);
+			}
+		}
 	});
 	
 	let mouseDown = false;
