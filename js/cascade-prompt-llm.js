@@ -1,4 +1,5 @@
 import { SheetDataManager } from './cascade-prompt-data.js';
+import { getApiEndpoint } from './api-config.js';
 
 export const LLMManager = {
 	models: [],
@@ -315,7 +316,7 @@ export const LLMManager = {
 		const icon = btn.querySelector('i');
 		icon.classList.add('animate-spin');
 		
-		fetch('api/llm_proxy.php', {
+		fetch(getApiEndpoint('llm_proxy'), {
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json'
@@ -490,7 +491,7 @@ export const LLMManager = {
 		
 		finalPrompt += '\n\nIMPORTANT: Respond ONLY with valid JSON matching this structure, repeat the structure for each result:\n' + cellData.llm.jsonSchema;
 		
-		fetch('api/llm_proxy.php', {
+		fetch(getApiEndpoint('llm_proxy'), {
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json'

@@ -1,3 +1,5 @@
+import { getApiEndpoint } from './api-config.js';
+
 export const SheetDataManager = {
 	data: {
 		activeSheetIndex: 0,
@@ -603,7 +605,7 @@ export const SheetDataManager = {
 			return;
 		}
 		
-		fetch('api/save_project.php', {
+		fetch(getApiEndpoint('save_project'), {
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json'
@@ -632,7 +634,7 @@ export const SheetDataManager = {
 	},
 	
 	loadProject: function (filename, isInitialLoad) {
-		fetch('api/load_project.php?filename=' + encodeURIComponent(filename))
+		fetch(getApiEndpoint('load_project') + '?filename=' + encodeURIComponent(filename))
 			.then(response => response.json())
 			.then(data => {
 				if (data.success) {
@@ -665,7 +667,7 @@ export const SheetDataManager = {
 	},
 	
 	listProjects: function (callback) {
-		fetch('api/list_projects.php')
+		fetch(getApiEndpoint('list_projects'))
 			.then(response => response.json())
 			.then(data => {
 				if (data.success && callback) {
@@ -677,7 +679,7 @@ export const SheetDataManager = {
 	deleteProject: function (filename, callback) {
 		if (!confirm('Are you sure you want to delete "' + filename + '"?')) return;
 		
-		fetch('api/delete_project.php', {
+		fetch(getApiEndpoint('delete_project'), {
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json'

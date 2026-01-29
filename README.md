@@ -3,9 +3,9 @@ Cascading prompts on spreadsheet to automate advanced LLM and Image generation.
 
 -------
 
-### How to Run
+### How to Run with PHP
 
-#### For Development (Hot Reloading)
+#### For Development with php (Hot Reloading)
 1.  Open your terminal in the project folder.
 2.  Run the Vite server:
     ```bash
@@ -25,3 +25,9 @@ Cascading prompts on spreadsheet to automate advanced LLM and Image generation.
     *(This creates a `dist` folder with compiled CSS and JS).*
 3.  Refresh `http://localhost/cascade-prompt/`.
     *   The PHP loader will see the `dist/manifest.json` and load the compiled files.
+
+### For running without PHP
+```bash
+npm run dev:node
+```
+Open your browser: `http://localhost:[port]/cascade-prompt/index.html`
