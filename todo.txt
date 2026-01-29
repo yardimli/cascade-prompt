@@ -75,6 +75,7 @@ TODO:
 
 --------- BUGS:
 
+selecting single cell is not working, also after making a selection making it smaller is not working correctly.
 when merging cells row height resize acts weirdly for the rows that intersect with merged cells
 when unmerging cells the new cells are not editable until page refresh
 new sheets row heights are different than the first sheet, should have some default height

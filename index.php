@@ -1,255 +1,159 @@
+<?php
+require_once 'vite_loader.php';
+$vite = new ViteLoader('/cascade-prompt/'); // Ensure this matches your folder name
+?>
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="light">
 
 <head>
 	<meta charset="utf-8">
-	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<meta name="author" content="DSAThemes">
-	<meta name="description" content="Discover a new beginning.">
-	<meta name="keywords"
-	      content="Responsive, HTML5, DSAThemes, Landing, Software, Mobile App, SaaS, Startup, Creative, Digital Product">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<meta name="csrf-token" content="">
-	
-	<!-- SITE TITLE -->
 	<title>Cascade Prompt</title>
+	<!-- Icons -->
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 	
-	<!-- FAVICON AND TOUCH ICONS -->
-	<link rel="shortcut icon" href="./images/favicon.ico" type="image/x-icon">
-	<link rel="icon" href="./images/favicon.ico" type="image/x-icon">
-	<link rel="apple-touch-icon" sizes="152x152" href="images/apple-touch-icon-152x152.png">
-	<link rel="apple-touch-icon" sizes="120x120" href="images/apple-touch-icon-120x120.png">
-	<link rel="apple-touch-icon" sizes="76x76" href="images/apple-touch-icon-76x76.png">
-	<link rel="apple-touch-icon" href="./images/apple-touch-icon.png">
-	<link rel="icon" href="./images/apple-touch-icon.png" type="image/x-icon">
-	
-	<link rel="stylesheet" href="./css/bootstrap-icons.min.css">
-	<link rel="stylesheet" href="css/cascade-prompt.css">
-	
-	<link href="./css/bootstrap.min.css" rel="stylesheet">
-	<script src="./js/bootstrap.min.js"></script>
-	
-	<!-- Scripts -->
-	<script src="js/cascade-prompt-data.js"></script>
-	<script src="js/cascade-prompt-history.js"></script>
-	<script src="js/cascade-prompt-formatting.js"></script>
-	<script src="js/cascade-prompt-clipboard.js"></script>
-	<script src="js/cascade-prompt-llm.js"></script>
-	<script src="js/cascade-prompt-dropdown.js"></script>
-	<script src="js/cascade-prompt.js"></script>
-	<script src="js/cascade-prompt-keypress.js"></script>
-	<script src="js/cascade-prompt-ui.js"></script>
-
+	<!-- Vite Entry Point -->
+	<?php echo $vite->render('src/main.js'); ?>
 </head>
 
-<body style="margin-left: 0px; padding-left: 0px; overflow: hidden;">
+<body>
 
-<!-- Top Menu Bar -->
-<div class="top-menu-bar">
-	<div style="margin-right: 15px; font-weight: bold; display:flex; align-items:center;">
+<!-- Top Menu Bar (DaisyUI Navbar) -->
+<div class="navbar bg-base-100 min-h-[40px] border-b border-base-300 shadow-sm z-50 px-2">
+	<div class="flex-none mr-4 font-bold flex items-center">
 		<img src="./images/android-chrome-192x192.png" style="height: 20px; margin-right:5px;">
 		Cascade
 	</div>
 	
-	<!-- File Menu -->
-	<div class="menu-item">
-		File
-		<div class="dropdown-content">
-			<div class="menu-dropdown-item" onclick="openProjectModal('new')">New...</div>
-			<div class="menu-dropdown-item" onclick="openProjectModal('open')">Open... <span
-					class="shortcut-key">Ctrl+O</span></div>
-			<div class="dropdown-divider"></div>
-			<div class="menu-dropdown-item" onclick="performSave()">Save <span class="shortcut-key">Ctrl+S</span></div>
-			<div class="menu-dropdown-item" onclick="openProjectModal('save-as')">Save As...</div>
-			<div class="dropdown-divider"></div>
-			<div class="menu-dropdown-item" onclick="LLMManager.openSettings()">LLM Settings...</div>
-			<div class="dropdown-divider"></div>
-			<div class="menu-dropdown-item" onclick="window.print()">Print <span class="shortcut-key">Ctrl+P</span></div>
-		</div>
-	</div>
-	
-	<!-- Edit Menu -->
-	<div class="menu-item">
-		Edit
-		<div class="dropdown-content">
-			<div class="menu-dropdown-item" onclick="HistoryManager.undo()">Undo <span class="shortcut-key">Ctrl+Z</span>
-			</div>
-			<div class="menu-dropdown-item" onclick="HistoryManager.redo()">Redo <span class="shortcut-key">Ctrl+Y</span>
-			</div>
-			<div class="dropdown-divider"></div>
-			<div class="menu-dropdown-item" onclick="ClipboardManager.cut()">Cut <span class="shortcut-key">Ctrl+X</span>
-			</div>
-			<div class="menu-dropdown-item" onclick="ClipboardManager.copy(false)">Copy <span
-					class="shortcut-key">Ctrl+C</span></div>
-			<div class="menu-dropdown-item" onclick="ClipboardManager.paste()">Paste <span class="shortcut-key">Ctrl+V</span>
-			</div>
-			<div class="dropdown-divider"></div>
-			<!-- NEW: Sheet Properties Menu Item -->
-			<div class="menu-dropdown-item" onclick="SheetPropertiesManager.open()">Sheet Properties...</div>
-			<div class="dropdown-divider"></div>
-			<div class="menu-dropdown-item" onclick="LLMManager.openFormulaBuilder()">Insert LLM Formula</div>
-			<div class="menu-dropdown-item" onclick="DropdownManager.openDropdownBuilder()">Insert Dropdown</div>
-		</div>
-	</div>
-	
-	<!-- View Menu -->
-	<div class="menu-item">
-		View
-		<div class="dropdown-content">
-			<div class="menu-dropdown-item" id="theme-toggle-btn">Light/Dark Mode</div>
-			<div class="dropdown-divider"></div>
-			<div class="menu-dropdown-item">Freeze Rows (Coming Soon)</div>
-			<div class="menu-dropdown-item">Freeze Columns (Coming Soon)</div>
-			<div class="dropdown-divider"></div>
-			<div class="menu-dropdown-item" onclick="document.documentElement.requestFullscreen()">Full Screen</div>
-		</div>
-	</div>
-	
-	<!-- Help Menu -->
-	<div class="menu-item">
-		Help
-		<div class="dropdown-content">
-			<div class="menu-dropdown-item"
-			     onclick="showCustomAlert('Cascade Prompt v1.0<br>Use Arrow keys to navigate.<br>Double click to edit.')">
-				About
-			</div>
-		</div>
+	<div class="flex-none">
+		<ul class="menu menu-horizontal px-1 p-0 text-sm">
+			<!-- File Menu -->
+			<li>
+				<details>
+					<summary>File</summary>
+					<ul class="bg-base-100 rounded-t-none p-2 w-52 shadow-lg border border-base-200 z-[1001]">
+						<li><a onclick="openProjectModal('new')">New...</a></li>
+						<li><a onclick="openProjectModal('open')">Open... <span class="text-xs opacity-50 float-right">Ctrl+O</span></a></li>
+						<div class="divider my-0"></div>
+						<li><a onclick="performSave()">Save <span class="text-xs opacity-50 float-right">Ctrl+S</span></a></li>
+						<li><a onclick="openProjectModal('save-as')">Save As...</a></li>
+						<div class="divider my-0"></div>
+						<li><a onclick="LLMManager.openSettings()">LLM Settings...</a></li>
+						<div class="divider my-0"></div>
+						<li><a onclick="window.print()">Print <span class="text-xs opacity-50 float-right">Ctrl+P</span></a></li>
+					</ul>
+				</details>
+			</li>
+			
+			<!-- Edit Menu -->
+			<li>
+				<details>
+					<summary>Edit</summary>
+					<ul class="bg-base-100 rounded-t-none p-2 w-52 shadow-lg border border-base-200 z-[1001]">
+						<li><a onclick="HistoryManager.undo()">Undo <span class="text-xs opacity-50 float-right">Ctrl+Z</span></a></li>
+						<li><a onclick="HistoryManager.redo()">Redo <span class="text-xs opacity-50 float-right">Ctrl+Y</span></a></li>
+						<div class="divider my-0"></div>
+						<li><a onclick="ClipboardManager.cut()">Cut <span class="text-xs opacity-50 float-right">Ctrl+X</span></a></li>
+						<li><a onclick="ClipboardManager.copy(false)">Copy <span class="text-xs opacity-50 float-right">Ctrl+C</span></a></li>
+						<li><a onclick="ClipboardManager.paste()">Paste <span class="text-xs opacity-50 float-right">Ctrl+V</span></a></li>
+						<div class="divider my-0"></div>
+						<li><a onclick="SheetPropertiesManager.open()">Sheet Properties...</a></li>
+						<div class="divider my-0"></div>
+						<li><a onclick="LLMManager.openFormulaBuilder()">Insert LLM Formula</a></li>
+						<li><a onclick="DropdownManager.openDropdownBuilder()">Insert Dropdown</a></li>
+					</ul>
+				</details>
+			</li>
+			
+			<!-- View Menu -->
+			<li>
+				<details>
+					<summary>View</summary>
+					<ul class="bg-base-100 rounded-t-none p-2 w-52 shadow-lg border border-base-200 z-[1001]">
+						<li><a onclick="toggleTheme()">Light/Dark Mode</a></li>
+						<div class="divider my-0"></div>
+						<li><a onclick="document.documentElement.requestFullscreen()">Full Screen</a></li>
+					</ul>
+				</details>
+			</li>
+			
+			<!-- Help Menu -->
+			<li>
+				<details>
+					<summary>Help</summary>
+					<ul class="bg-base-100 rounded-t-none p-2 w-52 shadow-lg border border-base-200 z-[1001]">
+						<li><a onclick="showCustomAlert('Cascade Prompt v1.0<br>Use Arrow keys to navigate.<br>Double click to edit.')">About</a></li>
+					</ul>
+				</details>
+			</li>
+		</ul>
 	</div>
 </div>
 
 <!-- Toolbar -->
-<div class="toolbar-container">
-	<button type="button" class="btn btn-sm btn-outline-info" onclick="HistoryManager.undo()" title="Undo">
-		<i class="bi bi-arrow-counterclockwise"></i>
-	</button>
-	<button type="button" class="btn btn-sm btn-outline-info" onclick="HistoryManager.redo()" title="Redo">
-		<i class="bi bi-arrow-clockwise"></i>
-	</button>
+<div class="flex items-center gap-1 px-4 py-1 bg-base-200 border-b border-base-300 overflow-x-auto">
+	<button class="btn btn-ghost btn-xs btn-square" onclick="HistoryManager.undo()" title="Undo"><i class="bi bi-arrow-counterclockwise"></i></button>
+	<button class="btn btn-ghost btn-xs btn-square" onclick="HistoryManager.redo()" title="Redo"><i class="bi bi-arrow-clockwise"></i></button>
 	
-	<div style="width: 1px; height: 20px; background: var(--border-color); margin: 0 5px;"></div>
+	<div class="w-px h-4 bg-base-content/20 mx-1"></div>
 	
-	<!-- Clipboard Toolbar Buttons -->
-	<button type="button" class="btn btn-sm btn-outline-info" onclick="ClipboardManager.cut()" title="Cut (Ctrl+X)">
-		<i class="bi bi-scissors"></i>
-	</button>
-	<button type="button" class="btn btn-sm btn-outline-info" onclick="ClipboardManager.copy(false)"
-	        title="Copy (Ctrl+C)">
-		<i class="bi bi-files"></i>
-	</button>
-	<button type="button" class="btn btn-sm btn-outline-info" onclick="ClipboardManager.paste()" title="Paste (Ctrl+V)">
-		<i class="bi bi-clipboard"></i>
-	</button>
+	<button class="btn btn-ghost btn-xs btn-square" onclick="ClipboardManager.cut()" title="Cut"><i class="bi bi-scissors"></i></button>
+	<button class="btn btn-ghost btn-xs btn-square" onclick="ClipboardManager.copy(false)" title="Copy"><i class="bi bi-files"></i></button>
+	<button class="btn btn-ghost btn-xs btn-square" onclick="ClipboardManager.paste()" title="Paste"><i class="bi bi-clipboard"></i></button>
 	
-	<div style="width: 1px; height: 20px; background: var(--border-color); margin: 0 5px;"></div>
+	<div class="w-px h-4 bg-base-content/20 mx-1"></div>
 	
-	<!-- Text Formatting -->
-	<button type="button" class="btn btn-sm btn-outline-info" onclick="FormatManager.toggleStyle('bold')" title="Bold">
-		<i class="bi bi-type-bold"></i>
-	</button>
-	<button type="button" class="btn btn-sm btn-outline-info" onclick="FormatManager.toggleStyle('italic')"
-	        title="Italic">
-		<i class="bi bi-type-italic"></i>
-	</button>
+	<button class="btn btn-ghost btn-xs btn-square" onclick="FormatManager.toggleStyle('bold')" title="Bold"><i class="bi bi-type-bold"></i></button>
+	<button class="btn btn-ghost btn-xs btn-square" onclick="FormatManager.toggleStyle('italic')" title="Italic"><i class="bi bi-type-italic"></i></button>
 	
 	<!-- Font Size Dropdown -->
-	<div class="border-dropdown" style="margin-left: 2px;">
-		<button type="button" class="btn btn-sm btn-outline-info" onclick="FormatManager.toggleFontSizeMenu(this)"
-		        title="Font Size">
-			<i class="bi bi-type"></i>
-		</button>
-		<div class="dropdown-content" style="min-width: 100px; padding: 5px;">
-			<div class="menu-dropdown-item"
-			     onclick="FormatManager.setFontSize('small'); this.parentElement.classList.remove('active')">Small
-			</div>
-			<div class="menu-dropdown-item"
-			     onclick="FormatManager.setFontSize('normal'); this.parentElement.classList.remove('active')">Normal
-			</div>
-			<div class="menu-dropdown-item"
-			     onclick="FormatManager.setFontSize('large'); this.parentElement.classList.remove('active')">Large
-			</div>
-			<div class="menu-dropdown-item"
-			     onclick="FormatManager.setFontSize('xl'); this.parentElement.classList.remove('active')">Extra Large
+	<div class="dropdown">
+		<div tabindex="0" role="button" class="btn btn-ghost btn-xs btn-square" title="Font Size"><i class="bi bi-type"></i></div>
+		<ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-32 border border-base-200">
+			<li><a onclick="FormatManager.setFontSize('small')">Small</a></li>
+			<li><a onclick="FormatManager.setFontSize('normal')">Normal</a></li>
+			<li><a onclick="FormatManager.setFontSize('large')">Large</a></li>
+			<li><a onclick="FormatManager.setFontSize('xl')">Extra Large</a></li>
+		</ul>
+	</div>
+	
+	<div class="w-px h-4 bg-base-content/20 mx-1"></div>
+	
+	<button class="btn btn-ghost btn-xs btn-square" onclick="FormatManager.openColorDialog('text')" title="Text Color"><i class="bi bi-palette"></i></button>
+	<button class="btn btn-ghost btn-xs btn-square" onclick="FormatManager.openColorDialog('background')" title="Fill Color"><i class="bi bi-paint-bucket"></i></button>
+	
+	<!-- Borders Dropdown -->
+	<div class="dropdown">
+		<div tabindex="0" role="button" class="btn btn-ghost btn-xs btn-square" title="Borders"><i class="bi bi-border-all"></i></div>
+		<div tabindex="0" class="dropdown-content z-[1] card card-compact w-36 shadow bg-base-100 border border-base-200">
+			<div class="card-body grid grid-cols-3 gap-1 p-2">
+				<button class="btn btn-ghost btn-xs btn-square" onclick="FormatManager.setBorder('all')" title="All"><i class="bi bi-border-all"></i></button>
+				<button class="btn btn-ghost btn-xs btn-square" onclick="FormatManager.setBorder('outer')" title="Outer"><i class="bi bi-border-outer"></i></button>
+				<button class="btn btn-ghost btn-xs btn-square" onclick="FormatManager.setBorder('none')" title="None"><i class="bi bi-border-none"></i></button>
+				<button class="btn btn-ghost btn-xs btn-square" onclick="FormatManager.setBorder('top')" title="Top"><i class="bi bi-border-top"></i></button>
+				<button class="btn btn-ghost btn-xs btn-square" onclick="FormatManager.setBorder('bottom')" title="Bottom"><i class="bi bi-border-bottom"></i></button>
+				<button class="btn btn-ghost btn-xs btn-square" onclick="FormatManager.setBorder('left')" title="Left"><i class="bi bi-border-left"></i></button>
+				<button class="btn btn-ghost btn-xs btn-square" onclick="FormatManager.setBorder('right')" title="Right"><i class="bi bi-border-right"></i></button>
+				<button class="btn btn-ghost btn-xs btn-square" onclick="FormatManager.openColorDialog('border')" title="Color"><i class="bi bi-palette2"></i></button>
 			</div>
 		</div>
 	</div>
 	
-	<div style="width: 1px; height: 20px; background: var(--border-color); margin: 0 5px;"></div>
+	<div class="w-px h-4 bg-base-content/20 mx-1"></div>
 	
-	<!-- Colors (Updated to use Modal) -->
-	<button type="button" class="btn btn-sm btn-outline-info" onclick="FormatManager.openColorDialog('text')"
-	        title="Text Color">
-		<i class="bi bi-palette"></i>
-	</button>
-	<button type="button" class="btn btn-sm btn-outline-info" onclick="FormatManager.openColorDialog('background')"
-	        title="Fill Color">
-		<i class="bi bi-paint-bucket"></i>
-	</button>
+	<button class="btn btn-ghost btn-xs btn-square" onclick="FormatManager.setAlignment('left')" title="Align Left"><i class="bi bi-justify-left"></i></button>
+	<button class="btn btn-ghost btn-xs btn-square" onclick="FormatManager.setAlignment('center')" title="Align Center"><i class="bi bi-text-center"></i></button>
+	<button class="btn btn-ghost btn-xs btn-square" onclick="FormatManager.setAlignment('right')" title="Align Right"><i class="bi bi-justify-right"></i></button>
 	
-	<!-- Borders -->
-	<div class="border-dropdown" id="border-dropdown">
-		<button type="button" class="btn btn-sm btn-outline-info" id="btn-borders"
-		        onclick="FormatManager.toggleBorderMenu()" title="Borders">
-			<i class="bi bi-border-all"></i>
-		</button>
-		<div class="border-dropdown-content">
-			<div class="border-option" onclick="FormatManager.setBorder('all')" title="All Borders"><i
-					class="bi bi-border-all"></i></div>
-			<div class="border-option" onclick="FormatManager.setBorder('outer')" title="Outer Borders"><i
-					class="bi bi-border-outer"></i></div>
-			<div class="border-option" onclick="FormatManager.setBorder('none')" title="No Borders"><i
-					class="bi bi-border-none"></i></div>
-			<div class="border-option" onclick="FormatManager.setBorder('top')" title="Top Border"><i
-					class="bi bi-border-top"></i></div>
-			<div class="border-option" onclick="FormatManager.setBorder('bottom')" title="Bottom Border"><i
-					class="bi bi-border-bottom"></i></div>
-			<div class="border-option" onclick="FormatManager.setBorder('left')" title="Left Border"><i
-					class="bi bi-border-left"></i></div>
-			<div class="border-option" onclick="FormatManager.setBorder('right')" title="Right Border"><i
-					class="bi bi-border-right"></i></div>
-			<!-- Border Color Trigger -->
-			<div class="border-option" onclick="FormatManager.openColorDialog('border')" title="Border Color"><i
-					class="bi bi-palette2"></i></div>
-		</div>
-	</div>
+	<div class="w-px h-4 bg-base-content/20 mx-1"></div>
 	
-	<div style="width: 1px; height: 20px; background: var(--border-color); margin: 0 5px;"></div>
+	<button class="btn btn-ghost btn-xs btn-square" id="merge-btn" title="Merge Cells" disabled onclick="mergeCells()"><i class="bi bi-arrows-collapse"></i></button>
+	<button class="btn btn-ghost btn-xs btn-square" id="unmerge-btn" title="Unmerge Cells" disabled onclick="unmergeCells()"><i class="bi bi-arrows-expand"></i></button>
 	
-	<!-- Alignment -->
-	<button type="button" class="btn btn-sm btn-outline-info" onclick="FormatManager.setAlignment('left')"
-	        title="Align Left">
-		<i class="bi bi-justify-left"></i>
-	</button>
-	<button type="button" class="btn btn-sm btn-outline-info" onclick="FormatManager.setAlignment('center')"
-	        title="Align Center">
-		<i class="bi bi-text-center"></i>
-	</button>
-	<button type="button" class="btn btn-sm btn-outline-info" onclick="FormatManager.setAlignment('right')"
-	        title="Align Right">
-		<i class="bi bi-justify-right"></i>
-	</button>
+	<div class="w-px h-4 bg-base-content/20 mx-1"></div>
 	
-	<div style="width: 1px; height: 20px; background: var(--border-color); margin: 0 5px;"></div>
-	
-	<button type="button" class="btn btn-sm btn-outline-info" id="merge-btn" title="Merge Cells" disabled>
-		<i class="bi bi-arrows-collapse"></i>
-	</button>
-	<button type="button" class="btn btn-sm btn-outline-info" id="unmerge-btn" title="Unmerge Cells" disabled>
-		<i class="bi bi-arrows-expand"></i>
-	</button>
-	
-	<div style="width: 1px; height: 20px; background: var(--border-color); margin: 0 5px;"></div>
-	
-	<!-- Dropdown Button -->
-	<button type="button" class="btn btn-sm btn-outline-secondary" onclick="DropdownManager.openDropdownBuilder()"
-	        title="Create/Edit Dropdown">
-		<i class="bi bi-list-ul"></i>
-	</button>
-	
-	<!-- LLM Button -->
-	<button type="button" class="btn btn-sm btn-outline-primary" onclick="LLMManager.openFormulaBuilder()"
-	        title="Insert LLM Formula">
-		<i class="bi bi-robot"></i> LLM
-	</button>
+	<button class="btn btn-ghost btn-xs btn-square" onclick="DropdownManager.openDropdownBuilder()" title="Dropdown"><i class="bi bi-list-ul"></i></button>
+	<button class="btn btn-primary btn-xs" onclick="LLMManager.openFormulaBuilder()"><i class="bi bi-robot mr-1"></i> LLM</button>
 </div>
 
 <!-- Formula Bar -->
@@ -258,10 +162,10 @@
 	<div id="formula-input" class="formula-input" contenteditable="false" placeholder="Select a cell..."></div>
 </div>
 
+<!-- Spreadsheet Area -->
 <div class="spreadsheet-container" id="spreadsheet-container">
 	<!-- Overlay Editor -->
 	<div id="cell-editor" contenteditable="true"></div>
-	
 	<div id="selection-helper" class="no-select"></div>
 	<table class="spreadsheet no-select">
 		<thead>
@@ -271,7 +175,8 @@
 				$alphabet = range('A', 'Z');
 				$colIndex = 0;
 				foreach ($alphabet as $letter) {
-					echo "<th class='letter-cell' data-col='$colIndex'>$letter</th>";
+					// FIX: Added style="width: 100px;" to force initial width
+					echo "<th class='letter-cell' data-col='$colIndex' style='width: 100px;'>$letter</th>";
 					$colIndex++;
 				}
 			?>
@@ -292,330 +197,261 @@
 	</table>
 </div>
 
-<!-- Sheet Tabs Container -->
+<!-- Sheet Tabs -->
 <div class="sheet-tabs-container" id="sheet-tabs-container">
-	<div class="add-sheet-btn" title="Add Sheet">+</div>
+	<div class="add-sheet-btn" title="Add Sheet"><i class="bi bi-plus"></i></div>
 </div>
 
 <!-- Status Bar -->
 <div class="status-bar">
-	<div class="status-left" style="display:flex;">
-		<div class="status-item" title="Current Selection">
+	<div class="flex gap-4">
+		<div class="flex items-center gap-1" title="Current Selection">
 			<i class="bi bi-cursor"></i> <span id="status-selection">--</span>
 		</div>
-		<div class="status-item" title="File Name">
+		<div class="flex items-center gap-1" title="File Name">
 			<i class="bi bi-file-earmark-spreadsheet"></i>
 			<span id="status-file">Untitled</span>
-			<span id="status-modified" style="display:none; margin-left:2px;">*</span>
+			<span id="status-modified" style="display:none;" class="text-warning font-bold">*</span>
 		</div>
-		<!-- NEW: LLM Status Indicator -->
-		<div class="status-item" id="status-llm-busy"
-		     style="display:none; color: var(--accent-color); align-items: center;">
-			<div class="llm-spinner"
-			     style="border-top-color: var(--accent-color); border-color: rgba(128,128,128,0.3); width: 12px; height: 12px; margin-right: 5px; border-width: 2px;"></div>
+		<div id="status-llm-busy" style="display:none;" class="flex items-center gap-1 text-primary">
+			<span class="loading loading-spinner loading-xs"></span>
 			<span id="status-llm-text">Processing...</span>
 		</div>
 	</div>
-	<div class="status-right">
-		<span style="font-size: 10px; color: #999;">Ready</span>
+	<div>
+		<span>Ready</span>
 	</div>
 </div>
 
-<!-- Toast Notification -->
-<div id="toast-notification" class="custom-toast">
-	Saved
-</div>
+<!-- Toast -->
+<div id="toast-notification" class="custom-toast">Saved</div>
 
-<!-- Project Management Modal -->
-<div class="modal fade" id="projectModal" tabindex="-1" aria-hidden="true">
-	<div class="modal-dialog">
-		<div class="modal-content">
-			<div class="modal-header">
-				<h5 class="modal-title" id="projectModalLabel">Project Manager</h5>
-				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-			</div>
-			<div class="modal-body">
-				<!-- Save As Section -->
-				<div id="modal-save-section" class="mb-3" style="display:none;">
-					<label for="project-filename" class="form-label">Project Name:</label>
-					<div class="input-group">
-						<input type="text" class="form-control" id="project-filename" placeholder="MySpreadsheet">
-						<span class="input-group-text">.json</span>
-					</div>
-				</div>
-				
-				<!-- Load/List Section -->
-				<div id="modal-list-section">
-					<h6>Existing Projects:</h6>
-					<div class="list-group" id="project-list-group">
-						<!-- Populated by JS -->
-					</div>
-					<div id="no-projects-msg" class="text-muted mt-2" style="display:none;">No projects found.</div>
+<!-- Modals (Native <dialog>) -->
+
+<!-- Project Modal -->
+<dialog id="projectModal" class="modal">
+	<div class="modal-box">
+		<h3 class="font-bold text-lg" id="projectModalLabel">Project Manager</h3>
+		<div class="py-4">
+			<div id="modal-save-section" style="display:none;">
+				<label class="label"><span class="label-text">Project Name:</span></label>
+				<div class="join w-full">
+					<input type="text" class="input input-bordered join-item w-full" id="project-filename" placeholder="MySpreadsheet">
+					<span class="btn join-item no-animation cursor-default">.json</span>
 				</div>
 			</div>
-			<div class="modal-footer">
-				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-				<button type="button" class="btn btn-primary" id="modal-action-btn">Save</button>
+			<div id="modal-list-section">
+				<h6 class="font-bold text-sm mb-2">Existing Projects:</h6>
+				<div class="flex flex-col gap-1 max-h-60 overflow-y-auto border border-base-200 rounded p-1" id="project-list-group">
+					<!-- Populated by JS -->
+				</div>
+				<div id="no-projects-msg" class="text-xs text-base-content/50 mt-2" style="display:none;">No projects found.</div>
 			</div>
 		</div>
+		<div class="modal-action">
+			<form method="dialog">
+				<button class="btn">Cancel</button>
+			</form>
+			<button class="btn btn-primary" id="modal-action-btn">Save</button>
+		</div>
 	</div>
-</div>
+</dialog>
 
 <!-- LLM Settings Modal -->
-<div class="modal fade" id="llmSettingsModal" tabindex="-1" aria-hidden="true">
-	<div class="modal-dialog">
-		<div class="modal-content">
-			<div class="modal-header">
-				<h5 class="modal-title">LLM Settings</h5>
-				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+<dialog id="llmSettingsModal" class="modal">
+	<div class="modal-box">
+		<h3 class="font-bold text-lg">LLM Settings</h3>
+		<div class="py-4 flex flex-col gap-3">
+			<div class="form-control">
+				<label class="label"><span class="label-text">OpenRouter API Key:</span></label>
+				<input type="password" class="input input-bordered" id="llm-api-key" placeholder="sk-or-...">
+				<label class="label"><span class="label-text-alt">Saved in project file.</span></label>
 			</div>
-			<div class="modal-body">
-				<div class="mb-3">
-					<label for="llm-api-key" class="form-label">OpenRouter API Key:</label>
-					<input type="password" class="form-control" id="llm-api-key" placeholder="sk-or-...">
-					<div class="form-text">Your key is saved within the project file.</div>
-				</div>
-				<!-- NEW: Fal.ai API Key Input -->
-				<div class="mb-3">
-					<label for="llm-fal-key" class="form-label">Fal.ai API Key:</label>
-					<input type="password" class="form-control" id="llm-fal-key" placeholder="key-...">
-					<div class="form-text">For image generation features.</div>
-				</div>
-			</div>
-			<div class="modal-footer">
-				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-				<button type="button" class="btn btn-primary" onclick="LLMManager.saveSettings()">Save Settings</button>
+			<div class="form-control">
+				<label class="label"><span class="label-text">Fal.ai API Key:</span></label>
+				<input type="password" class="input input-bordered" id="llm-fal-key" placeholder="key-...">
+				<label class="label"><span class="label-text-alt">For image generation.</span></label>
 			</div>
 		</div>
-	</div>
-</div>
-
-<!-- NEW: Sheet Properties Modal -->
-<div class="modal fade" id="sheetPropertiesModal" tabindex="-1" aria-hidden="true">
-	<div class="modal-dialog">
-		<div class="modal-content">
-			<div class="modal-header">
-				<h5 class="modal-title">Sheet Properties</h5>
-				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-			</div>
-			<div class="modal-body">
-				<div class="mb-3">
-					<label for="sheet-prop-name" class="form-label">Sheet Name:</label>
-					<input type="text" class="form-control" id="sheet-prop-name" placeholder="Sheet1">
-					<div class="form-text">Alphanumeric only, no spaces. Must be unique.</div>
-				</div>
-				<div class="row">
-					<div class="col-6 mb-3">
-						<label for="sheet-prop-rows" class="form-label">Rows:</label>
-						<input type="number" class="form-control" id="sheet-prop-rows" min="1" max="10000">
-					</div>
-					<div class="col-6 mb-3">
-						<label for="sheet-prop-cols" class="form-label">Columns:</label>
-						<input type="number" class="form-control" id="sheet-prop-cols" min="1" max="200">
-					</div>
-				</div>
-			</div>
-			<div class="modal-footer">
-				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-				<button type="button" class="btn btn-primary" onclick="SheetPropertiesManager.save()">Apply</button>
-			</div>
+		<div class="modal-action">
+			<form method="dialog">
+				<button class="btn">Cancel</button>
+			</form>
+			<button class="btn btn-primary" onclick="LLMManager.saveSettings()">Save Settings</button>
 		</div>
 	</div>
-</div>
+</dialog>
 
-<!-- LLM Formula Builder Modal -->
-<div class="modal fade" id="llmFormulaModal" tabindex="-1" aria-hidden="true">
-	<div class="modal-dialog modal-lg">
-		<div class="modal-content">
-			<div class="modal-header">
-				<h5 class="modal-title">Insert LLM Formula</h5>
-				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+<!-- Sheet Properties Modal -->
+<dialog id="sheetPropertiesModal" class="modal">
+	<div class="modal-box">
+		<h3 class="font-bold text-lg">Sheet Properties</h3>
+		<div class="py-4 flex flex-col gap-3">
+			<div class="form-control">
+				<label class="label"><span class="label-text">Sheet Name:</span></label>
+				<input type="text" class="input input-bordered" id="sheet-prop-name" placeholder="Sheet1">
 			</div>
-			<div class="modal-body">
-				<div class="row">
-					<div class="col-md-6 mb-3">
-						<label for="llm-model-select" class="form-label">Model:</label>
-						<!-- NEW: Filter Input for Models -->
-						<input type="text" class="form-control form-control-sm mb-1" id="llm-model-filter" placeholder="Search models...">
-						<div class="input-group">
-							<select class="form-select" id="llm-model-select">
-								<option value="">Select a model...</option>
-							</select>
-							<button class="btn btn-outline-secondary" type="button" id="refresh-models-btn"
-							        onclick="LLMManager.fetchModels()" title="Refresh Models">
-								<i class="bi bi-arrow-clockwise"></i>
-							</button>
-						</div>
-					</div>
-					<div class="col-md-6 mb-3">
-						<label for="llm-target-cell" class="form-label">Target Cell (Output):</label>
-						<input type="text" class="form-control" id="llm-target-cell" placeholder="e.g. A1">
-						<div class="form-text">Where the data will be inserted.</div>
-						<div class="invalid-feedback">Invalid format. Use A1, B2, etc.</div>
-					</div>
+			<div class="grid grid-cols-2 gap-4">
+				<div class="form-control">
+					<label class="label"><span class="label-text">Rows:</span></label>
+					<input type="number" class="input input-bordered" id="sheet-prop-rows" min="1" max="10000">
 				</div>
-				
-				<!-- NEW: Function Name Input -->
-				<div class="mb-3">
-					<label for="llm-func-name" class="form-label">Function Name (Button Text):</label>
-					<input type="text" class="form-control" id="llm-func-name" placeholder="Run LLM">
+				<div class="form-control">
+					<label class="label"><span class="label-text">Columns:</span></label>
+					<input type="number" class="input input-bordered" id="sheet-prop-cols" min="1" max="200">
 				</div>
-				
-				<div class="mb-3">
-					<label for="llm-prompt-editor" class="form-label">Prompt:</label>
-					<!-- Replaced Textarea with ContentEditable Div for Highlighting -->
-					<div id="llm-prompt-editor" class="llm-prompt-editor" contenteditable="true"
-					     data-placeholder="Describe what you want. Use #A17 or #A1:B5 to reference cell data."></div>
-					<div class="form-text">Use #ColumnRow (e.g., #A1) or #Range (e.g., #A1:B5) to insert cell data. Hover highlighted vars to preview.</div>
+			</div>
+		</div>
+		<div class="modal-action">
+			<form method="dialog">
+				<button class="btn">Cancel</button>
+			</form>
+			<button class="btn btn-primary" onclick="SheetPropertiesManager.save()">Apply</button>
+		</div>
+	</div>
+</dialog>
+
+<!-- LLM Formula Modal -->
+<dialog id="llmFormulaModal" class="modal">
+	<div class="modal-box w-11/12 max-w-4xl">
+		<h3 class="font-bold text-lg">Insert LLM Formula</h3>
+		<div class="py-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+			<div class="form-control">
+				<label class="label"><span class="label-text">Model:</span></label>
+				<input type="text" class="input input-sm input-bordered mb-1" id="llm-model-filter" placeholder="Search models...">
+				<div class="join">
+					<select class="select select-bordered join-item w-full" id="llm-model-select">
+						<option value="">Select a model...</option>
+					</select>
+					<button class="btn join-item" id="refresh-models-btn" onclick="LLMManager.fetchModels()" title="Refresh"><i class="bi bi-arrow-clockwise"></i></button>
 				</div>
-				
-				<div class="mb-3">
-					<label for="llm-json-schema" class="form-label">Expected JSON Structure:</label>
-					<textarea class="form-control" id="llm-json-schema" rows="4" style="font-family: monospace; font-size: 12px;">{
+			</div>
+			<div class="form-control">
+				<label class="label"><span class="label-text">Target Cell (Output):</span></label>
+				<input type="text" class="input input-bordered" id="llm-target-cell" placeholder="e.g. A1">
+			</div>
+			<div class="form-control md:col-span-2">
+				<label class="label"><span class="label-text">Function Name (Button Text):</span></label>
+				<input type="text" class="input input-bordered" id="llm-func-name" placeholder="Run LLM">
+			</div>
+			<div class="form-control md:col-span-2">
+				<label class="label"><span class="label-text">Prompt:</span></label>
+				<div id="llm-prompt-editor" class="llm-prompt-editor" contenteditable="true"></div>
+				<label class="label"><span class="label-text-alt">Use #A1 or #A1:B5 to reference cells.</span></label>
+			</div>
+			<div class="form-control md:col-span-2">
+				<label class="label"><span class="label-text">Expected JSON Structure:</span></label>
+				<textarea class="textarea textarea-bordered font-mono text-xs h-24" id="llm-json-schema">{
   "Key": "Value"
 }</textarea>
-					<div class="form-text">Define the JSON keys you expect. The result will be parsed into the sheet.</div>
-					<div class="invalid-feedback">Invalid JSON syntax.</div>
-				</div>
-			</div>
-			<div class="modal-footer">
-				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-				<button type="button" class="btn btn-primary" onclick="LLMManager.insertFormula()">Insert Formula</button>
 			</div>
 		</div>
+		<div class="modal-action">
+			<form method="dialog">
+				<button class="btn">Cancel</button>
+			</form>
+			<button class="btn btn-primary" onclick="LLMManager.insertFormula()">Insert Formula</button>
+		</div>
 	</div>
-</div>
+</dialog>
 
-<!-- Dropdown Builder Modal (NEW) -->
-<div class="modal fade" id="dropdownModal" tabindex="-1" aria-hidden="true">
-	<div class="modal-dialog">
-		<div class="modal-content">
-			<div class="modal-header">
-				<h5 class="modal-title">Configure Dropdown</h5>
-				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+<!-- Dropdown Modal -->
+<dialog id="dropdownModal" class="modal">
+	<div class="modal-box">
+		<h3 class="font-bold text-lg">Configure Dropdown</h3>
+		<div class="py-4 flex flex-col gap-3">
+			<div class="form-control">
+				<label class="label"><span class="label-text">Options (comma separated or new lines):</span></label>
+				<textarea class="textarea textarea-bordered h-24" id="dropdown-options" oninput="DropdownManager.updateSelectionPreview()"></textarea>
 			</div>
-			<div class="modal-body">
-				<div class="mb-3">
-					<label for="dropdown-options" class="form-label">Options (one per line or comma separated):</label>
-					<textarea class="form-control" id="dropdown-options" rows="5" placeholder="Option 1&#10;Option 2&#10;Option 3" oninput="DropdownManager.updateSelectionPreview()"></textarea>
-				</div>
-				<div class="mb-3">
-					<label for="dropdown-selection" class="form-label">Current Selection:</label>
-					<select class="form-select" id="dropdown-selection">
-						<option value="">(None)</option>
-					</select>
-				</div>
+			<div class="form-control">
+				<label class="label"><span class="label-text">Current Selection:</span></label>
+				<select class="select select-bordered" id="dropdown-selection">
+					<option value="">(None)</option>
+				</select>
 			</div>
-			<div class="modal-footer d-flex justify-content-between">
-				<button type="button" class="btn btn-danger" onclick="DropdownManager.removeDropdown()">Remove Dropdown</button>
-				<div>
-					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-					<button type="button" class="btn btn-primary" onclick="DropdownManager.saveDropdown()">Save</button>
-				</div>
+		</div>
+		<div class="modal-action justify-between">
+			<button class="btn btn-error btn-outline" onclick="DropdownManager.removeDropdown()">Remove</button>
+			<div class="flex gap-2">
+				<form method="dialog">
+					<button class="btn">Cancel</button>
+				</form>
+				<button class="btn btn-primary" onclick="DropdownManager.saveDropdown()">Save</button>
 			</div>
 		</div>
 	</div>
-</div>
+</dialog>
 
 <!-- Color Picker Modal -->
-<div class="modal fade" id="colorPickerModal" tabindex="-1" aria-hidden="true">
-	<div class="modal-dialog modal-sm">
-		<div class="modal-content">
-			<div class="modal-header">
-				<h5 class="modal-title" id="colorPickerTitle">Select Color</h5>
-				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-			</div>
-			<div class="modal-body text-center">
-				<input type="color" id="modal-color-input" class="form-control form-control-color w-100" value="#000000"
-				       title="Choose your color">
-				<div class="mt-3 d-flex justify-content-between">
-					<button type="button" class="btn btn-outline-secondary btn-sm" onclick="FormatManager.resetColorDialog()">
-						Reset
-					</button>
-					<button type="button" class="btn btn-primary btn-sm" onclick="FormatManager.applyColorDialog()">Apply</button>
-				</div>
-			</div>
+<dialog id="colorPickerModal" class="modal">
+	<div class="modal-box w-64">
+		<h3 class="font-bold text-lg mb-4" id="colorPickerTitle">Select Color</h3>
+		<input type="color" id="modal-color-input" class="w-full h-12 cursor-pointer" value="#000000">
+		<div class="modal-action justify-between">
+			<button class="btn btn-sm btn-outline" onclick="FormatManager.resetColorDialog()">Reset</button>
+			<button class="btn btn-sm btn-primary" onclick="FormatManager.applyColorDialog()">Apply</button>
 		</div>
 	</div>
-</div>
+	<form method="dialog" class="modal-backdrop">
+		<button>close</button>
+	</form>
+</dialog>
 
-<!-- Generic Alert Modal -->
-<div class="modal fade" id="alertModal" tabindex="-1" aria-hidden="true">
-	<div class="modal-dialog modal-sm">
-		<div class="modal-content">
-			<div class="modal-header">
-				<h5 class="modal-title">Alert</h5>
-				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-			</div>
-			<div class="modal-body" id="alert-modal-body">
-				<!-- Content -->
-			</div>
-			<div class="modal-footer">
-				<button type="button" class="btn btn-primary" data-bs-dismiss="modal">OK</button>
-			</div>
+<!-- Alert Modal -->
+<dialog id="alertModal" class="modal">
+	<div class="modal-box">
+		<h3 class="font-bold text-lg">Alert</h3>
+		<div class="py-4" id="alert-modal-body"></div>
+		<div class="modal-action">
+			<form method="dialog">
+				<button class="btn btn-primary">OK</button>
+			</form>
 		</div>
 	</div>
-</div>
+</dialog>
 
 <script>
-	// Modal Logic
-	var projectModal = new bootstrap.Modal(document.getElementById('projectModal'));
-	var alertModal = new bootstrap.Modal(document.getElementById('alertModal'));
-	var currentModalMode = '';
-	
-	// Helper to show custom alert
-	function showCustomAlert(message) {
-		document.getElementById('alert-modal-body').innerHTML = message;
-		alertModal.show();
-	}
-	
-	// Helper to show toast
-	function showToast(message) {
-		const toast = document.getElementById('toast-notification');
-		toast.textContent = message;
-		toast.classList.add('show');
-		setTimeout(() => {
-			toast.classList.remove('show');
-		}, 3000);
-	}
+	// Modal Logic Helper for Project Modal
+	let currentModalMode = '';
 	
 	function openProjectModal(mode) {
 		currentModalMode = mode;
+		const modal = document.getElementById('projectModal');
 		const title = document.getElementById('projectModalLabel');
 		const saveSection = document.getElementById('modal-save-section');
 		const listSection = document.getElementById('modal-list-section');
 		const actionBtn = document.getElementById('modal-action-btn');
 		const filenameInput = document.getElementById('project-filename');
 		
-		// Reset UI
 		saveSection.style.display = 'none';
 		listSection.style.display = 'none';
 		filenameInput.value = '';
 		
 		if (mode === 'new') {
 			SheetDataManager.newProject();
-			return; // No modal needed
+			return;
 		}
 		
 		if (mode === 'save-as') {
 			title.textContent = 'Save Project As';
 			saveSection.style.display = 'block';
-			listSection.style.display = 'block'; // Show list to see existing names
+			listSection.style.display = 'block';
 			actionBtn.textContent = 'Save';
-			actionBtn.className = 'btn btn-primary';
+			actionBtn.classList.remove('btn-disabled');
 			if (SheetDataManager.currentFileName) {
 				filenameInput.value = SheetDataManager.currentFileName;
 			}
-			loadProjectList(false); // List for reference
+			loadProjectList(false);
 		} else if (mode === 'open') {
 			title.textContent = 'Open Project';
 			listSection.style.display = 'block';
 			actionBtn.textContent = 'Open';
-			actionBtn.className = 'btn btn-primary disabled'; // Disabled until selection
-			loadProjectList(true); // List for selection
+			actionBtn.classList.add('btn-disabled');
+			loadProjectList(true);
 		}
 		
-		projectModal.show();
+		modal.showModal();
 	}
 	
 	function loadProjectList(isSelectable) {
@@ -623,58 +459,54 @@
 		const noMsg = document.getElementById('no-projects-msg');
 		listGroup.innerHTML = '';
 		
-		SheetDataManager.listProjects(function (files) {
+		SheetDataManager.listProjects(function(files) {
 			if (files.length === 0) {
 				noMsg.style.display = 'block';
 			} else {
 				noMsg.style.display = 'none';
 				files.forEach(file => {
 					const item = document.createElement('div');
-					item.className = 'list-group-item project-list-item';
+					item.className = 'flex justify-between items-center p-2 hover:bg-base-200 cursor-pointer rounded project-list-item';
 					
 					const nameSpan = document.createElement('span');
 					nameSpan.textContent = file;
 					item.appendChild(nameSpan);
 					
-					// Delete Button
 					const delBtn = document.createElement('button');
-					delBtn.className = 'btn btn-sm btn-outline-danger';
+					delBtn.className = 'btn btn-xs btn-outline btn-error';
 					delBtn.innerHTML = '<i class="bi bi-trash"></i>';
-					delBtn.style.marginLeft = '10px';
-					delBtn.onclick = function (e) {
+					delBtn.onclick = function(e) {
 						e.stopPropagation();
-						SheetDataManager.deleteProject(file, function () {
+						SheetDataManager.deleteProject(file, function() {
 							loadProjectList(isSelectable);
 						});
 					};
 					item.appendChild(delBtn);
 					
-					item.onclick = function () {
-						// Highlight selection
-						document.querySelectorAll('.project-list-item').forEach(el => el.classList.remove('active'));
-						item.classList.add('active');
+					item.onclick = function() {
+						document.querySelectorAll('.project-list-item').forEach(el => el.classList.remove('bg-primary', 'text-primary-content'));
+						item.classList.add('bg-primary', 'text-primary-content');
 						
 						if (currentModalMode === 'save-as') {
 							document.getElementById('project-filename').value = file;
 						} else if (currentModalMode === 'open') {
-							document.getElementById('modal-action-btn').classList.remove('disabled');
-							document.getElementById('modal-action-btn').dataset.selectedFile = file;
+							const btn = document.getElementById('modal-action-btn');
+							btn.classList.remove('btn-disabled');
+							btn.dataset.selectedFile = file;
 						}
 					};
-					
 					listGroup.appendChild(item);
 				});
 			}
 		});
 	}
 	
-	// Modal Action Button
-	document.getElementById('modal-action-btn').addEventListener('click', function () {
+	document.getElementById('modal-action-btn').addEventListener('click', function() {
 		if (currentModalMode === 'save-as') {
 			const filename = document.getElementById('project-filename').value.trim();
 			if (filename) {
 				SheetDataManager.saveProject(filename);
-				projectModal.hide();
+				document.getElementById('projectModal').close();
 			} else {
 				showCustomAlert('Please enter a filename');
 			}
@@ -682,12 +514,11 @@
 			const filename = this.dataset.selectedFile;
 			if (filename) {
 				SheetDataManager.loadProject(filename);
-				projectModal.hide();
+				document.getElementById('projectModal').close();
 			}
 		}
 	});
 	
-	// Quick Save (Ctrl+S)
 	function performSave() {
 		if (SheetDataManager.currentFileName) {
 			SheetDataManager.saveProject(SheetDataManager.currentFileName);
@@ -696,8 +527,7 @@
 		}
 	}
 	
-	// Keyboard Shortcuts for Save/Open
-	document.addEventListener('keydown', function (e) {
+	document.addEventListener('keydown', function(e) {
 		if ((e.ctrlKey || e.metaKey) && e.key === 's') {
 			e.preventDefault();
 			performSave();
@@ -708,7 +538,5 @@
 		}
 	});
 </script>
-
 </body>
-
 </html>

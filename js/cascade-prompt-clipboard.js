@@ -1,25 +1,16 @@
-/**
- * Cascade Prompt Clipboard Manager
- * Handles Copy, Cut, and Paste operations preserving data, styles, and merges.
- */
+import { SheetDataManager } from './cascade-prompt-data.js';
 
-var ClipboardManager = {
-	clipboardData: null, // Internal buffer for rich data { width, height, cells: [] }
+export const ClipboardManager = {
+	clipboardData: null,
 	
-	/**
-	 * Copy the current selection to the internal clipboard
-	 * @param {boolean} isCut - If true, this is part of a cut operation
-	 */
 	copy: function (isCut) {
-		// Determine selection range
 		let sR, sC, eR, eC;
 		
 		if (window.startCell && window.endCell) {
-			const r1 = window.startCell.parentElement.rowIndex - 1; // Adjust for header
+			const r1 = window.startCell.parentElement.rowIndex - 1;
 			const c1 = parseInt(window.startCell.getAttribute('data-col'));
 			const r2 = window.endCell.parentElement.rowIndex - 1;
 			const c2 = parseInt(window.endCell.getAttribute('data-col'));
-			
 			sR = Math.min(r1, r2);
 			eR = Math.max(r1, r2);
 			sC = Math.min(c1, c2);
@@ -37,22 +28,17 @@ var ClipboardManager = {
 		const copiedCells = [];
 		let plainTextBuffer = '';
 		
-		// Iterate through the range to capture data
 		for (let r = sR; r <= eR; r++) {
 			let rowText = [];
 			for (let c = sC; c <= eC; c++) {
 				const key = r + '-' + c;
 				const cellData = sheet.cells[key];
-				
-				// Add to text buffer for system clipboard
 				if (cellData && cellData.text) {
 					rowText.push(cellData.text);
 				} else {
 					rowText.push('');
 				}
-				
 				if (cellData) {
-					// Deep copy the data object to prevent reference issues
 					copiedCells.push({
 						rOffset: r - sR,
 						cOffset: c - sC,
@@ -69,7 +55,6 @@ var ClipboardManager = {
 			cells: copiedCells
 		};
 		
-		// Write plain text to system clipboard for external use
 		if (navigator.clipboard) {
 			navigator.clipboard.writeText(plainTextBuffer).catch(err => {
 				console.error('Failed to write to system clipboard', err);
@@ -77,21 +62,15 @@ var ClipboardManager = {
 		}
 		
 		if (!isCut) {
-			// Visual feedback
 			const toastMsg = 'Copied ' + copiedCells.length + ' cell(s)';
-			if (typeof showToast === 'function') showToast(toastMsg);
+			if (typeof window.showToast === 'function') window.showToast(toastMsg);
 		}
 	},
 	
-	/**
-	 * Cut the current selection (Copy + Delete content)
-	 */
 	cut: function () {
-		this.copy(true); // Pass true to suppress "Copied" toast
+		this.copy(true);
+		if (typeof window.HistoryManager !== 'undefined') window.HistoryManager.addState();
 		
-		if (typeof HistoryManager !== 'undefined') HistoryManager.addState();
-		
-		// Determine range again to delete
 		let sR, sC, eR, eC;
 		if (window.startCell && window.endCell) {
 			const r1 = window.startCell.parentElement.rowIndex - 1;
@@ -112,8 +91,6 @@ var ClipboardManager = {
 		}
 		
 		const sheet = SheetDataManager.data.sheets[SheetDataManager.data.activeSheetIndex];
-		
-		// Delete data from source
 		for (let r = sR; r <= eR; r++) {
 			for (let c = sC; c <= eC; c++) {
 				const key = r + '-' + c;
@@ -125,15 +102,11 @@ var ClipboardManager = {
 		
 		SheetDataManager.renderSheet(SheetDataManager.data.activeSheetIndex);
 		SheetDataManager.setModified(true);
-		if (typeof showToast === 'function') showToast('Cut selection');
+		if (typeof window.showToast === 'function') window.showToast('Cut selection');
 	},
 	
-	/**
-	 * Paste content from internal clipboard to current selection
-	 */
 	paste: function () {
 		if (!this.clipboardData) {
-			// Fallback: Try to read system clipboard text
 			if (navigator.clipboard) {
 				navigator.clipboard.readText().then(text => {
 					if (text) this.pasteText(text);
@@ -142,13 +115,11 @@ var ClipboardManager = {
 			return;
 		}
 		
-		if (typeof HistoryManager !== 'undefined') HistoryManager.addState();
+		if (typeof window.HistoryManager !== 'undefined') window.HistoryManager.addState();
 		
-		// Identify Target (Top-Left of current selection)
 		let targetR, targetC;
 		const selected = document.querySelector('.selected-cell');
 		
-		// If we have a range selection, use the top-left of that range
 		if (window.startCell && window.endCell) {
 			const r1 = window.startCell.parentElement.rowIndex - 1;
 			const c1 = parseInt(window.startCell.getAttribute('data-col'));
@@ -165,15 +136,11 @@ var ClipboardManager = {
 		
 		const sheet = SheetDataManager.data.sheets[SheetDataManager.data.activeSheetIndex];
 		
-		// Apply clipboard data
 		this.clipboardData.cells.forEach(item => {
 			const destR = targetR + item.rOffset;
 			const destC = targetC + item.cOffset;
-			
-			// Boundary check
 			if (destR < sheet.rowCount && destC < sheet.colCount) {
 				const key = destR + '-' + destC;
-				// Clone again to ensure unique references if pasted multiple times
 				sheet.cells[key] = JSON.parse(JSON.stringify(item.data));
 			}
 		});
@@ -181,8 +148,6 @@ var ClipboardManager = {
 		SheetDataManager.renderSheet(SheetDataManager.data.activeSheetIndex);
 		SheetDataManager.setModified(true);
 		
-		// Restore selection on the target area
-		// We calculate the new range based on the pasted data dimensions
 		setTimeout(() => {
 			const tbody = document.querySelector('.spreadsheet tbody');
 			const endR = targetR + this.clipboardData.rows - 1;
@@ -199,21 +164,18 @@ var ClipboardManager = {
 						window.startCell = domStart;
 						window.endCell = domEnd;
 						window.isSelecting = false;
-						highlightCell(domStart); // Highlights top-left
-						updateSelection(); // Draws box around range
+						window.highlightCell(domStart);
+						window.updateSelection();
 					}
 				}
 			}
 		}, 0);
 		
-		if (typeof showToast === 'function') showToast('Pasted');
+		if (typeof window.showToast === 'function') window.showToast('Pasted');
 	},
 	
-	/**
-	 * Handle pasting plain text from system clipboard (fallback)
-	 */
 	pasteText: function (text) {
-		if (typeof HistoryManager !== 'undefined') HistoryManager.addState();
+		if (typeof window.HistoryManager !== 'undefined') window.HistoryManager.addState();
 		
 		const selected = document.querySelector('.selected-cell');
 		if (!selected) return;
@@ -225,8 +187,7 @@ var ClipboardManager = {
 		const rows = text.split(/\r\n|\n|\r/);
 		
 		rows.forEach((rowStr, rIdx) => {
-			if (rowStr === '' && rIdx === rows.length - 1) return; // Skip trailing newline
-			
+			if (rowStr === '' && rIdx === rows.length - 1) return;
 			const cols = rowStr.split('\t');
 			cols.forEach((colData, cIdx) => {
 				const destR = startR + rIdx;
@@ -234,10 +195,8 @@ var ClipboardManager = {
 				
 				if (destR < sheet.rowCount && destC < sheet.colCount) {
 					const key = destR + '-' + destC;
-					
-					// Preserve existing style if possible, or init new
 					if (!sheet.cells[key]) {
-						sheet.cells[key] = {text: colData, html: colData};
+						sheet.cells[key] = { text: colData, html: colData };
 					} else {
 						sheet.cells[key].text = colData;
 						sheet.cells[key].html = colData;

@@ -1,33 +1,29 @@
-// --------------------------------------------------//
-// ----------------- Document Ready -----------------//
-document.addEventListener('DOMContentLoaded', function () {
+import { SheetDataManager } from './cascade-prompt-data.js';
+
+export function initKeypressListeners() {
 	const cellEditor = document.getElementById('cell-editor');
 	const formulaInput = document.getElementById('formula-input');
 	
-	// Listener for the overlay editor (div contenteditable)
 	cellEditor.addEventListener('keydown', function (e) {
 		if (e.key === 'Enter') {
-			if (!e.shiftKey) { // Allow Shift+Enter for new lines
-				e.preventDefault(); // Prevent default div behavior
+			if (!e.shiftKey) {
+				e.preventDefault();
 				e.stopPropagation();
 				console.log('Cell Editor Enter key pressed');
 				
-				// Identify the currently edited cell
 				const editingCell = document.querySelector('.edit-cell');
 				if (editingCell) {
 					const currentRow = editingCell.closest('tr');
-					const nextRow = currentRow ? currentRow.nextElementSibling : null; // Find the next row
+					const nextRow = currentRow ? currentRow.nextElementSibling : null;
 					
-					stopEditing();
-					if (typeof saveState === 'function') saveState(); // Save on Enter
+					window.stopEditing();
+					if (typeof window.saveState === 'function') window.saveState();
 					
-					// Find the cell directly below in the next row and start editing, if it exists
 					if (nextRow) {
-						const cellCol = parseInt(editingCell.getAttribute('data-col')); // Use data-col
+						const cellCol = parseInt(editingCell.getAttribute('data-col'));
 						const nextCell = nextRow.querySelector('td[data-col="' + cellCol + '"]');
 						if (nextCell) {
-							highlightCell(nextCell);
-							// makeCellEditable(nextCell); // Optional: Make the next cell editable immediately
+							window.highlightCell(nextCell);
 						}
 					}
 				}
@@ -35,102 +31,83 @@ document.addEventListener('DOMContentLoaded', function () {
 		}
 	});
 	
-	// Sync typing in overlay editor with formula bar
 	cellEditor.addEventListener('input', function () {
-		if (isEditing) {
-			// For formula bar, we just show text content
+		if (window.isEditing) {
 			formulaInput.textContent = this.textContent;
 		}
 	});
 	
-	// --------------------------------------------------//
-	
 	document.addEventListener('keydown', function (e) {
-		// --- NEW: Disable keypress if a modal is open ---
-		if (document.body.classList.contains('modal-open')) {
+		// Check if any dialog is open
+		const openDialog = document.querySelector('dialog[open]');
+		if (openDialog) {
 			return;
 		}
 		
-		// Handle Shortcuts (Ctrl or Cmd)
-		if ((e.ctrlKey || e.metaKey) && !isEditing) {
-			
-			// Undo / Redo
+		if ((e.ctrlKey || e.metaKey) && !window.isEditing) {
 			if (e.key === 'z') {
 				e.preventDefault();
-				if (typeof HistoryManager !== 'undefined') HistoryManager.undo();
+				if (typeof window.HistoryManager !== 'undefined') window.HistoryManager.undo();
 				return;
 			}
 			if (e.key === 'y') {
 				e.preventDefault();
-				if (typeof HistoryManager !== 'undefined') HistoryManager.redo();
+				if (typeof window.HistoryManager !== 'undefined') window.HistoryManager.redo();
 				return;
 			}
-			
-			// Formatting Shortcuts
 			if (e.key === 'b') {
 				e.preventDefault();
-				if (typeof FormatManager !== 'undefined') FormatManager.toggleStyle('bold');
+				if (typeof window.FormatManager !== 'undefined') window.FormatManager.toggleStyle('bold');
 				return;
 			}
 			if (e.key === 'i') {
 				e.preventDefault();
-				if (typeof FormatManager !== 'undefined') FormatManager.toggleStyle('italic');
+				if (typeof window.FormatManager !== 'undefined') window.FormatManager.toggleStyle('italic');
 				return;
 			}
-			
-			// Clipboard Shortcuts (New)
 			if (e.key === 'c') {
-				// Don't prevent default immediately if we want system clipboard to work natively,
-				// but we are handling it manually in ClipboardManager for rich data.
 				e.preventDefault();
-				if (typeof ClipboardManager !== 'undefined') ClipboardManager.copy(false);
+				if (typeof window.ClipboardManager !== 'undefined') window.ClipboardManager.copy(false);
 				return;
 			}
 			if (e.key === 'x') {
 				e.preventDefault();
-				if (typeof ClipboardManager !== 'undefined') ClipboardManager.cut();
+				if (typeof window.ClipboardManager !== 'undefined') window.ClipboardManager.cut();
 				return;
 			}
 			if (e.key === 'v') {
 				e.preventDefault();
-				if (typeof ClipboardManager !== 'undefined') ClipboardManager.paste();
+				if (typeof window.ClipboardManager !== 'undefined') window.ClipboardManager.paste();
 				return;
 			}
 		}
 		
-		// --- NEW: Delete Key to clear content ---
-		if (e.key === 'Delete' && !isEditing) {
+		if (e.key === 'Delete' && !window.isEditing) {
 			e.preventDefault();
-			if (typeof HistoryManager !== 'undefined') HistoryManager.addState();
+			if (typeof window.HistoryManager !== 'undefined') window.HistoryManager.addState();
 			
 			const sheet = SheetDataManager.data.sheets[SheetDataManager.data.activeSheetIndex];
 			
-			// Helper to clear a specific cell element
 			const clearCell = (cell) => {
 				const r = cell.parentElement.rowIndex - 1;
 				const c = parseInt(cell.getAttribute('data-col'));
 				const key = r + '-' + c;
 				
-				// Clear DOM
 				const contentDiv = cell.querySelector('.content-cut');
 				if (contentDiv) {
 					contentDiv.innerHTML = '';
 					contentDiv.textContent = '';
 				}
 				
-				// Clear Data
 				if (sheet.cells[key]) {
-					// Preserve style, remove content
 					sheet.cells[key].text = '';
 					sheet.cells[key].html = '';
-					// Also remove LLM config if present
 					if (sheet.cells[key].llm) {
 						delete sheet.cells[key].llm;
 					}
 				}
 			};
 			
-			// Apply to selection
 			const areaCells = document.querySelectorAll('.area-selected-cell');
 			if (areaCells.length > 0) {
 				areaCells.forEach(clearCell);
@@ -140,28 +117,24 @@ document.addEventListener('DOMContentLoaded', function () {
 			}
 			
 			SheetDataManager.setModified(true);
-			if (typeof updateSelection === 'function') updateSelection(); // Refresh visual state if needed
+			if (typeof window.updateSelection === 'function') window.updateSelection();
 			return;
 		}
 		
-		console.log('isEditing: ', isEditing);
-		if (isEditing) return; // Skip navigation if we are in editing mode
+		if (window.isEditing) return;
 		
-		isSelecting = false;
-		// Remove area-selected-cell class
+		window.isSelecting = false;
 		document.querySelectorAll('.spreadsheet .area-selected-cell').forEach(el => el.classList.remove('area-selected-cell'));
 		
-		startCell = null;
-		endCell = null;
-		updateSelection();
+		window.startCell = null;
+		window.endCell = null;
+		window.updateSelection();
 		
 		const selectedCell = document.querySelector('.selected-cell');
-		if (!selectedCell) return; // Skip if no cell is selected
+		if (!selectedCell) return;
 		
 		const row = selectedCell.closest('tr');
 		const rows = Array.from(document.querySelectorAll('.spreadsheet tbody tr'));
-		// Note: rowIndex in DOM includes thead, but the rows array is just tbody.
-		// We can use the index within the rows array.
 		const rowIndex = rows.indexOf(row);
 		
 		const cellCol = parseInt(selectedCell.getAttribute('data-col'));
@@ -169,19 +142,16 @@ document.addEventListener('DOMContentLoaded', function () {
 		
 		switch (e.key) {
 			case 'Enter':
-				e.preventDefault(); // Prevent the default Enter behavior
+				e.preventDefault();
 				console.log('Document Enter key pressed');
-				if (!isEditing) {
-					makeCellEditable(selectedCell);
+				if (!window.isEditing) {
+					window.makeCellEditable(selectedCell);
 				}
 				break;
 			case 'ArrowLeft':
-				// Prevent default to avoid horizontal scroll
 				e.preventDefault();
-				if (cellCol > 0) { // Check if there's a cell to the left
-					// Find the cell with the largest data-col less than current cellCol
+				if (cellCol > 0) {
 					const cells = Array.from(row.querySelectorAll('td'));
-					// Filter and find last
 					let prevCell = null;
 					for (let i = cells.length - 1; i >= 0; i--) {
 						if (parseInt(cells[i].getAttribute('data-col')) < cellCol) {
@@ -189,63 +159,49 @@ document.addEventListener('DOMContentLoaded', function () {
 							break;
 						}
 					}
-					
 					if (prevCell) {
-						highlightCell(prevCell);
+						window.highlightCell(prevCell);
 					}
 				}
 				break;
 			case 'ArrowRight':
 				e.preventDefault();
-				// Target column is current col + colspan
 				var targetCol = cellCol + colspan;
 				var nextCell = row.querySelector('td[data-col="' + targetCol + '"]');
-				
 				if (nextCell) {
-					highlightCell(nextCell);
-				} else {
-					// Check if we are at the end of the row
-					// addNewColumn();
+					window.highlightCell(nextCell);
 				}
 				break;
 			case 'ArrowUp':
 				e.preventDefault();
-				if (rowIndex > 0) { // Check if there's a row above
+				if (rowIndex > 0) {
 					const prevRow = rows[rowIndex - 1];
-					// Find cell in previous row at the same column
-					// If that cell is merged, we might need to find the one covering it
 					const cells = Array.from(prevRow.querySelectorAll('td'));
 					const target = cells.find(function (cell) {
 						const c = parseInt(cell.getAttribute('data-col'));
 						const span = parseInt(cell.getAttribute('colspan')) || 1;
 						return c <= cellCol && (c + span) > cellCol;
 					});
-					
 					if (target) {
-						highlightCell(target);
+						window.highlightCell(target);
 					}
 				}
 				break;
 			case 'ArrowDown':
 				e.preventDefault();
-				if (rowIndex < rows.length - 1) { // Check if there's a row below
+				if (rowIndex < rows.length - 1) {
 					const nextRow = rows[rowIndex + 1];
-					// Find cell in next row
 					const cells = Array.from(nextRow.querySelectorAll('td'));
 					const target = cells.find(function (cell) {
 						const c = parseInt(cell.getAttribute('data-col'));
 						const span = parseInt(cell.getAttribute('colspan')) || 1;
 						return c <= cellCol && (c + span) > cellCol;
 					});
-					
 					if (target) {
-						highlightCell(target);
+						window.highlightCell(target);
 					}
-				} else {
-					// Add a new row if at the last cell
-					// addNewRow();
 				}
 				break;
 		}
 	});
-});
+}

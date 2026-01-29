@@ -1,0 +1,246 @@
+@import "tailwindcss";
+@plugin "daisyui";
+
+@theme {
+    --font-sans: "Inter", sans-serif;
+}
+
+/* Global Overrides */
+body {
+    background-color: var(--color-base-200) !important;
+    color: var(--color-base-content) !important;
+    overflow: hidden;
+}
+
+/* ... (Keep Scrollbar Styling) ... */
+::-webkit-scrollbar { height: 16px; width: 16px; }
+::-webkit-scrollbar-thumb { background-color: var(--color-base-300); border: 4px solid transparent; background-clip: content-box; border-radius: 8px; }
+::-webkit-scrollbar-thumb:hover { background-color: var(--color-base-content); }
+::-webkit-scrollbar-track { background-color: var(--color-base-200); }
+
+/* Spreadsheet Layout */
+.formula-bar-container {
+    @apply flex items-center h-[30px] mx-2 mt-2 rounded border border-base-300 bg-base-100;
+}
+
+.formula-icon {
+    @apply w-[30px] text-center font-bold italic text-base-content/50 border-r border-base-300 bg-base-200 leading-[28px] rounded-l select-none;
+}
+
+.formula-input {
+    @apply grow border-none outline-none px-2 h-full text-sm rounded-r bg-base-100 text-base-content whitespace-nowrap overflow-hidden flex items-center;
+}
+
+.spreadsheet-container {
+    margin: 10px 10px 0 10px;
+    padding: 0;
+    overflow: auto;
+    width: calc(100vw - 20px);
+    height: calc(100vh - 155px - 35px - 25px);
+    border: 1px solid var(--color-base-300);
+    background-color: var(--color-base-100);
+    position: relative;
+}
+
+.spreadsheet {
+    border-spacing: 0;
+    border-collapse: separate;
+    table-layout: fixed;
+    background-color: var(--color-base-100);
+    /* FIX: Force table to take up necessary space, preventing squash */
+    width: max-content;
+}
+
+.spreadsheet th, .spreadsheet td {
+    box-sizing: border-box;
+}
+
+/* Sticky Headers */
+.top-corner-cell {
+    position: sticky;
+    top: 0;
+    left: 0;
+    z-index: 40; /* Highest priority corner */
+    background: var(--color-base-200);
+    border-right: 1px solid var(--color-base-300);
+    border-bottom: 1px solid var(--color-base-300);
+    width: 50px !important;
+    min-width: 50px !important;
+    height: 25px;
+}
+
+.letter-cell {
+    position: sticky;
+    top: 0;
+    z-index: 30; /* Above normal cells */
+    background: var(--color-base-200);
+    border-right: 1px solid var(--color-base-300);
+    border-bottom: 1px solid var(--color-base-300);
+    text-align: center;
+    font-size: 0.75rem;
+    font-weight: normal;
+    color: var(--color-base-content);
+    user-select: none;
+    height: 25px;
+    /* Ensure overflow is visible for resize handles */
+    overflow: visible;
+}
+
+.counter-cell {
+    position: sticky;
+    left: 0;
+    z-index: 30;
+    background: var(--color-base-200);
+    border-right: 1px solid var(--color-base-300);
+    border-bottom: 1px solid var(--color-base-300);
+    width: 50px;
+    min-width: 50px;
+    text-align: center;
+    vertical-align: middle;
+    font-size: 0.75rem;
+    font-weight: normal;
+    color: var(--color-base-content);
+    user-select: none;
+    overflow: visible;
+}
+
+.text-cell {
+    border-right: 1px solid var(--color-base-200);
+    border-bottom: 1px solid var(--color-base-200);
+    vertical-align: top;
+    padding: 0;
+    color: var(--color-base-content);
+    background: var(--color-base-100);
+    z-index: 1;
+}
+
+.content-cut {
+    overflow: hidden;
+    padding: 2px 5px;
+    box-sizing: border-box;
+    white-space: pre-wrap;
+    display: block;
+    font-family: inherit;
+    font-size: inherit;
+    min-height: 20px;
+}
+
+/* Resize Handles - Improved Hit Area */
+.resize-handle {
+    position: absolute;
+    top: 0;
+    right: 0; /* Align to right edge */
+    width: 10px; /* Wider hit area */
+    height: 100%;
+    cursor: col-resize;
+    z-index: 50; /* Must be higher than th z-index */
+    background-color: transparent; /* Invisible but clickable */
+    touch-action: none;
+}
+
+/* Visual feedback on hover */
+.resize-handle:hover {
+    background-color: rgba(var(--color-primary), 0.5);
+}
+
+.resize-handle-row {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 10px; /* Wider hit area */
+    cursor: row-resize;
+    z-index: 50;
+    background-color: transparent;
+    touch-action: none;
+}
+
+.resize-handle-row:hover {
+    background-color: rgba(var(--color-primary), 0.5);
+}
+
+/* ... (Keep Editor, Selection, Tabs, Status Bar, Toast, Modal styles) ... */
+.selected-cell {
+    outline: 2px solid var(--color-primary);
+    outline-offset: -2px;
+    z-index: 20;
+}
+
+.highlight {
+    background-color: color-mix(in srgb, var(--color-primary) 20%, transparent) !important;
+}
+
+.area-selected-cell {
+    background-color: color-mix(in srgb, var(--color-primary) 10%, transparent);
+}
+
+#selection-helper {
+    display: none;
+    position: absolute;
+    z-index: 100;
+    border: 1px solid var(--color-primary);
+    background-color: rgba(0, 0, 0, 0.05);
+    pointer-events: none;
+}
+
+.selection-helper-edge {
+    position: absolute;
+    background: transparent;
+    pointer-events: auto;
+}
+
+.selection-helper-edge.top, .selection-helper-edge.bottom { height: 5px; cursor: ns-resize; }
+.selection-helper-edge.left, .selection-helper-edge.right { width: 5px; cursor: ew-resize; }
+
+/* Tabs */
+.sheet-tabs-container {
+    @apply h-[35px] mx-2 flex items-center bg-base-200 border-x border-b border-base-300 overflow-x-auto px-1;
+}
+
+.sheet-tab {
+    @apply px-4 py-1 mr-1 text-xs cursor-pointer select-none rounded-b border-x border-b border-transparent hover:bg-base-300 text-base-content;
+}
+
+.sheet-tab.active {
+    @apply bg-base-100 text-primary font-bold border-base-300 shadow-sm;
+}
+
+.add-sheet-btn {
+    @apply btn btn-circle btn-ghost btn-xs ml-2;
+}
+
+/* Status Bar */
+.status-bar {
+    @apply fixed bottom-0 left-0 w-full h-[25px] bg-base-200 border-t border-base-300 flex justify-between items-center px-4 text-xs text-base-content/70 z-50 select-none;
+}
+
+/* LLM Button */
+.llm-run-btn {
+    @apply inline-flex items-center justify-center m-[2px] px-2 text-[11px] font-bold text-center bg-base-100 text-primary border border-primary rounded cursor-pointer select-none shadow-sm transition-all hover:bg-primary hover:text-primary-content hover:shadow-md active:translate-y-0 active:shadow-none w-[calc(100%-4px)] h-[calc(100%-4px)];
+}
+
+.llm-spinner {
+    @apply loading loading-spinner loading-xs text-primary;
+}
+
+/* Toast */
+.custom-toast {
+    @apply alert alert-info fixed bottom-10 left-1/2 -translate-x-1/2 w-auto shadow-lg opacity-0 transition-opacity duration-300 z-[2000] pointer-events-none py-2 px-4 text-sm;
+}
+
+.custom-toast.show {
+    @apply opacity-100;
+}
+
+/* DaisyUI Modal Overrides for Spreadsheet Context */
+.modal-box {
+    @apply max-w-lg;
+}
+
+.llm-prompt-editor {
+    @apply textarea  w-full min-h-[100px] font-mono text-sm; /*textarea-bordered*/
+}
+
+.llm-var-tag {
+    @apply badge badge-info badge-outline font-mono text-xs cursor-help;
+}

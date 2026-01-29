@@ -3,10 +3,25 @@ Cascading prompts on spreadsheet to automate advanced LLM and Image generation.
 
 -------
 
-build a excel sheet like application using javascript and jquery
-there should be an underlying array of 100 rows and column
-there should be a rendering engine that creates this grid using <div> for each cell
-the underlying data should have properties for each column and row for width and height
-each cell should have cell-width and cell-height, these should default to 1 but if either one is more than 1 the div for the cell should be drawn bigger and the other cells it overlaps should not be rendered.
-when rendering each div, use whitespace none so it won't wrap, if the cells to the right are empty allow the text inside it to overflow but not beyond a filled cell.
-there should be global settings for cell background, border, width and height
+### How to Run
+
+#### For Development (Hot Reloading)
+1.  Open your terminal in the project folder.
+2.  Run the Vite server:
+    ```bash
+    npm run dev
+    ```
+3.  Open your browser to your **Apache URL**: `http://localhost/cascade-prompt/`.
+    *   The PHP loader will detect the dev server.
+    *   It will load scripts from `http://localhost:5173/cascade-prompt/src/main.js`.
+    *   Changes to JS/CSS files will update instantly.
+
+#### For Production (Deployment)
+1.  Stop the `npm run dev` process.
+2.  Build the assets:
+    ```bash
+    npm run build
+    ```
+    *(This creates a `dist` folder with compiled CSS and JS).*
+3.  Refresh `http://localhost/cascade-prompt/`.
+    *   The PHP loader will see the `dist/manifest.json` and load the compiled files.
