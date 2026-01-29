@@ -19,6 +19,12 @@ import {
 	attachResizeHandlers,
 	initMenuHandlers
 } from '../js/cascade-prompt-ui.js';
+// Import Project UI handlers
+import {
+	openProjectModal,
+	performSave,
+	initProjectHandlers
+} from '../js/cascade-prompt-project-ui.js';
 
 // Expose Managers to Window for HTML event handlers
 window.SheetDataManager = SheetDataManager;
@@ -38,6 +44,10 @@ window.mergeCells = mergeCells;
 window.unmergeCells = unmergeCells;
 window.attachResizeHandlers = attachResizeHandlers;
 window.initMenuHandlers = initMenuHandlers;
+
+// Expose Project Functions to Window
+window.openProjectModal = openProjectModal;
+window.performSave = performSave;
 
 // Global State Variables (migrated from cascade-prompt.js)
 window.isEditing = false;
@@ -358,6 +368,7 @@ document.addEventListener('DOMContentLoaded', function () {
 	HistoryManager.init();
 	LLMManager.init();
 	initKeypressListeners();
+	initProjectHandlers(); // Initialize Project UI Handlers
 	
 	// Attach handlers for the initial server-rendered table
 	attachResizeHandlers();
