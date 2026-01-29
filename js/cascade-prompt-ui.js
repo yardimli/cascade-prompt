@@ -1,27 +1,69 @@
 import { SheetDataManager } from './cascade-prompt-data.js';
 
 // --------------------------------------------------//
-// Theme Management Functions
+// Theme & UI Management Functions
 // --------------------------------------------------//
 
 export function initTheme() {
-	const savedTheme = localStorage.getItem('cascade_theme');
-	if (savedTheme) {
-		document.documentElement.setAttribute('data-theme', savedTheme);
-	} else {
+	let theme = localStorage.getItem('cascade_theme');
+	if (!theme) {
+		// Default to system preference if not set
 		if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-			document.documentElement.setAttribute('data-theme', 'dark');
+			theme = 'dark';
 		} else {
-			document.documentElement.setAttribute('data-theme', 'light');
+			theme = 'light';
 		}
 	}
+	setTheme(theme, false);
 }
 
-export function toggleTheme() {
-	const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
-	const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-	document.documentElement.setAttribute('data-theme', newTheme);
-	localStorage.setItem('cascade_theme', newTheme);
+export function setTheme(themeName, save = true) {
+	document.documentElement.setAttribute('data-theme', themeName);
+	if (save) {
+		localStorage.setItem('cascade_theme', themeName);
+	}
+	updateThemeMenu(themeName);
+}
+
+function updateThemeMenu(activeTheme) {
+	const themes = ['light', 'dark', 'cupcake', 'retro'];
+	themes.forEach(t => {
+		const icon = document.getElementById(`theme-check-${t}`);
+		if (icon) {
+			if (t === activeTheme) {
+				icon.classList.remove('invisible');
+			} else {
+				icon.classList.add('invisible');
+			}
+		}
+	});
+}
+
+export function initUiSize() {
+	const savedSize = localStorage.getItem('cascade_ui_size') || 'normal';
+	setUiFontSize(savedSize, false);
+}
+
+export function setUiFontSize(size, save = true) {
+	document.documentElement.setAttribute('data-ui-size', size);
+	if (save) {
+		localStorage.setItem('cascade_ui_size', size);
+	}
+	updateUiSizeMenu(size);
+}
+
+function updateUiSizeMenu(activeSize) {
+	const sizes = ['small', 'normal', 'large'];
+	sizes.forEach(s => {
+		const icon = document.getElementById(`size-check-${s}`);
+		if (icon) {
+			if (s === activeSize) {
+				icon.classList.remove('invisible');
+			} else {
+				icon.classList.add('invisible');
+			}
+		}
+	});
 }
 
 // --------------------------------------------------//

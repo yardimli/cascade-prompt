@@ -62,7 +62,16 @@
 				<details>
 					<summary>View</summary>
 					<ul class="bg-base-100 rounded-t-none p-2 w-52 shadow-lg border border-base-200 z-[1001]">
-						<li><a onclick="toggleTheme()">Light/Dark Mode</a></li>
+						<li class="menu-title text-xs opacity-50 px-2 pb-1">Theme</li>
+						<li><a onclick="setTheme('light')"><i class="bi bi-check invisible" id="theme-check-light"></i> Light</a></li>
+						<li><a onclick="setTheme('dark')"><i class="bi bi-check invisible" id="theme-check-dark"></i> Dark</a></li>
+						<li><a onclick="setTheme('cupcake')"><i class="bi bi-check invisible" id="theme-check-cupcake"></i> Cupcake</a></li>
+						<li><a onclick="setTheme('retro')"><i class="bi bi-check invisible" id="theme-check-retro"></i> Retro</a></li>
+						<div class="divider my-0"></div>
+						<li class="menu-title text-xs opacity-50 px-2 pb-1 pt-1">UI Size</li>
+						<li><a onclick="setUiFontSize('small')"><i class="bi bi-check invisible" id="size-check-small"></i> Small</a></li>
+						<li><a onclick="setUiFontSize('normal')"><i class="bi bi-check invisible" id="size-check-normal"></i> Normal</a></li>
+						<li><a onclick="setUiFontSize('large')"><i class="bi bi-check invisible" id="size-check-large"></i> Large</a></li>
 						<div class="divider my-0"></div>
 						<li><a onclick="document.documentElement.requestFullscreen()">Full Screen</a></li>
 					</ul>
@@ -157,7 +166,7 @@
 <!-- Spreadsheet Area -->
 <div class="spreadsheet-container" id="spreadsheet-container">
 	<!-- Overlay Editor -->
-	<div id="cell-editor" contenteditable="true"></div>
+	<div id="cell-editor" contenteditable="true" style="display:none;"></div>
 	<div id="selection-helper" class="no-select"></div>
 	<table class="spreadsheet no-select">
 		<thead>

@@ -9,7 +9,9 @@ import { DropdownManager } from '../js/cascade-prompt-dropdown.js';
 import { initKeypressListeners } from '../js/cascade-prompt-keypress.js';
 import {
 	initTheme,
-	toggleTheme,
+	setTheme,
+	initUiSize,
+	setUiFontSize,
 	SheetPropertiesManager,
 	scrollToViewWithOffsets,
 	makeCellEditable,
@@ -36,7 +38,8 @@ window.DropdownManager = DropdownManager;
 window.SheetPropertiesManager = SheetPropertiesManager;
 
 // Expose UI Functions
-window.toggleTheme = toggleTheme;
+window.setTheme = setTheme;
+window.setUiFontSize = setUiFontSize;
 window.scrollToViewWithOffsets = scrollToViewWithOffsets;
 window.makeCellEditable = makeCellEditable;
 window.stopEditing = stopEditing;
@@ -357,6 +360,7 @@ window.showToast = function (message) {
 // Initialize
 document.addEventListener('DOMContentLoaded', function () {
 	initTheme();
+	initUiSize();
 	initMenuHandlers();
 	
 	// Listen for the custom event dispatched by renderSheet to re-attach handlers
