@@ -88,18 +88,6 @@ function makeCellEditable(cell) {
 	// Get the inner content div
 	const contentDiv = cell.querySelector('.content-cut');
 	
-	// --- NEW: Check if this cell is a dropdown ---
-	// If it contains a dropdown formula or select element, block direct editing.
-	const dropdownSelect = contentDiv.querySelector('select.cell-dropdown');
-	if (dropdownSelect || contentDiv.hasAttribute('data-formula')) {
-		if (typeof showToast === 'function') {
-			showToast('Use the Dropdown button in toolbar to edit options.');
-		}
-		// Remove edit-cell class since we are aborting
-		cell.classList.remove('edit-cell');
-		return;
-	}
-	
 	// Get cell position relative to container
 	const width = cell.offsetWidth;
 	const height = cell.offsetHeight;
@@ -126,42 +114,103 @@ function makeCellEditable(cell) {
 	editor.style.color = computedStyle.color;
 	editor.style.fontSize = computedStyle.fontSize;
 	editor.style.fontFamily = computedStyle.fontFamily;
+	editor.style.backgroundColor = window.getComputedStyle(cell).backgroundColor; // Match cell background
 	
-	// Load content and focus
-	editor.innerText = contentDiv.innerText; // Use innerText for editing to avoid HTML tags
-	editor.contentEditable = true;
-	editor.focus();
+	// --- UPDATED: Check for Dropdown Formula ---
+	const formula = contentDiv.getAttribute('data-formula');
+	const dropdownRegex = /^=dropdown\s*\(\s*"([^"]+)"(?:\s*,\s*"([^"]*)")?\s*\)$/i;
+	
+	if (formula && formula.match(dropdownRegex)) {
+		// It is a dropdown: Render a floating select element
+		const match = formula.match(dropdownRegex);
+		const optionsStr = match[1];
+		const currentSelection = match[2] || '';
+		const options = optionsStr.split(',').map(o => o.trim());
+		
+		// Create wrapper for custom arrow styling
+		const wrapper = document.createElement('div');
+		wrapper.className = 'floating-select-wrapper';
+		
+		const select = document.createElement('select');
+		select.className = 'floating-select';
+		
+		// Apply alignment specifically to select (text-align works differently on inputs)
+		select.style.textAlign = computedStyle.textAlign;
+		select.style.textAlignLast = computedStyle.textAlign; // Browser support varies
+		
+		// Populate options
+		options.forEach(opt => {
+			const option = document.createElement('option');
+			option.value = opt;
+			option.textContent = opt;
+			if (opt === currentSelection) {
+				option.selected = true;
+			}
+			select.appendChild(option);
+		});
+		
+		// Add event listeners for the select
+		select.addEventListener('change', function () {
+			// Commit change immediately on selection
+			stopEditing();
+		});
+		
+		select.addEventListener('blur', function () {
+			stopEditing();
+		});
+		
+		// Prevent click propagation
+		select.addEventListener('click', function (e) {
+			e.stopPropagation();
+		});
+		
+		wrapper.appendChild(select);
+		editor.innerHTML = ''; // Clear text
+		editor.appendChild(wrapper);
+		editor.contentEditable = false; // Disable text editing on the container
+		editor.style.padding = '0'; // Remove padding for select to fit
+		
+		// Focus the select
+		select.focus();
+		
+	} else {
+		// Normal Text Editing
+		editor.innerText = contentDiv.innerText; // Use innerText for editing to avoid HTML tags
+		editor.contentEditable = true;
+		editor.style.padding = '2px 5px'; // Restore padding
+		editor.focus();
+		
+		// Auto-resize logic (only for text)
+		editor.oninput = function () {
+			this.style.height = 'auto';
+			this.style.width = 'auto';
+			
+			const scrollHeight = this.scrollHeight;
+			const scrollWidth = this.scrollWidth;
+			
+			// Grow vertically
+			if (scrollHeight > height) {
+				this.style.height = scrollHeight + 'px';
+			} else {
+				this.style.height = height + 'px';
+			}
+			
+			// Grow horizontally
+			if (scrollWidth > width) {
+				this.style.width = scrollWidth + 'px';
+			} else {
+				this.style.width = width + 'px';
+			}
+		};
+		
+		// Trigger resize immediately
+		editor.dispatchEvent(new Event('input'));
+	}
 	
 	// Hide the inner div content while editing so it doesn't duplicate visually
 	contentDiv.style.visibility = 'hidden';
 	
 	isEditing = true;
-	
-	// Auto-resize logic
-	editor.oninput = function () {
-		this.style.height = 'auto';
-		this.style.width = 'auto';
-		
-		const scrollHeight = this.scrollHeight;
-		const scrollWidth = this.scrollWidth;
-		
-		// Grow vertically
-		if (scrollHeight > height) {
-			this.style.height = scrollHeight + 'px';
-		} else {
-			this.style.height = height + 'px';
-		}
-		
-		// Grow horizontally
-		if (scrollWidth > width) {
-			this.style.width = scrollWidth + 'px';
-		} else {
-			this.style.width = width + 'px';
-		}
-	};
-	
-	// --- NEW: Trigger resize immediately to fit content without waiting for input ---
-	editor.dispatchEvent(new Event('input'));
 }
 
 // --------------------------------------------------//
@@ -172,46 +221,93 @@ function stopEditing() {
 	const editor = document.getElementById('cell-editor');
 	
 	if (editingCell) {
-		// Get value from editor div
-		const newText = editor.innerText; // Use innerText to get clean text
-		
-		// Update the inner div
 		const contentDiv = editingCell.querySelector('.content-cut');
+		let newText = '';
+		let isDropdownChange = false;
+		
+		// Check if we were editing a dropdown
+		const select = editor.querySelector('select.floating-select');
+		
+		if (select) {
+			// Handle Dropdown Save
+			const selectedValue = select.value;
+			const formula = contentDiv.getAttribute('data-formula');
+			
+			// Reconstruct formula: =dropdown("opts", "newVal")
+			const regex = /^=dropdown\s*\(\s*"([^"]+)"(?:\s*,\s*"[^"]*")?\s*\)$/i;
+			const match = formula ? formula.match(regex) : null;
+			
+			if (match) {
+				const options = match[1];
+				const newFormula = `=dropdown("${options}", "${selectedValue}")`;
+				
+				// Update data-formula immediately
+				contentDiv.setAttribute('data-formula', newFormula);
+				
+				// For the text display, we just show the value
+				newText = selectedValue;
+				isDropdownChange = true;
+			} else {
+				// Fallback
+				newText = selectedValue;
+			}
+		} else {
+			// Handle Normal Text Save
+			newText = editor.innerText;
+		}
+		
 		const oldText = contentDiv.innerText;
 		
-		if (newText !== oldText) {
-			// Capture state BEFORE updating the DOM with new value
+		// Capture state if changed
+		if (newText !== oldText || isDropdownChange) {
 			if (typeof HistoryManager !== 'undefined') {
 				HistoryManager.addState();
 			}
 		}
 		
+		// Update DOM
 		contentDiv.innerText = newText;
-		contentDiv.style.visibility = 'visible'; // Make visible again
+		contentDiv.style.visibility = 'visible';
 		
-		// Copy styles back from editor to contentDiv if they changed via toolbar
-		// (e.g. user clicked Bold while editing)
-		contentDiv.style.fontWeight = editor.style.fontWeight;
-		contentDiv.style.fontStyle = editor.style.fontStyle;
-		contentDiv.style.textAlign = editor.style.textAlign;
-		contentDiv.style.color = editor.style.color;
-		contentDiv.style.fontSize = editor.style.fontSize; // Added: Font Size
+		// Copy styles back from editor to contentDiv (if text editing)
+		if (!select) {
+			contentDiv.style.fontWeight = editor.style.fontWeight;
+			contentDiv.style.fontStyle = editor.style.fontStyle;
+			contentDiv.style.textAlign = editor.style.textAlign;
+			contentDiv.style.color = editor.style.color;
+			contentDiv.style.fontSize = editor.style.fontSize;
+		}
+		
+		// Update Data Model
+		const r = editingCell.parentElement.rowIndex - 1;
+		const c = parseInt(editingCell.getAttribute('data-col'));
+		const sheet = SheetDataManager.data.sheets[SheetDataManager.data.activeSheetIndex];
+		const key = r + '-' + c;
+		
+		if (!sheet.cells[key]) sheet.cells[key] = {};
+		
+		if (isDropdownChange) {
+			// Save the formula, not just the text
+			const updatedFormula = contentDiv.getAttribute('data-formula');
+			sheet.cells[key].text = updatedFormula;
+			sheet.cells[key].html = updatedFormula;
+		} else {
+			// Save plain text
+			sheet.cells[key].text = newText;
+			sheet.cells[key].html = newText;
+		}
 		
 		// Reset and hide editor
 		editor.innerHTML = '';
 		editor.style.display = 'none';
 		editor.style.width = '';
 		editor.style.height = '';
-		editor.oninput = null; // Clean up listener
+		editor.oninput = null;
 		
 		editingCell.classList.remove('edit-cell');
 		isEditing = false;
 		
-		// Force a re-render to process formulas like =dropdown(...)
-		// Although direct editing of dropdowns is disabled, this handles
-		// the case where a user types =dropdown(...) manually into a standard cell.
-		SheetDataManager.updateCurrentSheetData();
-		SheetDataManager.renderSheet(SheetDataManager.data.activeSheetIndex);
+		SheetDataManager.setModified(true);
 	}
 }
 

@@ -59,6 +59,8 @@ add a button to the cell when user clicks on the button the llm formula is exect
 
 TODO:
 
+- make overlay editor for cell content have max-width and max-height and fit the screen and grow in height show scrollbar if needed.
+
 - add sheet properties dialog where user can set number of rows and columns, and name of sheet it should be alphanumeric with no spaces so it can be used in formulas. add menu item to edit menu to open the dialog.
 
 - add fal.ai api key to the llm settings dialog.

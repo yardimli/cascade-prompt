@@ -441,26 +441,18 @@ var SheetDataManager = {
 						// Wrapper div only gets dimensions
 						cellHTML = `<div class="content-cut" style="${divStyle}">${content}</div>`;
 					} else {
-						// --- NEW: Check for Dropdown Formula ---
+						// --- UPDATED: Check for Dropdown Formula ---
 						// Regex: =dropdown("opt1,opt2", "selected")
 						const dropdownRegex = /^=dropdown\s*\(\s*"([^"]+)"(?:\s*,\s*"([^"]*)")?\s*\)$/i;
 						const match = content.match(dropdownRegex);
 						
 						if (match) {
-							const optionsStr = match[1];
+							// For view mode, we just show the selected value (or empty string)
+							// We keep the formula in data-formula so double-click knows to spawn the dropdown
 							const selectedVal = match[2] || '';
-							const options = optionsStr.split(',').map(o => o.trim());
 							
-							let selectHTML = `<select class="cell-dropdown form-select form-select-sm" style="width:100%; height:100%; border:none; background:transparent; padding:0 5px; ${userStyle}" onchange="updateDropdownValue(${r}, ${c}, this)" onclick="event.stopPropagation()">`;
-							
-							options.forEach(opt => {
-								const isSelected = (opt === selectedVal) ? 'selected' : '';
-								selectHTML += `<option value="${opt}" ${isSelected}>${opt}</option>`;
-							});
-							selectHTML += '</select>';
-							
-							// Store the original formula in a data attribute so we don't lose it on save
-							cellHTML = `<div class="content-cut" style="${divStyle}" data-formula="${content.replace(/"/g, '&quot;')}">${selectHTML}</div>`;
+							// Render as text, but keep the formula attribute
+							cellHTML = `<div class="content-cut" style="${divStyle}${userStyle}" data-formula="${content.replace(/"/g, '&quot;')}">${selectedVal}</div>`;
 							
 						} else {
 							// Simple regex to strip the button if it was accidentally saved in HTML
@@ -493,7 +485,6 @@ var SheetDataManager = {
 		});
 		console.log('Sheet rendered in ' + (performance.now() - startTime).toFixed(2) + ' ms');
 	},
-	
 	/**
 	 * Helper to restore selection after render
 	 */
