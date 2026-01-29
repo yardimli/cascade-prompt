@@ -34,7 +34,8 @@
 	<script src="js/cascade-prompt-history.js"></script>
 	<script src="js/cascade-prompt-formatting.js"></script>
 	<script src="js/cascade-prompt-clipboard.js"></script>
-	<script src="js/cascade-prompt-llm.js"></script> <!-- Added LLM Manager -->
+	<script src="js/cascade-prompt-llm.js"></script>
+	<script src="js/cascade-prompt-dropdown.js"></script> <!-- Added Dropdown Manager -->
 	<script src="js/cascade-prompt.js"></script>
 	<script src="js/cascade-prompt-keypress.js"></script>
 	<script src="js/cascade-prompt-ui.js"></script>
@@ -84,6 +85,7 @@
 			</div>
 			<div class="dropdown-divider"></div>
 			<div class="menu-dropdown-item" onclick="LLMManager.openFormulaBuilder()">Insert LLM Formula</div>
+			<div class="menu-dropdown-item" onclick="DropdownManager.openDropdownBuilder()">Insert Dropdown</div>
 		</div>
 	</div>
 	
@@ -233,6 +235,12 @@
 	</button>
 	
 	<div style="width: 1px; height: 20px; background: var(--border-color); margin: 0 5px;"></div>
+	
+	<!-- Dropdown Button -->
+	<button type="button" class="btn btn-sm btn-outline-secondary" onclick="DropdownManager.openDropdownBuilder()"
+	        title="Create/Edit Dropdown">
+		<i class="bi bi-list-ul"></i>
+	</button>
 	
 	<!-- LLM Button -->
 	<button type="button" class="btn btn-sm btn-outline-primary" onclick="LLMManager.openFormulaBuilder()"
@@ -385,6 +393,8 @@
 				<div class="row">
 					<div class="col-md-6 mb-3">
 						<label for="llm-model-select" class="form-label">Model:</label>
+						<!-- NEW: Filter Input for Models -->
+						<input type="text" class="form-control form-control-sm mb-1" id="llm-model-filter" placeholder="Search models...">
 						<div class="input-group">
 							<select class="form-select" id="llm-model-select">
 								<option value="">Select a model...</option>
@@ -429,6 +439,37 @@
 			<div class="modal-footer">
 				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
 				<button type="button" class="btn btn-primary" onclick="LLMManager.insertFormula()">Insert Formula</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- Dropdown Builder Modal (NEW) -->
+<div class="modal fade" id="dropdownModal" tabindex="-1" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title">Configure Dropdown</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body">
+				<div class="mb-3">
+					<label for="dropdown-options" class="form-label">Options (one per line or comma separated):</label>
+					<textarea class="form-control" id="dropdown-options" rows="5" placeholder="Option 1&#10;Option 2&#10;Option 3" oninput="DropdownManager.updateSelectionPreview()"></textarea>
+				</div>
+				<div class="mb-3">
+					<label for="dropdown-selection" class="form-label">Current Selection:</label>
+					<select class="form-select" id="dropdown-selection">
+						<option value="">(None)</option>
+					</select>
+				</div>
+			</div>
+			<div class="modal-footer d-flex justify-content-between">
+				<button type="button" class="btn btn-danger" onclick="DropdownManager.removeDropdown()">Remove Dropdown</button>
+				<div>
+					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+					<button type="button" class="btn btn-primary" onclick="DropdownManager.saveDropdown()">Save</button>
+				</div>
 			</div>
 		</div>
 	</div>

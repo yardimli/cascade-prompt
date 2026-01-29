@@ -87,8 +87,18 @@ function makeCellEditable(cell) {
 	
 	// Get the inner content div
 	const contentDiv = cell.querySelector('.content-cut');
-	// Use innerHTML to preserve formatting
-	const currentHTML = contentDiv.innerHTML;
+	
+	// --- NEW: Check if this cell is a dropdown ---
+	// If it contains a dropdown formula or select element, block direct editing.
+	const dropdownSelect = contentDiv.querySelector('select.cell-dropdown');
+	if (dropdownSelect || contentDiv.hasAttribute('data-formula')) {
+		if (typeof showToast === 'function') {
+			showToast('Use the Dropdown button in toolbar to edit options.');
+		}
+		// Remove edit-cell class since we are aborting
+		cell.classList.remove('edit-cell');
+		return;
+	}
 	
 	// Get cell position relative to container
 	const width = cell.offsetWidth;
@@ -118,7 +128,7 @@ function makeCellEditable(cell) {
 	editor.style.fontFamily = computedStyle.fontFamily;
 	
 	// Load content and focus
-	editor.innerHTML = currentHTML;
+	editor.innerText = contentDiv.innerText; // Use innerText for editing to avoid HTML tags
 	editor.contentEditable = true;
 	editor.focus();
 	
@@ -149,6 +159,9 @@ function makeCellEditable(cell) {
 			this.style.width = width + 'px';
 		}
 	};
+	
+	// --- NEW: Trigger resize immediately to fit content without waiting for input ---
+	editor.dispatchEvent(new Event('input'));
 }
 
 // --------------------------------------------------//
@@ -160,21 +173,20 @@ function stopEditing() {
 	
 	if (editingCell) {
 		// Get value from editor div
-		const newHTML = editor.innerHTML;
+		const newText = editor.innerText; // Use innerText to get clean text
 		
 		// Update the inner div
 		const contentDiv = editingCell.querySelector('.content-cut');
-		const oldHTML = contentDiv.innerHTML;
+		const oldText = contentDiv.innerText;
 		
-		// Only save history if value changed
-		if (newHTML !== oldHTML) {
+		if (newText !== oldText) {
 			// Capture state BEFORE updating the DOM with new value
 			if (typeof HistoryManager !== 'undefined') {
 				HistoryManager.addState();
 			}
 		}
 		
-		contentDiv.innerHTML = newHTML;
+		contentDiv.innerText = newText;
 		contentDiv.style.visibility = 'visible'; // Make visible again
 		
 		// Copy styles back from editor to contentDiv if they changed via toolbar
@@ -194,6 +206,48 @@ function stopEditing() {
 		
 		editingCell.classList.remove('edit-cell');
 		isEditing = false;
+		
+		// Force a re-render to process formulas like =dropdown(...)
+		// Although direct editing of dropdowns is disabled, this handles
+		// the case where a user types =dropdown(...) manually into a standard cell.
+		SheetDataManager.updateCurrentSheetData();
+		SheetDataManager.renderSheet(SheetDataManager.data.activeSheetIndex);
+	}
+}
+
+// --- NEW: Handle Dropdown Selection Change ---
+function updateDropdownValue(r, c, selectElement) {
+	if (typeof HistoryManager !== 'undefined') HistoryManager.addState();
+	
+	const sheet = SheetDataManager.data.sheets[SheetDataManager.data.activeSheetIndex];
+	const key = r + '-' + c;
+	const selectedValue = selectElement.value;
+	
+	// Retrieve the original formula from the parent div's data attribute
+	const contentDiv = selectElement.parentElement;
+	const formula = contentDiv.getAttribute('data-formula');
+	
+	if (formula) {
+		// Regex to find the options and replace the selection
+		// Pattern: =dropdown("options", "oldSelection") or =dropdown("options")
+		const regex = /^=dropdown\s*\(\s*"([^"]+)"(?:\s*,\s*"[^"]*")?\s*\)$/i;
+		const match = formula.match(regex);
+		
+		if (match) {
+			const options = match[1];
+			// Construct new formula with selected value
+			const newFormula = `=dropdown("${options}", "${selectedValue}")`;
+			
+			// Update Data
+			if (!sheet.cells[key]) sheet.cells[key] = {};
+			sheet.cells[key].text = newFormula;
+			sheet.cells[key].html = newFormula; // Will be re-rendered as HTML select
+			
+			// Update DOM attribute for consistency until re-render
+			contentDiv.setAttribute('data-formula', newFormula);
+			
+			SheetDataManager.setModified(true);
+		}
 	}
 }
 

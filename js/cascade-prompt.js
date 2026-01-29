@@ -21,6 +21,10 @@ function highlightCell(cell) {
 	const row = cell.parentElement;
 	// We need the index in the tbody to match counter-cell
 	const tbody = row.parentElement;
+	if (!tbody) {
+		console.error('highlightCell: tbody not found for cell, returning.');
+		return;
+	}
 	const rowIndex = Array.from(tbody.children).indexOf(row);
 	
 	console.log('1) Cell Col: ' + cellIndex + ', Row Index: ' + rowIndex);

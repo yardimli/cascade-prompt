@@ -12,6 +12,14 @@ var LLMManager = {
 		if (cachedModels) {
 			this.models = JSON.parse(cachedModels);
 		}
+		
+		// --- NEW: Add Filter Listener ---
+		const filterInput = document.getElementById('llm-model-filter');
+		if (filterInput) {
+			filterInput.addEventListener('input', (e) => {
+				this.filterModels(e.target.value);
+			});
+		}
 	},
 	
 	/**
@@ -275,6 +283,25 @@ var LLMManager = {
 		const startC = getColIdx(c1);
 		const startR = parseInt(r1) - 1;
 		
+		// Helper to extract value from cell, handling Dropdowns
+		const getCellValue = (r, c) => {
+			const key = r + '-' + c;
+			const cellData = sheet.cells[key];
+			if (!cellData) return 'Empty';
+			
+			// Check for Dropdown Formula
+			const text = cellData.text || '';
+			const dropdownRegex = /^=dropdown\s*\(\s*"[^"]+"(?:\s*,\s*"([^"]*)")?\s*\)$/i;
+			const match = text.match(dropdownRegex);
+			
+			if (match) {
+				// Return the selected value (group 1) or empty string if not selected
+				return match[1] || '';
+			}
+			
+			return text;
+		};
+		
 		if (c2 && r2) {
 			// Range Logic
 			const endC = getColIdx(c2);
@@ -292,9 +319,7 @@ var LLMManager = {
 				for(let c = minC; c <= maxC; c++) {
 					count++;
 					if (count <= 3) {
-						const key = r + '-' + c;
-						const val = sheet.cells[key] ? (sheet.cells[key].text || '') : '';
-						const label = SheetDataManager.getColumnLetter(c) + (r+1);
+						const val = getCellValue(r, c);
 						previewText += `${val.substring(0, 20)}${val.length>20?'...':''}, `;
 					}
 				}
@@ -304,8 +329,7 @@ var LLMManager = {
 			return `Range: ${count} cells\n${previewText}`;
 		} else {
 			// Single Cell Logic
-			const key = startR + '-' + startC;
-			const val = sheet.cells[key] ? (sheet.cells[key].text || 'Empty') : 'Empty';
+			const val = getCellValue(startR, startC);
 			return `${val}`;
 		}
 	},
@@ -395,6 +419,27 @@ var LLMManager = {
 			opt.value = m.id;
 			opt.textContent = m.name || m.id;
 			select.appendChild(opt);
+		});
+		
+		// Reset filter
+		const filterInput = document.getElementById('llm-model-filter');
+		if (filterInput) filterInput.value = '';
+	},
+	
+	// --- NEW: Filter Models Logic ---
+	filterModels: function (query) {
+		const select = document.getElementById('llm-model-select');
+		const options = select.querySelectorAll('option');
+		const lowerQuery = query.toLowerCase();
+		
+		options.forEach(opt => {
+			if (opt.value === '') return; // Skip placeholder
+			const text = opt.textContent.toLowerCase();
+			if (text.includes(lowerQuery)) {
+				opt.style.display = '';
+			} else {
+				opt.style.display = 'none';
+			}
 		});
 	},
 	

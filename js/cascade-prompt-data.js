@@ -159,14 +159,24 @@ var SheetDataManager = {
 				// Note: We need to be careful not to save the LLM button HTML as text content
 				// So we clone the node, remove the button, then get text
 				let text = '';
-				const llmBtn = contentDiv.querySelector('.llm-run-btn');
-				if (llmBtn) {
-					const clone = contentDiv.cloneNode(true);
-					const btn = clone.querySelector('.llm-run-btn');
-					if (btn) btn.remove();
-					text = clone.innerText.trim();
+				
+				// --- NEW: Check for Dropdown Formula Attribute ---
+				// If the cell is a dropdown, the visible text is just the selection.
+				// We must save the formula stored in data-formula.
+				const dropdownFormula = contentDiv.getAttribute('data-formula');
+				
+				if (dropdownFormula) {
+					text = dropdownFormula;
 				} else {
-					text = contentDiv.innerText.trim();
+					const llmBtn = contentDiv.querySelector('.llm-run-btn');
+					if (llmBtn) {
+						const clone = contentDiv.cloneNode(true);
+						const btn = clone.querySelector('.llm-run-btn');
+						if (btn) btn.remove();
+						text = clone.innerText.trim();
+					} else {
+						text = contentDiv.innerText.trim();
+					}
 				}
 				
 				const rowspan = parseInt(cell.getAttribute('rowspan')) || 1;
@@ -186,6 +196,7 @@ var SheetDataManager = {
 				let cleanCssText = '';
 				
 				// Determine source of styles: Button if present, otherwise Div
+				const llmBtn = contentDiv.querySelector('.llm-run-btn');
 				const styleSource = llmBtn || contentDiv;
 				
 				allowedStyles.forEach(prop => {
@@ -224,6 +235,9 @@ var SheetDataManager = {
 					html = '{{LLM_BUTTON}}';
 					// Ensure text doesn't contain button markup remnants
 					if (!text) text = 'LLM Formula';
+				} else if (dropdownFormula) {
+					// If it's a dropdown, save the formula as HTML too so it re-renders correctly next time
+					html = dropdownFormula;
 				}
 				
 				// --- Logic Update: Only save if meaningful data exists ---
@@ -427,14 +441,37 @@ var SheetDataManager = {
 						// Wrapper div only gets dimensions
 						cellHTML = `<div class="content-cut" style="${divStyle}">${content}</div>`;
 					} else {
-						// Simple regex to strip the button if it was accidentally saved in HTML
-						content = content.replace(/<button class="llm-run-btn".*?<\/button>/g, '');
-						// Remove placeholder if it exists without config
-						if (content === '{{LLM_BUTTON}}') {
-							content = '';
+						// --- NEW: Check for Dropdown Formula ---
+						// Regex: =dropdown("opt1,opt2", "selected")
+						const dropdownRegex = /^=dropdown\s*\(\s*"([^"]+)"(?:\s*,\s*"([^"]*)")?\s*\)$/i;
+						const match = content.match(dropdownRegex);
+						
+						if (match) {
+							const optionsStr = match[1];
+							const selectedVal = match[2] || '';
+							const options = optionsStr.split(',').map(o => o.trim());
+							
+							let selectHTML = `<select class="cell-dropdown form-select form-select-sm" style="width:100%; height:100%; border:none; background:transparent; padding:0 5px; ${userStyle}" onchange="updateDropdownValue(${r}, ${c}, this)" onclick="event.stopPropagation()">`;
+							
+							options.forEach(opt => {
+								const isSelected = (opt === selectedVal) ? 'selected' : '';
+								selectHTML += `<option value="${opt}" ${isSelected}>${opt}</option>`;
+							});
+							selectHTML += '</select>';
+							
+							// Store the original formula in a data attribute so we don't lose it on save
+							cellHTML = `<div class="content-cut" style="${divStyle}" data-formula="${content.replace(/"/g, '&quot;')}">${selectHTML}</div>`;
+							
+						} else {
+							// Simple regex to strip the button if it was accidentally saved in HTML
+							content = content.replace(/<button class="llm-run-btn".*?<\/button>/g, '');
+							// Remove placeholder if it exists without config
+							if (content === '{{LLM_BUTTON}}') {
+								content = '';
+							}
+							// Normal Cell: User styles go on the wrapper div
+							cellHTML = `<div class="content-cut" style="${divStyle}${userStyle}">${content}</div>`;
 						}
-						// Normal Cell: User styles go on the wrapper div
-						cellHTML = `<div class="content-cut" style="${divStyle}${userStyle}">${content}</div>`;
 					}
 				} else {
 					// Empty Cell
