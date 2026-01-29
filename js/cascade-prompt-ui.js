@@ -174,8 +174,24 @@ export function makeCellEditable(cell) {
 		wrapper.className = 'floating-select-wrapper w-full h-full';
 		
 		const select = document.createElement('select');
-		select.className = 'select select-bordered select-xs w-full h-full rounded-none';
+		// Removed select-bordered to blend better, added focus:outline-none and min-h-0
+		select.className = 'select select-xs w-full h-full rounded-none focus:outline-none min-h-0 block p-0 m-0';
+		
+		// Apply styles to match cell
 		select.style.textAlign = computedStyle.textAlign;
+		select.style.fontWeight = computedStyle.fontWeight;
+		select.style.fontStyle = computedStyle.fontStyle;
+		select.style.fontSize = computedStyle.fontSize;
+		select.style.fontFamily = computedStyle.fontFamily;
+		select.style.color = computedStyle.color;
+		select.style.backgroundColor = window.getComputedStyle(cell).backgroundColor;
+		
+		// Remove default borders and outlines
+		select.style.border = 'none';
+		select.style.outline = 'none';
+		select.style.boxShadow = 'none';
+		// Adjust padding to match standard cell padding
+		select.style.padding = '0 5px';
 		
 		options.forEach(opt => {
 			const option = document.createElement('option');
@@ -205,6 +221,15 @@ export function makeCellEditable(cell) {
 		editor.contentEditable = false;
 		editor.style.padding = '0';
 		select.focus();
+		
+		// Attempt to auto-open the dropdown
+		try {
+			if (typeof select.showPicker === 'function') {
+				select.showPicker();
+			}
+		} catch (e) {
+			console.warn('Auto-open dropdown failed:', e);
+		}
 		
 	} else {
 		editor.innerText = contentDiv.innerText;
