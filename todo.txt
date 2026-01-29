@@ -65,6 +65,16 @@ add a button to the cell when user clicks on the button the llm formula is exect
 
 TODO:
 
+selecting single cell is not working, also after making a selection making it smaller is not working correctly. moving cells is not working including moving single cell. once selection is made the mouse cursor should change to drag when over the selected area to indicate its draggable.
+
+- add checkbox (with true and false values configurable)
+
+- add =folderreader("folderpath") formula that reads all files in a folder and can feed them to the llm one file at a time
+- add =filereader("filepath") formula that reads a file content and feeds it to the llm one line at a time
+- =folerreader and =filereader should also work with full output
+
+- in llm dialog add checkbox to continue adding results at the end instead of overwriting specified target area.
+
 - allow user to add image to a cell from local file or url. images should resize to fit the cell but keep aspect ratio.
 
 - allow user to create =imagegen() formula that uses fal.ai to generate images based on a prompt from the sheet cell content.
@@ -74,8 +84,6 @@ TODO:
 
 
 --------- BUGS:
-
-selecting single cell is not working, also after making a selection making it smaller is not working correctly. moving cells is not working including moving single cell. once selection is made the mouse cursor should change to drag when over the selected area to indicate its draggable.
 
 when merging cells row height resize acts weirdly for the rows that intersect with merged cells
 when unmerging cells the new cells are not editable until page refresh
