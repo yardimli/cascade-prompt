@@ -35,7 +35,7 @@
 	<script src="js/cascade-prompt-formatting.js"></script>
 	<script src="js/cascade-prompt-clipboard.js"></script>
 	<script src="js/cascade-prompt-llm.js"></script>
-	<script src="js/cascade-prompt-dropdown.js"></script> <!-- Added Dropdown Manager -->
+	<script src="js/cascade-prompt-dropdown.js"></script>
 	<script src="js/cascade-prompt.js"></script>
 	<script src="js/cascade-prompt-keypress.js"></script>
 	<script src="js/cascade-prompt-ui.js"></script>
@@ -83,6 +83,9 @@
 					class="shortcut-key">Ctrl+C</span></div>
 			<div class="menu-dropdown-item" onclick="ClipboardManager.paste()">Paste <span class="shortcut-key">Ctrl+V</span>
 			</div>
+			<div class="dropdown-divider"></div>
+			<!-- NEW: Sheet Properties Menu Item -->
+			<div class="menu-dropdown-item" onclick="SheetPropertiesManager.open()">Sheet Properties...</div>
 			<div class="dropdown-divider"></div>
 			<div class="menu-dropdown-item" onclick="LLMManager.openFormulaBuilder()">Insert LLM Formula</div>
 			<div class="menu-dropdown-item" onclick="DropdownManager.openDropdownBuilder()">Insert Dropdown</div>
@@ -372,10 +375,49 @@
 					<input type="password" class="form-control" id="llm-api-key" placeholder="sk-or-...">
 					<div class="form-text">Your key is saved within the project file.</div>
 				</div>
+				<!-- NEW: Fal.ai API Key Input -->
+				<div class="mb-3">
+					<label for="llm-fal-key" class="form-label">Fal.ai API Key:</label>
+					<input type="password" class="form-control" id="llm-fal-key" placeholder="key-...">
+					<div class="form-text">For image generation features.</div>
+				</div>
 			</div>
 			<div class="modal-footer">
 				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
 				<button type="button" class="btn btn-primary" onclick="LLMManager.saveSettings()">Save Settings</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- NEW: Sheet Properties Modal -->
+<div class="modal fade" id="sheetPropertiesModal" tabindex="-1" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title">Sheet Properties</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body">
+				<div class="mb-3">
+					<label for="sheet-prop-name" class="form-label">Sheet Name:</label>
+					<input type="text" class="form-control" id="sheet-prop-name" placeholder="Sheet1">
+					<div class="form-text">Alphanumeric only, no spaces. Must be unique.</div>
+				</div>
+				<div class="row">
+					<div class="col-6 mb-3">
+						<label for="sheet-prop-rows" class="form-label">Rows:</label>
+						<input type="number" class="form-control" id="sheet-prop-rows" min="1" max="10000">
+					</div>
+					<div class="col-6 mb-3">
+						<label for="sheet-prop-cols" class="form-label">Columns:</label>
+						<input type="number" class="form-control" id="sheet-prop-cols" min="1" max="200">
+					</div>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+				<button type="button" class="btn btn-primary" onclick="SheetPropertiesManager.save()">Apply</button>
 			</div>
 		</div>
 	</div>

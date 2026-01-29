@@ -33,6 +33,84 @@ function toggleTheme() {
 }
 
 // --------------------------------------------------//
+// Sheet Properties Manager
+// --------------------------------------------------//
+var SheetPropertiesManager = {
+	/**
+	 * Open the Sheet Properties Modal
+	 */
+	open: function () {
+		const modal = new bootstrap.Modal(document.getElementById('sheetPropertiesModal'));
+		const sheet = SheetDataManager.data.sheets[SheetDataManager.data.activeSheetIndex];
+		
+		if (!sheet) return;
+		
+		document.getElementById('sheet-prop-name').value = sheet.name;
+		document.getElementById('sheet-prop-rows').value = sheet.rowCount;
+		document.getElementById('sheet-prop-cols').value = sheet.colCount;
+		
+		modal.show();
+	},
+	
+	/**
+	 * Save changes from the modal
+	 */
+	save: function () {
+		const nameInput = document.getElementById('sheet-prop-name');
+		const rowsInput = document.getElementById('sheet-prop-rows');
+		const colsInput = document.getElementById('sheet-prop-cols');
+		
+		const newName = nameInput.value.trim();
+		const newRows = parseInt(rowsInput.value);
+		const newCols = parseInt(colsInput.value);
+		
+		// Validation
+		if (!newName) {
+			showCustomAlert('Sheet name cannot be empty.');
+			return;
+		}
+		
+		// Alphanumeric check (no spaces)
+		if (!/^[a-zA-Z0-9]+$/.test(newName)) {
+			showCustomAlert('Sheet name must be alphanumeric and contain no spaces.');
+			return;
+		}
+		
+		// Unique check (exclude current sheet)
+		const currentIndex = SheetDataManager.data.activeSheetIndex;
+		const isDuplicate = SheetDataManager.data.sheets.some((sheet, idx) => {
+			return idx !== currentIndex && sheet.name === newName;
+		});
+		
+		if (isDuplicate) {
+			showCustomAlert('Sheet name already exists. Please choose a unique name.');
+			return;
+		}
+		
+		if (isNaN(newRows) || newRows < 1 || newRows > 10000) {
+			showCustomAlert('Rows must be between 1 and 10000.');
+			return;
+		}
+		
+		if (isNaN(newCols) || newCols < 1 || newCols > 200) {
+			showCustomAlert('Columns must be between 1 and 200.');
+			return;
+		}
+		
+		// Capture history before changing properties
+		if (typeof HistoryManager !== 'undefined') HistoryManager.addState();
+		
+		SheetDataManager.updateSheetProperties(currentIndex, newName, newRows, newCols);
+		
+		const modalEl = document.getElementById('sheetPropertiesModal');
+		const modal = bootstrap.Modal.getInstance(modalEl);
+		modal.hide();
+		
+		showToast('Sheet properties updated.');
+	}
+};
+
+// --------------------------------------------------//
 function scrollToViewWithOffsets(cell) {
 	const container = document.querySelector('.spreadsheet-container');
 	const containerRect = container.getBoundingClientRect();

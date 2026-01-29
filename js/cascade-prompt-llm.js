@@ -27,13 +27,16 @@ var LLMManager = {
 	 */
 	openSettings: function () {
 		const modal = new bootstrap.Modal(document.getElementById('llmSettingsModal'));
-		const input = document.getElementById('llm-api-key');
+		const apiKeyInput = document.getElementById('llm-api-key');
+		const falKeyInput = document.getElementById('llm-fal-key');
 		
-		// Load existing key
-		if (SheetDataManager.data.llmSettings && SheetDataManager.data.llmSettings.apiKey) {
-			input.value = SheetDataManager.data.llmSettings.apiKey;
+		// Load existing keys
+		if (SheetDataManager.data.llmSettings) {
+			apiKeyInput.value = SheetDataManager.data.llmSettings.apiKey || '';
+			falKeyInput.value = SheetDataManager.data.llmSettings.falAiKey || '';
 		} else {
-			input.value = '';
+			apiKeyInput.value = '';
+			falKeyInput.value = '';
 		}
 		
 		modal.show();
@@ -43,21 +46,26 @@ var LLMManager = {
 	 * Save Settings from Modal
 	 */
 	saveSettings: function () {
-		const input = document.getElementById('llm-api-key');
-		const key = input.value.trim();
+		const apiKeyInput = document.getElementById('llm-api-key');
+		const falKeyInput = document.getElementById('llm-fal-key');
+		
+		const apiKey = apiKeyInput.value.trim();
+		const falKey = falKeyInput.value.trim();
 		
 		if (!SheetDataManager.data.llmSettings) {
 			SheetDataManager.data.llmSettings = {};
 		}
 		
-		SheetDataManager.data.llmSettings.apiKey = key;
+		SheetDataManager.data.llmSettings.apiKey = apiKey;
+		SheetDataManager.data.llmSettings.falAiKey = falKey;
+		
 		SheetDataManager.setModified(true);
 		
 		const modalEl = document.getElementById('llmSettingsModal');
 		const modal = bootstrap.Modal.getInstance(modalEl);
 		modal.hide();
 		
-		showToast('LLM Settings Saved. Please Save Project (Ctrl+S).');
+		showToast('Settings Saved. Please Save Project (Ctrl+S).');
 	},
 	
 	/**

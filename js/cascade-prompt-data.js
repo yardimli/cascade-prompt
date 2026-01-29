@@ -9,7 +9,8 @@ var SheetDataManager = {
 		activeSheetIndex: 0,
 		sheets: [],
 		llmSettings: {
-			apiKey: '' // Store OpenRouter API Key here
+			apiKey: '', // Store OpenRouter API Key here
+			falAiKey: '' // Store Fal.ai API Key here
 		}
 	},
 	
@@ -61,11 +62,17 @@ var SheetDataManager = {
 	},
 	
 	/**
-	 * Create a new sheet
+	 * Create a new sheet with a unique name
 	 */
 	createSheet: function (name, isInitial) {
+		// Ensure unique name if not initial load
+		let finalName = name;
+		if (!isInitial) {
+			finalName = this.generateUniqueSheetName(name);
+		}
+		
 		let newSheet = {
-			name: name,
+			name: finalName,
 			rowCount: this.defaults.rows,
 			colCount: this.defaults.cols,
 			cells: {},
@@ -91,6 +98,60 @@ var SheetDataManager = {
 			this.renderTabs();
 			// We don't auto-save to server on init, only on explicit save
 		}
+	},
+	
+	/**
+	 * Helper to generate a unique sheet name (e.g., Sheet1, Sheet2)
+	 */
+	generateUniqueSheetName: function (baseName) {
+		let name = baseName;
+		let counter = 1;
+		
+		// If baseName is just "Sheet", start checking from Sheet1
+		if (baseName === this.defaults.sheetNamePrefix) {
+			name = baseName + counter;
+		}
+		
+		// Check against existing names
+		while (this.data.sheets.some(s => s.name === name)) {
+			counter++;
+			// If baseName ends with a number, strip it before appending new counter
+			// Simple logic: just append if baseName is "Sheet", otherwise append to base
+			if (baseName.startsWith(this.defaults.sheetNamePrefix)) {
+				name = this.defaults.sheetNamePrefix + counter;
+			} else {
+				name = baseName + '_' + counter;
+			}
+		}
+		return name;
+	},
+	
+	/**
+	 * Update properties of a specific sheet (Name, Rows, Cols)
+	 * @param {number} index - Index of the sheet
+	 * @param {string} newName - New name (must be validated before calling)
+	 * @param {number} newRows - New row count
+	 * @param {number} newCols - New column count
+	 */
+	updateSheetProperties: function (index, newName, newRows, newCols) {
+		if (index < 0 || index >= this.data.sheets.length) return;
+		
+		const sheet = this.data.sheets[index];
+		
+		// Update Data
+		sheet.name = newName;
+		sheet.rowCount = parseInt(newRows);
+		sheet.colCount = parseInt(newCols);
+		
+		// If this is the active sheet, update DOM
+		if (index === this.data.activeSheetIndex) {
+			this.renderSheet(index);
+			this.renderTabs();
+		} else {
+			this.renderTabs(); // Just update tabs if inactive
+		}
+		
+		this.setModified(true);
 	},
 	
 	/**
@@ -719,7 +780,7 @@ var SheetDataManager = {
 					this.data = data.data;
 					// Ensure llmSettings exists for older projects
 					if (!this.data.llmSettings) {
-						this.data.llmSettings = {apiKey: ''};
+						this.data.llmSettings = {apiKey: '', falAiKey: ''};
 					}
 					
 					this.currentFileName = filename;
@@ -780,7 +841,7 @@ var SheetDataManager = {
 			this.data = {
 				activeSheetIndex: 0,
 				sheets: [],
-				llmSettings: {apiKey: ''}
+				llmSettings: {apiKey: '', falAiKey: ''}
 			};
 			this.currentFileName = null;
 			localStorage.removeItem('lastOpenedFile');
