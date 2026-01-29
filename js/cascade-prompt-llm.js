@@ -63,27 +63,17 @@ export const LLMManager = {
 		const modal = document.getElementById('llmFormulaModal');
 		const selected = document.querySelector('.selected-cell');
 		
-		// Reset UI state
 		const targetInput = document.getElementById('llm-target-cell');
-		targetInput.classList.remove('input-error');
+		targetInput.classList.remove('input-error'); // DaisyUI error class
 		document.getElementById('llm-json-schema').classList.remove('textarea-error');
 		
-		// 1. Reset Listeners (Replaces DOM node)
-		// We do this first so we can get a fresh reference to the editor element
+		// 1. Populate models and attach listeners (resets the editor node)
+		this.populateModelSelect();
 		this.attachEditorListeners();
 		
-		// 2. Get fresh references
 		const promptEditor = document.getElementById('llm-prompt-editor');
-		const schemaInput = document.getElementById('llm-json-schema');
-		const funcNameInput = document.getElementById('llm-func-name');
-		const modelSelect = document.getElementById('llm-model-select');
-		
-		// 3. Prepare Data
 		let promptText = '';
-		let schemaText = '{\n  "Key": "Value"\n}';
-		let funcNameText = 'Run LLM';
-		let targetText = '';
-		let modelId = '';
+		let modelToSelect = '';
 		
 		if (selected) {
 			const r = selected.parentElement.rowIndex;
@@ -95,37 +85,33 @@ export const LLMManager = {
 			if (sheet.cells[key] && sheet.cells[key].llm) {
 				const config = sheet.cells[key].llm;
 				promptText = config.prompt || '';
-				schemaText = config.jsonSchema || '';
-				funcNameText = config.funcName || 'Run LLM';
+				document.getElementById('llm-json-schema').value = config.jsonSchema || '';
+				document.getElementById('llm-func-name').value = config.funcName || 'Run LLM';
 				const targetLetter = SheetDataManager.getColumnLetter(config.targetCol);
-				targetText = targetLetter + (config.targetRow + 1);
-				modelId = config.model || '';
+				targetInput.value = targetLetter + (config.targetRow + 1);
+				modelToSelect = config.model || '';
 			} else {
 				const letter = SheetDataManager.getColumnLetter(c);
-				targetText = letter + r;
+				targetInput.value = letter + r;
+				promptText = '';
+				document.getElementById('llm-json-schema').value = '{\n  "Key": "Value"\n}';
+				document.getElementById('llm-func-name').value = 'Run LLM';
 			}
 		} else {
-			targetText = '';
+			targetInput.value = '';
 		}
 		
-		// 4. Populate UI
-		// Setting innerText works even if hidden, but reading it requires visibility.
-		promptEditor.innerText = promptText;
-		schemaInput.value = schemaText;
-		funcNameInput.value = funcNameText;
-		targetInput.value = targetText;
+		// Set prompt text content (safe even if hidden)
+		promptEditor.textContent = promptText;
 		
-		this.populateModelSelect();
-		if (modelId) {
-			modelSelect.value = modelId;
+		if (modelToSelect) {
+			document.getElementById('llm-model-select').value = modelToSelect;
 		}
 		
-		// 5. Show Modal (Make visible)
-		// IMPORTANT: Modal must be visible before calling highlightPromptVariables,
-		// because innerText returns empty string on hidden elements.
+		// 2. Show Modal (renders the element so layout is available)
 		modal.showModal();
 		
-		// 6. Highlight Variables
+		// 3. Highlight (requires element to be visible/rendered)
 		this.highlightPromptVariables();
 	},
 	
@@ -201,7 +187,6 @@ export const LLMManager = {
 			savedOffset = preCaretRange.toString().length;
 		}
 		
-		// innerText relies on layout. If editor is hidden (e.g. modal closed), this returns empty string.
 		const text = editor.innerText;
 		let html = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 		const regex = /#([A-Z]+)([0-9]+)(?::([A-Z]+)([0-9]+))?/gi;
@@ -453,6 +438,13 @@ export const LLMManager = {
 		}
 		targetColIndex -= 1;
 		const targetRowIndex = rowNum - 1;
+		
+		// Validation: Check if target is same as source
+		if (targetRowIndex === sourceRow && targetColIndex === sourceCol) {
+			window.showCustomAlert('Target cell cannot be the same as the button cell.');
+			document.getElementById('llm-target-cell').classList.add('input-error');
+			return;
+		}
 		
 		if (typeof window.HistoryManager !== 'undefined') window.HistoryManager.addState();
 		
