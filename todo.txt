@@ -63,6 +63,9 @@ add a button to the cell when user clicks on the button the llm formula is exect
 
 - add fal.ai api key to the llm settings dialog.
 
+- in llm dialog add checkbox to continue adding results at the end instead of overwriting specified target area.
+
+
 TODO:
 
 selecting single cell is not working, also after making a selection making it smaller is not working correctly. moving cells is not working including moving single cell. once selection is made the mouse cursor should change to drag when over the selected area to indicate its draggable.
@@ -73,11 +76,10 @@ selecting single cell is not working, also after making a selection making it sm
 - add =filereader("filepath") formula that reads a file content and feeds it to the llm one line at a time
 - =folerreader and =filereader should also work with full output
 
-- in llm dialog add checkbox to continue adding results at the end instead of overwriting specified target area.
-
 - allow user to add image to a cell from local file or url. images should resize to fit the cell but keep aspect ratio.
 
 - allow user to create =imagegen() formula that uses fal.ai to generate images based on a prompt from the sheet cell content.
+
 - make the llm call support image inputs so user can reference images in the sheet when using llm formula. images should be added in a new input type where user enters comma seperated list of sheet cell coordinates that contain images. the images are uploaded are added as base64 data urls to the llm request.
 
 - update prompt dialog so cell references (#A17) is current sheet and allow user to select cell references from other sheets using sheetname!A17 format.
@@ -88,5 +90,4 @@ selecting single cell is not working, also after making a selection making it sm
 when merging cells row height resize acts weirdly for the rows that intersect with merged cells
 when unmerging cells the new cells are not editable until page refresh
 new sheets row heights are different than the first sheet, should have some default height
-switching sheets is slow.
 border tool is not working correctly with cells merged and unmerged.
