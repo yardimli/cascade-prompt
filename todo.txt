@@ -59,11 +59,11 @@ add a button to the cell when user clicks on the button the llm formula is exect
 
 - make overlay editor for cell content have max-width and max-height and fit the screen and grow in height show scrollbar if needed.
 
-TODO:
-
 - add sheet properties dialog where user can set number of rows and columns, and name of sheet it should be alphanumeric with no spaces so it can be used in formulas. add menu item to edit menu to open the dialog. Default sheet names should be unique and check for existing names when creating or renaming sheets.
 
 - add fal.ai api key to the llm settings dialog.
+
+TODO:
 
 - allow user to add image to a cell from local file or url. images should resize to fit the cell but keep aspect ratio.
 
@@ -75,7 +75,8 @@ TODO:
 
 --------- BUGS:
 
-selecting single cell is not working, also after making a selection making it smaller is not working correctly.
+selecting single cell is not working, also after making a selection making it smaller is not working correctly. moving cells is not working including moving single cell. once selection is made the mouse cursor should change to drag when over the selected area to indicate its draggable.
+
 when merging cells row height resize acts weirdly for the rows that intersect with merged cells
 when unmerging cells the new cells are not editable until page refresh
 new sheets row heights are different than the first sheet, should have some default height

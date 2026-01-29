@@ -16,7 +16,8 @@ import {
 	stopEditing,
 	mergeCells,
 	unmergeCells,
-	attachResizeHandlers
+	attachResizeHandlers,
+	initMenuHandlers
 } from '../js/cascade-prompt-ui.js';
 
 // Expose Managers to Window for HTML event handlers
@@ -36,6 +37,7 @@ window.stopEditing = stopEditing;
 window.mergeCells = mergeCells;
 window.unmergeCells = unmergeCells;
 window.attachResizeHandlers = attachResizeHandlers;
+window.initMenuHandlers = initMenuHandlers;
 
 // Global State Variables (migrated from cascade-prompt.js)
 window.isEditing = false;
@@ -345,6 +347,7 @@ window.showToast = function (message) {
 // Initialize
 document.addEventListener('DOMContentLoaded', function () {
 	initTheme();
+	initMenuHandlers();
 	
 	// Listen for the custom event dispatched by renderSheet to re-attach handlers
 	document.addEventListener('sheetRendered', function () {

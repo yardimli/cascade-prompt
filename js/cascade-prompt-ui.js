@@ -571,3 +571,50 @@ export function attachResizeHandlers() {
 		cell.classList.add('processed');
 	});
 }
+
+// --------------------------------------------------//
+// Menu & Dropdown Handlers
+// --------------------------------------------------//
+export function initMenuHandlers() {
+	document.addEventListener('click', function (event) {
+		// 1. Handle Top Bar Menus (<details>)
+		const navDetails = document.querySelectorAll('.navbar details');
+		navDetails.forEach(detail => {
+			const isClickInside = detail.contains(event.target);
+			const summary = detail.querySelector('summary');
+			const isSummaryClick = summary && (event.target === summary || summary.contains(event.target));
+			
+			if (isClickInside) {
+				if (isSummaryClick) {
+					// Clicked Summary: Ensure others are closed
+					navDetails.forEach(other => {
+						if (other !== detail) other.removeAttribute('open');
+					});
+				} else {
+					// Clicked Content (Link/Button): Close this one
+					detail.removeAttribute('open');
+				}
+			} else {
+				// Clicked Outside: Close if open
+				if (detail.hasAttribute('open')) {
+					detail.removeAttribute('open');
+				}
+			}
+		});
+		
+		// 2. Handle Toolbar Dropdowns (DaisyUI .dropdown)
+		const dropdownContent = event.target.closest('.dropdown-content');
+		if (dropdownContent) {
+			// If clicked a link or button inside dropdown content
+			if (event.target.closest('a') || event.target.closest('button')) {
+				// Blur the focused element (the dropdown trigger)
+				if (document.activeElement instanceof HTMLElement) {
+					// Check if active element is part of a dropdown to avoid blurring modals
+					if (document.activeElement.closest('.dropdown')) {
+						document.activeElement.blur();
+					}
+				}
+			}
+		}
+	});
+}
