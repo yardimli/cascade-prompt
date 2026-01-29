@@ -84,23 +84,23 @@
 
 <!-- Toolbar -->
 <div class="flex items-center gap-1 px-4 py-1 bg-base-200 border-b border-base-300 overflow-x-auto">
-	<button class="btn btn-ghost btn-xs btn-square" onclick="HistoryManager.undo()" title="Undo"><i class="bi bi-arrow-counterclockwise"></i></button>
-	<button class="btn btn-ghost btn-xs btn-square" onclick="HistoryManager.redo()" title="Redo"><i class="bi bi-arrow-clockwise"></i></button>
+	<button class="btn btn-ghost btn-sm btn-square" onclick="HistoryManager.undo()" title="Undo"><i class="bi bi-arrow-counterclockwise"></i></button>
+	<button class="btn btn-ghost btn-sm btn-square" onclick="HistoryManager.redo()" title="Redo"><i class="bi bi-arrow-clockwise"></i></button>
 	
 	<div class="w-px h-4 bg-base-content/20 mx-1"></div>
 	
-	<button class="btn btn-ghost btn-xs btn-square" onclick="ClipboardManager.cut()" title="Cut"><i class="bi bi-scissors"></i></button>
-	<button class="btn btn-ghost btn-xs btn-square" onclick="ClipboardManager.copy(false)" title="Copy"><i class="bi bi-files"></i></button>
-	<button class="btn btn-ghost btn-xs btn-square" onclick="ClipboardManager.paste()" title="Paste"><i class="bi bi-clipboard"></i></button>
+	<button class="btn btn-ghost btn-sm btn-square" onclick="ClipboardManager.cut()" title="Cut"><i class="bi bi-scissors"></i></button>
+	<button class="btn btn-ghost btn-sm btn-square" onclick="ClipboardManager.copy(false)" title="Copy"><i class="bi bi-files"></i></button>
+	<button class="btn btn-ghost btn-sm btn-square" onclick="ClipboardManager.paste()" title="Paste"><i class="bi bi-clipboard"></i></button>
 	
 	<div class="w-px h-4 bg-base-content/20 mx-1"></div>
 	
-	<button class="btn btn-ghost btn-xs btn-square" onclick="FormatManager.toggleStyle('bold')" title="Bold"><i class="bi bi-type-bold"></i></button>
-	<button class="btn btn-ghost btn-xs btn-square" onclick="FormatManager.toggleStyle('italic')" title="Italic"><i class="bi bi-type-italic"></i></button>
+	<button class="btn btn-ghost btn-sm btn-square" onclick="FormatManager.toggleStyle('bold')" title="Bold"><i class="bi bi-type-bold"></i></button>
+	<button class="btn btn-ghost btn-sm btn-square" onclick="FormatManager.toggleStyle('italic')" title="Italic"><i class="bi bi-type-italic"></i></button>
 	
 	<!-- Font Size Dropdown -->
 	<div class="dropdown">
-		<div tabindex="0" role="button" class="btn btn-ghost btn-xs btn-square" title="Font Size"><i class="bi bi-type"></i></div>
+		<div tabindex="0" role="button" class="btn btn-ghost btn-sm btn-square" title="Font Size"><i class="bi bi-type"></i></div>
 		<ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-32 border border-base-200">
 			<li><a onclick="FormatManager.setFontSize('small')">Small</a></li>
 			<li><a onclick="FormatManager.setFontSize('normal')">Normal</a></li>
@@ -111,41 +111,41 @@
 	
 	<div class="w-px h-4 bg-base-content/20 mx-1"></div>
 	
-	<button class="btn btn-ghost btn-xs btn-square" onclick="FormatManager.openColorDialog('text')" title="Text Color"><i class="bi bi-palette"></i></button>
-	<button class="btn btn-ghost btn-xs btn-square" onclick="FormatManager.openColorDialog('background')" title="Fill Color"><i class="bi bi-paint-bucket"></i></button>
+	<button class="btn btn-ghost btn-sm btn-square" onclick="FormatManager.openColorDialog('text')" title="Text Color"><i class="bi bi-palette"></i></button>
+	<button class="btn btn-ghost btn-sm btn-square" onclick="FormatManager.openColorDialog('background')" title="Fill Color"><i class="bi bi-paint-bucket"></i></button>
 	
 	<!-- Borders Dropdown -->
 	<div class="dropdown">
-		<div tabindex="0" role="button" class="btn btn-ghost btn-xs btn-square" title="Borders"><i class="bi bi-border-all"></i></div>
+		<div tabindex="0" role="button" class="btn btn-ghost btn-sm btn-square" title="Borders"><i class="bi bi-border-all"></i></div>
 		<div tabindex="0" class="dropdown-content z-[1] card card-compact w-36 shadow bg-base-100 border border-base-200">
 			<div class="card-body grid grid-cols-3 gap-1 p-2">
-				<button class="btn btn-ghost btn-xs btn-square" onclick="FormatManager.setBorder('all')" title="All"><i class="bi bi-border-all"></i></button>
-				<button class="btn btn-ghost btn-xs btn-square" onclick="FormatManager.setBorder('outer')" title="Outer"><i class="bi bi-border-outer"></i></button>
-				<button class="btn btn-ghost btn-xs btn-square" onclick="FormatManager.setBorder('none')" title="None"><i class="bi bi-border-none"></i></button>
-				<button class="btn btn-ghost btn-xs btn-square" onclick="FormatManager.setBorder('top')" title="Top"><i class="bi bi-border-top"></i></button>
-				<button class="btn btn-ghost btn-xs btn-square" onclick="FormatManager.setBorder('bottom')" title="Bottom"><i class="bi bi-border-bottom"></i></button>
-				<button class="btn btn-ghost btn-xs btn-square" onclick="FormatManager.setBorder('left')" title="Left"><i class="bi bi-border-left"></i></button>
-				<button class="btn btn-ghost btn-xs btn-square" onclick="FormatManager.setBorder('right')" title="Right"><i class="bi bi-border-right"></i></button>
-				<button class="btn btn-ghost btn-xs btn-square" onclick="FormatManager.openColorDialog('border')" title="Color"><i class="bi bi-palette2"></i></button>
+				<button class="btn btn-ghost btn-sm btn-square" onclick="FormatManager.setBorder('all')" title="All"><i class="bi bi-border-all"></i></button>
+				<button class="btn btn-ghost btn-sm btn-square" onclick="FormatManager.setBorder('outer')" title="Outer"><i class="bi bi-border-outer"></i></button>
+				<button class="btn btn-ghost btn-sm btn-square" onclick="FormatManager.setBorder('none')" title="None"><i class="bi bi-border-none"></i></button>
+				<button class="btn btn-ghost btn-sm btn-square" onclick="FormatManager.setBorder('top')" title="Top"><i class="bi bi-border-top"></i></button>
+				<button class="btn btn-ghost btn-sm btn-square" onclick="FormatManager.setBorder('bottom')" title="Bottom"><i class="bi bi-border-bottom"></i></button>
+				<button class="btn btn-ghost btn-sm btn-square" onclick="FormatManager.setBorder('left')" title="Left"><i class="bi bi-border-left"></i></button>
+				<button class="btn btn-ghost btn-sm btn-square" onclick="FormatManager.setBorder('right')" title="Right"><i class="bi bi-border-right"></i></button>
+				<button class="btn btn-ghost btn-sm btn-square" onclick="FormatManager.openColorDialog('border')" title="Color"><i class="bi bi-palette2"></i></button>
 			</div>
 		</div>
 	</div>
 	
 	<div class="w-px h-4 bg-base-content/20 mx-1"></div>
 	
-	<button class="btn btn-ghost btn-xs btn-square" onclick="FormatManager.setAlignment('left')" title="Align Left"><i class="bi bi-justify-left"></i></button>
-	<button class="btn btn-ghost btn-xs btn-square" onclick="FormatManager.setAlignment('center')" title="Align Center"><i class="bi bi-text-center"></i></button>
-	<button class="btn btn-ghost btn-xs btn-square" onclick="FormatManager.setAlignment('right')" title="Align Right"><i class="bi bi-justify-right"></i></button>
+	<button class="btn btn-ghost btn-sm btn-square" onclick="FormatManager.setAlignment('left')" title="Align Left"><i class="bi bi-justify-left"></i></button>
+	<button class="btn btn-ghost btn-sm btn-square" onclick="FormatManager.setAlignment('center')" title="Align Center"><i class="bi bi-text-center"></i></button>
+	<button class="btn btn-ghost btn-sm btn-square" onclick="FormatManager.setAlignment('right')" title="Align Right"><i class="bi bi-justify-right"></i></button>
 	
 	<div class="w-px h-4 bg-base-content/20 mx-1"></div>
 	
-	<button class="btn btn-ghost btn-xs btn-square" id="merge-btn" title="Merge Cells" disabled onclick="mergeCells()"><i class="bi bi-arrows-collapse"></i></button>
-	<button class="btn btn-ghost btn-xs btn-square" id="unmerge-btn" title="Unmerge Cells" disabled onclick="unmergeCells()"><i class="bi bi-arrows-expand"></i></button>
+	<button class="btn btn-ghost btn-sm btn-square" id="merge-btn" title="Merge Cells" disabled onclick="mergeCells()"><i class="bi bi-arrows-collapse"></i></button>
+	<button class="btn btn-ghost btn-sm btn-square" id="unmerge-btn" title="Unmerge Cells" disabled onclick="unmergeCells()"><i class="bi bi-arrows-expand"></i></button>
 	
 	<div class="w-px h-4 bg-base-content/20 mx-1"></div>
 	
-	<button class="btn btn-ghost btn-xs btn-square" onclick="DropdownManager.openDropdownBuilder()" title="Dropdown"><i class="bi bi-list-ul"></i></button>
-	<button class="btn btn-primary btn-xs" onclick="LLMManager.openFormulaBuilder()"><i class="bi bi-robot mr-1"></i> LLM</button>
+	<button class="btn btn-ghost btn-sm btn-square" onclick="DropdownManager.openDropdownBuilder()" title="Dropdown"><i class="bi bi-list-ul"></i></button>
+	<button class="btn btn-primary btn-sm" onclick="LLMManager.openFormulaBuilder()"><i class="bi bi-robot mr-1"></i> LLM</button>
 </div>
 
 <!-- Formula Bar -->
@@ -303,44 +303,74 @@
 
 <!-- LLM Formula Modal -->
 <dialog id="llmFormulaModal" class="modal">
-	<div class="modal-box w-11/12 max-w-4xl">
-		<h3 class="font-bold text-lg">Insert LLM Formula</h3>
+	<!-- Increased width to max-w-6xl -->
+	<div class="modal-box w-11/12 max-w-6xl">
+		<h3 class="font-bold text-lg" id="llm-modal-title">Insert LLM Formula</h3>
 		<div class="py-4 grid grid-cols-1 md:grid-cols-2 gap-4">
 			<div class="form-control">
-				<label class="label"><span class="label-text">Model:</span></label>
-				<input type="text" class="input input-sm input-bordered mb-1" id="llm-model-filter" placeholder="Search models...">
-				<div class="join">
-					<select class="select select-bordered join-item w-full" id="llm-model-select">
-						<option value="">Select a model...</option>
-					</select>
+				<!-- Combined Input and Datalist for filtering -->
+				<div class="join w-full">
+					<label class="label"><span class="label-text">Model:</span></label>
+					<input class="input input-bordered join-item w-full" list="llm-models-datalist" id="llm-model-input" placeholder="Type to search or select model...">
+					<datalist id="llm-models-datalist">
+						<!-- Populated by JS -->
+					</datalist>
 					<button class="btn join-item" id="refresh-models-btn" onclick="LLMManager.fetchModels()" title="Refresh"><i class="bi bi-arrow-clockwise"></i></button>
 				</div>
 			</div>
 			<div class="form-control">
-				<label class="label"><span class="label-text">Target Cell (Output):</span></label>
+				<label class="label"><span class="label-text">Target:</span></label>
 				<input type="text" class="input input-bordered" id="llm-target-cell" placeholder="e.g. A1">
 			</div>
-			<div class="form-control md:col-span-2">
-				<label class="label"><span class="label-text">Function Name (Button Text):</span></label>
+			<div class="form-control">
+				<label class="label"><span class="label-text">Button Text:</span></label>
 				<input type="text" class="input input-bordered" id="llm-func-name" placeholder="Run LLM">
 			</div>
 			<div class="form-control md:col-span-2">
 				<label class="label"><span class="label-text">Prompt:</span></label>
-				<div id="llm-prompt-editor" class="llm-prompt-editor" contenteditable="true"></div>
-				<label class="label"><span class="label-text-alt">Use #A1 or #A1:B5 to reference cells.</span></label>
+				<div id="llm-prompt-editor" class="llm-prompt-editor border border-base-300 rounded p-2" contenteditable="true"></div>
+				<label class="label"><span class="label-text-alt">Use #A1 or #A1:B5 to reference cells. Hover over tags to preview content.</span></label>
 			</div>
 			<div class="form-control md:col-span-2">
 				<label class="label"><span class="label-text">Expected JSON Structure:</span></label>
-				<textarea class="textarea textarea-bordered font-mono text-xs h-24" id="llm-json-schema">{
+				<div>
+				<textarea class="textarea textarea-bordered font-mono text-xs h-24 w-12/12" id="llm-json-schema">{
   "Key": "Value"
 }</textarea>
+				</div>
+			</div>
+			
+			<!-- New Options Section -->
+			<div class="form-control md:col-span-2 border-t border-base-200 pt-3 mt-1">
+				<div class="flex flex-col sm:flex-row gap-6">
+					<div class="form-control">
+						<label class="label cursor-pointer justify-start gap-2">
+							<input type="checkbox" class="checkbox checkbox-sm checkbox-primary" id="llm-include-headers">
+							<span class="label-text">Insert Header Row</span>
+						</label>
+					</div>
+					
+					<div class="flex flex-col gap-1">
+						<div class="flex gap-4">
+							<label class="label-text font-semibold mb-1">Data Placement:</label>
+							<label class="label cursor-pointer justify-start gap-2 p-0">
+								<input type="radio" name="llm-insert-mode" value="overwrite" class="radio radio-sm radio-primary" checked>
+								<span class="label-text">Overwrite Target</span>
+							</label>
+							<label class="label cursor-pointer justify-start gap-2 p-0">
+								<input type="radio" name="llm-insert-mode" value="append" class="radio radio-sm radio-primary">
+								<span class="label-text">Append (Find empty row)</span>
+							</label>
+						</div>
+					</div>
+				</div>
 			</div>
 		</div>
 		<div class="modal-action">
 			<form method="dialog">
 				<button class="btn">Cancel</button>
 			</form>
-			<button class="btn btn-primary" onclick="LLMManager.insertFormula()">Insert Formula</button>
+			<button class="btn btn-primary" id="llm-save-btn" onclick="LLMManager.insertFormula()">Insert Formula</button>
 		</div>
 	</div>
 </dialog>

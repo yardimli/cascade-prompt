@@ -234,9 +234,7 @@ body {
 }
 
 /* DaisyUI Modal Overrides for Spreadsheet Context */
-.modal-box {
-    @apply max-w-lg;
-}
+/* Removed the global .modal-box override to allow specific width classes in HTML to work properly */
 
 .llm-prompt-editor {
     @apply textarea  w-full min-h-[100px] font-mono text-sm; /*textarea-bordered*/
@@ -244,4 +242,21 @@ body {
 
 .llm-var-tag {
     @apply badge badge-info badge-outline font-mono text-xs cursor-help;
+}
+
+/* Tooltip for LLM Variables */
+.llm-var-tooltip-global {
+    position: fixed; /* Changed to fixed to coordinate with viewport */
+    z-index: 10000; /* Ensure it is above the modal (dialog) */
+    background-color: var(--color-base-300);
+    color: var(--color-base-content);
+    border: 1px solid var(--color-primary);
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    pointer-events: none;
+    white-space: pre-wrap;
+    max-width: 300px;
+    display: none;
 }

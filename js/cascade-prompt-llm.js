@@ -14,13 +14,6 @@ export const LLMManager = {
 		if (cachedModels) {
 			this.models = JSON.parse(cachedModels);
 		}
-		
-		const filterInput = document.getElementById('llm-model-filter');
-		if (filterInput) {
-			filterInput.addEventListener('input', (e) => {
-				this.filterModels(e.target.value);
-			});
-		}
 	},
 	
 	openSettings: function () {
@@ -63,17 +56,27 @@ export const LLMManager = {
 		const modal = document.getElementById('llmFormulaModal');
 		const selected = document.querySelector('.selected-cell');
 		
+		// UI Elements
+		const titleEl = document.getElementById('llm-modal-title');
+		const btnEl = document.getElementById('llm-save-btn');
 		const targetInput = document.getElementById('llm-target-cell');
-		targetInput.classList.remove('input-error'); // DaisyUI error class
-		document.getElementById('llm-json-schema').classList.remove('textarea-error');
+		const modelInput = document.getElementById('llm-model-input');
+		const schemaInput = document.getElementById('llm-json-schema');
+		const funcNameInput = document.getElementById('llm-func-name');
+		const headersCheckbox = document.getElementById('llm-include-headers');
+		const modeRadios = document.getElementsByName('llm-insert-mode');
 		
-		// 1. Populate models and attach listeners (resets the editor node)
+		targetInput.classList.remove('input-error');
+		schemaInput.classList.remove('textarea-error');
+		
+		// 1. Populate models and attach listeners
+		// Note: attachEditorListeners replaces the DOM node for prompt-editor to clear old listeners
 		this.populateModelSelect();
 		this.attachEditorListeners();
 		
-		const promptEditor = document.getElementById('llm-prompt-editor');
 		let promptText = '';
 		let modelToSelect = '';
+		let isUpdate = false;
 		
 		if (selected) {
 			const r = selected.parentElement.rowIndex;
@@ -83,35 +86,59 @@ export const LLMManager = {
 			const key = (r - 1) + '-' + c;
 			
 			if (sheet.cells[key] && sheet.cells[key].llm) {
+				// Editing existing formula
+				isUpdate = true;
 				const config = sheet.cells[key].llm;
 				promptText = config.prompt || '';
-				document.getElementById('llm-json-schema').value = config.jsonSchema || '';
-				document.getElementById('llm-func-name').value = config.funcName || 'Run LLM';
+				schemaInput.value = config.jsonSchema || '';
+				funcNameInput.value = config.funcName || 'Run LLM';
 				const targetLetter = SheetDataManager.getColumnLetter(config.targetCol);
 				targetInput.value = targetLetter + (config.targetRow + 1);
 				modelToSelect = config.model || '';
+				
+				// Set new options
+				headersCheckbox.checked = !!config.includeHeaders;
+				const savedMode = config.insertMode || 'overwrite';
+				for (const radio of modeRadios) {
+					if (radio.value === savedMode) radio.checked = true;
+				}
 			} else {
+				// New formula
 				const letter = SheetDataManager.getColumnLetter(c);
 				targetInput.value = letter + r;
 				promptText = '';
-				document.getElementById('llm-json-schema').value = '{\n  "Key": "Value"\n}';
-				document.getElementById('llm-func-name').value = 'Run LLM';
+				schemaInput.value = '{\n  "Key": "Value"\n}';
+				funcNameInput.value = 'Run LLM';
+				headersCheckbox.checked = false;
+				modeRadios[0].checked = true; // Default to overwrite
 			}
 		} else {
 			targetInput.value = '';
 		}
 		
-		// Set prompt text content (safe even if hidden)
-		promptEditor.textContent = promptText;
-		
-		if (modelToSelect) {
-			document.getElementById('llm-model-select').value = modelToSelect;
+		// Update Title and Button based on mode
+		if (isUpdate) {
+			titleEl.textContent = 'Update LLM Formula';
+			btnEl.textContent = 'Update';
+		} else {
+			titleEl.textContent = 'Insert LLM Formula';
+			btnEl.textContent = 'Insert Formula';
 		}
 		
-		// 2. Show Modal (renders the element so layout is available)
+		// Set prompt text content
+		// FIX: Re-query the element because attachEditorListeners replaced the node
+		document.getElementById('llm-prompt-editor').textContent = promptText;
+		
+		if (modelToSelect) {
+			modelInput.value = modelToSelect;
+		} else {
+			modelInput.value = '';
+		}
+		
+		// 2. Show Modal
 		modal.showModal();
 		
-		// 3. Highlight (requires element to be visible/rendered)
+		// 3. Highlight
 		this.highlightPromptVariables();
 	},
 	
@@ -301,17 +328,37 @@ export const LLMManager = {
 			tooltip = document.createElement('div');
 			tooltip.id = 'llm-global-tooltip';
 			tooltip.className = 'llm-var-tooltip-global';
+			// Initial append to body, but we will move it if needed
 			document.body.appendChild(tooltip);
 		}
+		
+		// FIX: Move tooltip into the modal if it's open, to ensure it sits on top (Top Layer)
+		// This fixes the z-index issue where the tooltip appears behind the dialog.
+		const modal = document.getElementById('llmFormulaModal');
+		if (modal && modal.hasAttribute('open') && tooltip.parentElement !== modal) {
+			modal.appendChild(tooltip);
+		} else if ((!modal || !modal.hasAttribute('open')) && tooltip.parentElement !== document.body) {
+			document.body.appendChild(tooltip);
+		}
+		
 		tooltip.textContent = text;
 		tooltip.style.display = 'block';
 		
+		// Use getBoundingClientRect for viewport coordinates
 		const rect = target.getBoundingClientRect();
+		
+		// Position above the cursor/element
 		let top = rect.top - tooltip.offsetHeight - 5;
 		let left = rect.left;
 		
-		if (top < 0) {
+		// If too close to top edge, flip to bottom
+		if (top < 10) {
 			top = rect.bottom + 5;
+		}
+		
+		// Ensure it doesn't go off the right edge
+		if (left + tooltip.offsetWidth > window.innerWidth) {
+			left = window.innerWidth - tooltip.offsetWidth - 10;
 		}
 		
 		tooltip.style.top = top + 'px';
@@ -364,42 +411,26 @@ export const LLMManager = {
 	},
 	
 	populateModelSelect: function () {
-		const select = document.getElementById('llm-model-select');
-		select.innerHTML = '<option value="">Select a model...</option>';
+		const datalist = document.getElementById('llm-models-datalist');
+		datalist.innerHTML = '';
 		
 		this.models.forEach(m => {
 			const opt = document.createElement('option');
 			opt.value = m.id;
 			opt.textContent = m.name || m.id;
-			select.appendChild(opt);
-		});
-		
-		const filterInput = document.getElementById('llm-model-filter');
-		if (filterInput) filterInput.value = '';
-	},
-	
-	filterModels: function (query) {
-		const select = document.getElementById('llm-model-select');
-		const options = select.querySelectorAll('option');
-		const lowerQuery = query.toLowerCase();
-		
-		options.forEach(opt => {
-			if (opt.value === '') return;
-			const text = opt.textContent.toLowerCase();
-			if (text.includes(lowerQuery)) {
-				opt.style.display = '';
-			} else {
-				opt.style.display = 'none';
-			}
+			datalist.appendChild(opt);
 		});
 	},
 	
 	insertFormula: function () {
 		const prompt = document.getElementById('llm-prompt-editor').innerText;
-		const model = document.getElementById('llm-model-select').value;
+		const model = document.getElementById('llm-model-input').value;
 		const schema = document.getElementById('llm-json-schema').value;
 		const targetStr = document.getElementById('llm-target-cell').value;
 		const funcName = document.getElementById('llm-func-name').value || 'Run LLM';
+		
+		const includeHeaders = document.getElementById('llm-include-headers').checked;
+		const insertMode = document.querySelector('input[name="llm-insert-mode"]:checked').value;
 		
 		if (!prompt || !model || !targetStr) {
 			window.showCustomAlert('Please fill in all required fields.');
@@ -461,7 +492,9 @@ export const LLMManager = {
 			jsonSchema: schema,
 			targetRow: targetRowIndex,
 			targetCol: targetColIndex,
-			funcName: funcName
+			funcName: funcName,
+			includeHeaders: includeHeaders,
+			insertMode: insertMode
 		};
 		
 		if (!sheet.cells[key].text) {
@@ -473,6 +506,7 @@ export const LLMManager = {
 		SheetDataManager.setModified(true);
 		
 		document.getElementById('llmFormulaModal').close();
+		window.showToast(document.getElementById('llm-save-btn').textContent === 'Update' ? 'Formula Updated' : 'Formula Inserted');
 	},
 	
 	executeLLM: function (r, c, event) {
@@ -534,7 +568,14 @@ export const LLMManager = {
 				if (data.success && data.data) {
 					const isValid = this.validateStructure(data.data, cellData.llm.jsonSchema);
 					if (isValid) {
-						this.parseAndInsert(data.data, cellData.llm.targetRow, cellData.llm.targetCol, cellData.llm.jsonSchema);
+						this.parseAndInsert(
+							data.data,
+							cellData.llm.targetRow,
+							cellData.llm.targetCol,
+							cellData.llm.jsonSchema,
+							cellData.llm.includeHeaders,
+							cellData.llm.insertMode
+						);
 						if (data.usage) {
 							console.log('Token Usage:', data.usage);
 						}
@@ -603,10 +644,33 @@ export const LLMManager = {
 		}
 	},
 	
-	parseAndInsert: function (jsonData, startR, startC, schemaString) {
+	parseAndInsert: function (jsonData, startR, startC, schemaString, includeHeaders, insertMode) {
 		if (typeof window.HistoryManager !== 'undefined') window.HistoryManager.addState();
 		
 		const sheet = SheetDataManager.data.sheets[SheetDataManager.data.activeSheetIndex];
+		
+		// 1. Determine Insertion Point (Append Logic)
+		let actualStartR = startR;
+		
+		if (insertMode === 'append') {
+			// Find the next empty row in the target column
+			let r = startR;
+			while (r < sheet.rowCount) {
+				const key = r + '-' + startC;
+				const cell = sheet.cells[key];
+				if (!cell || (!cell.text && !cell.html)) {
+					// Found empty cell
+					actualStartR = r;
+					break;
+				}
+				r++;
+			}
+			// If we reached the end of the sheet, we might need to expand it,
+			// but for now let's just stick to the limit or the last row.
+			if (r >= sheet.rowCount) actualStartR = sheet.rowCount;
+		}
+		
+		// 2. Handle Headers
 		let headers = [];
 		try {
 			const schema = JSON.parse(schemaString);
@@ -627,13 +691,16 @@ export const LLMManager = {
 			console.warn('Could not parse schema for headers', e);
 		}
 		
-		if (headers.length > 0) {
+		let currentRow = actualStartR;
+		
+		if (includeHeaders && headers.length > 0) {
 			headers.forEach((header, idx) => {
-				this.setCellValue(sheet, startR, startC + idx, header);
+				this.setCellValue(sheet, currentRow, startC + idx, header);
 			});
-			startR++;
+			currentRow++;
 		}
 		
+		// 3. Handle Data Rows
 		let rowsToInsert = [];
 		if (Array.isArray(jsonData)) {
 			rowsToInsert = jsonData;
@@ -652,8 +719,7 @@ export const LLMManager = {
 			}
 		}
 		
-		rowsToInsert.forEach((rowObj, rOffset) => {
-			const currentRow = startR + rOffset;
+		rowsToInsert.forEach((rowObj) => {
 			if (typeof rowObj !== 'object' || rowObj === null) {
 				this.setCellValue(sheet, currentRow, startC, rowObj);
 			} else {
@@ -676,6 +742,7 @@ export const LLMManager = {
 					});
 				}
 			}
+			currentRow++;
 		});
 		
 		SheetDataManager.renderSheet(SheetDataManager.data.activeSheetIndex);
