@@ -1,3 +1,8 @@
+/**
+ * LLM Manager
+ * Handles LLM configuration, formula building, and execution.
+ */
+
 import { SheetDataManager } from './cascade-prompt-data.js';
 import { getApiEndpoint } from './api-config.js';
 
@@ -58,11 +63,27 @@ export const LLMManager = {
 		const modal = document.getElementById('llmFormulaModal');
 		const selected = document.querySelector('.selected-cell');
 		
+		// Reset UI state
 		const targetInput = document.getElementById('llm-target-cell');
-		targetInput.classList.remove('input-error'); // DaisyUI error class
+		targetInput.classList.remove('input-error');
 		document.getElementById('llm-json-schema').classList.remove('textarea-error');
 		
+		// 1. Reset Listeners (Replaces DOM node)
+		// We do this first so we can get a fresh reference to the editor element
+		this.attachEditorListeners();
+		
+		// 2. Get fresh references
 		const promptEditor = document.getElementById('llm-prompt-editor');
+		const schemaInput = document.getElementById('llm-json-schema');
+		const funcNameInput = document.getElementById('llm-func-name');
+		const modelSelect = document.getElementById('llm-model-select');
+		
+		// 3. Prepare Data
+		let promptText = '';
+		let schemaText = '{\n  "Key": "Value"\n}';
+		let funcNameText = 'Run LLM';
+		let targetText = '';
+		let modelId = '';
 		
 		if (selected) {
 			const r = selected.parentElement.rowIndex;
@@ -73,29 +94,39 @@ export const LLMManager = {
 			
 			if (sheet.cells[key] && sheet.cells[key].llm) {
 				const config = sheet.cells[key].llm;
-				promptEditor.innerText = config.prompt || '';
-				this.highlightPromptVariables();
-				document.getElementById('llm-json-schema').value = config.jsonSchema || '';
-				document.getElementById('llm-func-name').value = config.funcName || 'Run LLM';
+				promptText = config.prompt || '';
+				schemaText = config.jsonSchema || '';
+				funcNameText = config.funcName || 'Run LLM';
 				const targetLetter = SheetDataManager.getColumnLetter(config.targetCol);
-				targetInput.value = targetLetter + (config.targetRow + 1);
-				setTimeout(() => {
-					document.getElementById('llm-model-select').value = config.model || '';
-				}, 100);
+				targetText = targetLetter + (config.targetRow + 1);
+				modelId = config.model || '';
 			} else {
 				const letter = SheetDataManager.getColumnLetter(c);
-				targetInput.value = letter + r;
-				promptEditor.innerText = '';
-				document.getElementById('llm-json-schema').value = '{\n  "Key": "Value"\n}';
-				document.getElementById('llm-func-name').value = 'Run LLM';
+				targetText = letter + r;
 			}
 		} else {
-			targetInput.value = '';
+			targetText = '';
 		}
 		
+		// 4. Populate UI
+		// Setting innerText works even if hidden, but reading it requires visibility.
+		promptEditor.innerText = promptText;
+		schemaInput.value = schemaText;
+		funcNameInput.value = funcNameText;
+		targetInput.value = targetText;
+		
 		this.populateModelSelect();
-		this.attachEditorListeners();
+		if (modelId) {
+			modelSelect.value = modelId;
+		}
+		
+		// 5. Show Modal (Make visible)
+		// IMPORTANT: Modal must be visible before calling highlightPromptVariables,
+		// because innerText returns empty string on hidden elements.
 		modal.showModal();
+		
+		// 6. Highlight Variables
+		this.highlightPromptVariables();
 	},
 	
 	attachEditorListeners: function () {
@@ -170,6 +201,7 @@ export const LLMManager = {
 			savedOffset = preCaretRange.toString().length;
 		}
 		
+		// innerText relies on layout. If editor is hidden (e.g. modal closed), this returns empty string.
 		const text = editor.innerText;
 		let html = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 		const regex = /#([A-Z]+)([0-9]+)(?::([A-Z]+)([0-9]+))?/gi;
