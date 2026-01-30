@@ -50,9 +50,18 @@
 						<li><a onclick="ClipboardManager.paste()">Paste <span class="text-xs opacity-50 float-right">Ctrl+V</span></a></li>
 						<div class="divider my-0"></div>
 						<li><a onclick="SheetPropertiesManager.open()">Sheet Properties...</a></li>
+					</ul>
+				</details>
+			</li>
+
+			<li>
+				<details>
+					<summary>Insert</summary>
+					<ul class="bg-base-100 rounded-t-none p-2 w-52 shadow-lg border border-base-200 z-[1001]">
+						<li><a onclick="LLMManager.openFormulaBuilder()">LLM Formula</a></li>
+						<li><a onclick="DropdownManager.openDropdownBuilder()">Dropdown</a></li>
 						<div class="divider my-0"></div>
-						<li><a onclick="LLMManager.openFormulaBuilder()">Insert LLM Formula</a></li>
-						<li><a onclick="DropdownManager.openDropdownBuilder()">Insert Dropdown</a></li>
+						<li><a onclick="ImageManager.openImageModal()">Image</a></li>
 					</ul>
 				</details>
 			</li>
@@ -425,6 +434,37 @@
 	<form method="dialog" class="modal-backdrop">
 		<button>close</button>
 	</form>
+</dialog>
+
+<!-- Image Modal -->
+<dialog id="imageModal" class="modal">
+	<div class="modal-box">
+		<h3 class="font-bold text-lg">Insert Image</h3>
+		<div class="py-4">
+			<!-- DaisyUI Tabs using the radio button pattern -->
+			<div role="tablist" class="tabs tabs-lifted">
+				<!-- Tab 1: Link -->
+				<input type="radio" name="image_insert_tabs" role="tab" class="tab" aria-label="By Link" checked />
+				<div role="tabpanel" class="tab-content bg-base-100 border-base-300 rounded-box p-6">
+					<p class="text-sm text-base-content/60">Provide a URL to an image hosted online.</p>
+					<!-- Form fields will go here later -->
+				</div>
+
+				<!-- Tab 2: Upload -->
+				<input type="radio" name="image_insert_tabs" role="tab" class="tab" aria-label="Upload" />
+				<div role="tabpanel" class="tab-content bg-base-100 border-base-300 rounded-box p-6">
+					<p class="text-sm text-base-content/60">Choose an image file from your computer.</p>
+					<!-- Upload fields will go here later -->
+				</div>
+			</div>
+		</div>
+		<div class="modal-action">
+			<form method="dialog">
+				<button class="btn">Cancel</button>
+			</form>
+			<button class="btn btn-primary" onclick="ImageManager.insertImage()">Insert</button>
+		</div>
+	</div>
 </dialog>
 
 <!-- Alert Modal -->

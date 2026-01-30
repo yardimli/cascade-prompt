@@ -27,6 +27,7 @@ import {
 	performSave,
 	initProjectHandlers
 } from '../js/cascade-prompt-project-ui.js';
+import { ImageManager } from '../js/cascade-prompt-image.js';
 
 // Expose Managers to Window for HTML event handlers
 window.SheetDataManager = SheetDataManager;
@@ -36,6 +37,7 @@ window.ClipboardManager = ClipboardManager;
 window.LLMManager = LLMManager;
 window.DropdownManager = DropdownManager;
 window.SheetPropertiesManager = SheetPropertiesManager;
+window.ImageManager = ImageManager;
 
 // Expose UI Functions
 window.setTheme = setTheme;
