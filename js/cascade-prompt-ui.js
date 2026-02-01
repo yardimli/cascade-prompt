@@ -306,47 +306,90 @@ export function makeCellEditable(cell) {
 // --------------------------------------------------//
 export function stopEditing() {
 	if (!window.isEditing) return;
-	
+
 	const editingCell = document.querySelector('.edit-cell');
 	const editor = document.getElementById('cell-editor');
-	
+
 	if (editingCell) {
 		const contentDiv = editingCell.querySelector('.content-cut');
-		let newText = '';
-		let isDropdownChange = false;
-		
+		const r = editingCell.parentElement.rowIndex - 1;
+		const c = parseInt(editingCell.getAttribute('data-col'));
+		const sheet = SheetDataManager.data.sheets[SheetDataManager.data.activeSheetIndex];
+		const key = r + '-' + c;
+
+		// Ensure cell data object exists
+		if (!sheet.cells[key]) {
+			sheet.cells[key] = {
+				type: { name: "text", details: { value: "" } },
+				rowspan: 1,
+				colspan: 1,
+				style: {},
+				cellStyle: {}
+			};
+		}
+
+		let newValue = '';
+		let oldValue = '';
 		const select = editor.querySelector('select');
-		
+
 		if (select) {
-			const selectedValue = select.value;
-			const formula = contentDiv.getAttribute('data-formula');
-			const regex = /^=dropdown\s*\(\s*"([^"]+)"(?:\s*,\s*"[^"]*")?\s*\)$/i;
-			const match = formula ? formula.match(regex) : null;
-			
-			if (match) {
-				const options = match[1];
-				const newFormula = `=dropdown("${options}", "${selectedValue}")`;
+			// 1. Handle Dropdown stop editing
+			newValue = select.value;
+
+			// Get old value for history comparison
+			oldValue = (sheet.cells[key].type && sheet.cells[key].type.details) ?
+				sheet.cells[key].type.details.selected : '';
+
+			if (newValue !== oldValue) {
+				if (typeof window.HistoryManager !== 'undefined') window.HistoryManager.addState();
+
+				// Update Data Structure
+				sheet.cells[key].type.name = "dropdown";
+				sheet.cells[key].type.details.selected = newValue;
+
+				// Update DOM Attribute (formula)
+				const options = sheet.cells[key].type.details.options.join(',');
+				const newFormula = `=dropdown("${options}", "${newValue}")`;
 				contentDiv.setAttribute('data-formula', newFormula);
-				newText = selectedValue;
-				isDropdownChange = true;
-			} else {
-				newText = selectedValue;
 			}
 		} else {
-			newText = editor.innerText;
-		}
-		
-		const oldText = contentDiv.innerText;
-		
-		if (newText !== oldText || isDropdownChange) {
-			if (typeof window.HistoryManager !== 'undefined') {
-				window.HistoryManager.addState();
+			// 2. Handle Text/Number stop editing
+			newValue = editor.innerText.trim();
+
+			// Get old value for history comparison
+			if (sheet.cells[key].type && sheet.cells[key].type.name === 'number') {
+				oldValue = String(sheet.cells[key].type.details.value);
+			} else {
+				oldValue = (sheet.cells[key].type && sheet.cells[key].type.details) ?
+					sheet.cells[key].type.details.value : '';
+			}
+
+			if (newValue !== oldValue) {
+				if (typeof window.HistoryManager !== 'undefined') window.HistoryManager.addState();
+
+				// Determine if it's a number or text
+				if (newValue !== "" && !isNaN(newValue) && !isNaN(parseFloat(newValue))) {
+					sheet.cells[key].type = {
+						name: "number",
+						details: { value: Number(newValue) }
+					};
+				} else {
+					sheet.cells[key].type = {
+						name: "text",
+						details: { value: newValue }
+					};
+				}
+
+				// Ensure contentDiv doesn't carry over old dropdown formulas
+				contentDiv.removeAttribute('data-formula');
 			}
 		}
-		
-		contentDiv.innerText = newText;
+
+		// Update UI DOM
+		contentDiv.innerText = newValue;
 		contentDiv.style.visibility = 'visible';
-		
+
+		// If not a dropdown, sync styles back from editor in case they were changed via toolbar during edit
 		if (!select) {
 			contentDiv.style.fontWeight = editor.style.fontWeight;
 			contentDiv.style.fontStyle = editor.style.fontStyle;
@@ -354,32 +397,17 @@ export function stopEditing() {
 			contentDiv.style.color = editor.style.color;
 			contentDiv.style.fontSize = editor.style.fontSize;
 		}
-		
-		const r = editingCell.parentElement.rowIndex - 1;
-		const c = parseInt(editingCell.getAttribute('data-col'));
-		const sheet = SheetDataManager.data.sheets[SheetDataManager.data.activeSheetIndex];
-		const key = r + '-' + c;
-		
-		if (!sheet.cells[key]) sheet.cells[key] = {};
-		
-		if (isDropdownChange) {
-			const updatedFormula = contentDiv.getAttribute('data-formula');
-			sheet.cells[key].text = updatedFormula;
-			sheet.cells[key].html = updatedFormula;
-		} else {
-			sheet.cells[key].text = newText;
-			sheet.cells[key].html = newText;
-		}
-		
+
+		// Cleanup Editor
 		editor.innerHTML = '';
 		editor.style.display = 'none';
 		editor.style.width = '';
 		editor.style.height = '';
 		editor.oninput = null;
-		
+
 		editingCell.classList.remove('edit-cell');
 		window.isEditing = false;
-		
+
 		SheetDataManager.setModified(true);
 	}
 }

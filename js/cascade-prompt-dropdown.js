@@ -89,9 +89,14 @@ export const DropdownManager = {
 			const key = r + '-' + c;
 			
 			if (!sheet.cells[key]) sheet.cells[key] = {};
-			
-			sheet.cells[key].text = formula;
-			sheet.cells[key].html = formula;
+
+			sheet.cells[key].type = {
+				name: "dropdown",
+				details: {
+					options: options,
+					selected: selected
+				}
+			};
 			
 			SheetDataManager.renderSheet(SheetDataManager.data.activeSheetIndex);
 			SheetDataManager.setModified(true);

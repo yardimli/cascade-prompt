@@ -85,10 +85,10 @@ export const LLMManager = {
 			const sheet = SheetDataManager.data.sheets[SheetDataManager.data.activeSheetIndex];
 			const key = (r - 1) + '-' + c;
 			
-			if (sheet.cells[key] && sheet.cells[key].llm) {
+			if (sheet.cells[key] && sheet.cells[key].type && sheet.cells[key].type.name === 'llm_formula') {
 				// Editing existing formula
 				isUpdate = true;
-				const config = sheet.cells[key].llm;
+				const config = sheet.cells[key].type.details;
 				promptText = config.prompt || '';
 				schemaInput.value = config.jsonSchema || '';
 				funcNameInput.value = config.funcName || 'Run LLM';
@@ -485,23 +485,22 @@ export const LLMManager = {
 		if (!sheet.cells[key]) {
 			sheet.cells[key] = {};
 		}
-		
-		sheet.cells[key].llm = {
-			prompt: prompt,
-			model: model,
-			jsonSchema: schema,
-			targetRow: targetRowIndex,
-			targetCol: targetColIndex,
-			funcName: funcName,
-			includeHeaders: includeHeaders,
-			insertMode: insertMode
+
+		sheet.cells[key].type = {
+			name: "llm_formula",
+			details: {
+				component: "button",
+				prompt: prompt,
+				model: model,
+				jsonSchema: schema,
+				targetRow: targetRowIndex,
+				targetCol: targetColIndex,
+				funcName: funcName,
+				includeHeaders: includeHeaders,
+				insertMode: insertMode
+			}
 		};
-		
-		if (!sheet.cells[key].text) {
-			sheet.cells[key].text = 'LLM Formula';
-			sheet.cells[key].html = 'LLM Formula';
-		}
-		
+
 		SheetDataManager.renderSheet(SheetDataManager.data.activeSheetIndex);
 		SheetDataManager.setModified(true);
 		
@@ -520,8 +519,9 @@ export const LLMManager = {
 		const sheet = SheetDataManager.data.sheets[SheetDataManager.data.activeSheetIndex];
 		const key = r + '-' + c;
 		const cellData = sheet.cells[key];
-		
-		if (!cellData || !cellData.llm) return;
+
+		if (!cellData || cellData.type?.name !== 'llm_formula') return;
+		const config = cellData.type.details;
 		
 		const btn = document.querySelector(`.text-cell[data-col="${c}"]`).parentElement.parentElement.children[r].querySelector(`td[data-col="${c}"] .llm-run-btn`);
 		const originalIcon = btn.innerHTML;
@@ -530,16 +530,16 @@ export const LLMManager = {
 		
 		const statusContainer = document.getElementById('status-llm-busy');
 		const statusText = document.getElementById('status-llm-text');
-		const targetName = SheetDataManager.getColumnLetter(cellData.llm.targetCol) + (cellData.llm.targetRow + 1);
+		const targetName = SheetDataManager.getColumnLetter(config.targetCol) + (config.targetRow + 1);
 		
 		if (statusContainer) {
 			statusContainer.style.display = 'flex';
 			if (statusText) {
-				statusText.textContent = `Running ${cellData.llm.model} -> ${targetName}...`;
+				statusText.textContent = `Running ${config.model} -> ${targetName}...`;
 			}
 		}
 		
-		let finalPrompt = cellData.llm.prompt;
+		let finalPrompt = config.prompt;
 		const regex = /#([A-Z]+)([0-9]+)(?::([A-Z]+)([0-9]+))?/gi;
 		
 		finalPrompt = finalPrompt.replace(regex, (match, c1, r1, c2, r2) => {
@@ -547,7 +547,7 @@ export const LLMManager = {
 			return preview.replace(/^Range: \d+ cells\n/, '');
 		});
 		
-		finalPrompt += '\n\nIMPORTANT: Respond ONLY with valid JSON matching this structure, repeat the structure for each result:\n' + cellData.llm.jsonSchema;
+		finalPrompt += '\n\nIMPORTANT: Respond ONLY with valid JSON matching this structure, repeat the structure for each result:\n' + config.jsonSchema;
 		
 		fetch(getApiEndpoint('llm_proxy'), {
 			method: 'POST',
@@ -557,7 +557,7 @@ export const LLMManager = {
 			body: JSON.stringify({
 				action: 'chat',
 				filename: SheetDataManager.currentFileName,
-				model: cellData.llm.model,
+				model: config.model,
 				messages: [
 					{ role: 'user', content: finalPrompt }
 				]
@@ -566,15 +566,15 @@ export const LLMManager = {
 			.then(response => response.json())
 			.then(data => {
 				if (data.success && data.data) {
-					const isValid = this.validateStructure(data.data, cellData.llm.jsonSchema);
+					const isValid = this.validateStructure(data.data, config.jsonSchema);
 					if (isValid) {
 						this.parseAndInsert(
 							data.data,
-							cellData.llm.targetRow,
-							cellData.llm.targetCol,
-							cellData.llm.jsonSchema,
-							cellData.llm.includeHeaders,
-							cellData.llm.insertMode
+							config.targetRow,
+							config.targetCol,
+							config.jsonSchema,
+							config.includeHeaders,
+							config.insertMode
 						);
 						if (data.usage) {
 							console.log('Token Usage:', data.usage);
@@ -582,7 +582,7 @@ export const LLMManager = {
 					} else {
 						window.showCustomAlert('<b>Structure Mismatch:</b><br>The LLM returned JSON that does not match your requested schema.<br><br>Please try again or refine your prompt.');
 						console.warn('Returned Data:', data.data);
-						console.warn('Expected Schema:', cellData.llm.jsonSchema);
+						console.warn('Expected Schema:', config.jsonSchema);
 					}
 				} else {
 					window.showCustomAlert('LLM Error: ' + (data.message || 'Unknown error'));
