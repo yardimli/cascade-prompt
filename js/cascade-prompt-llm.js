@@ -421,22 +421,22 @@ export const LLMManager = {
 			datalist.appendChild(opt);
 		});
 	},
-	
+
 	insertFormula: function () {
 		const prompt = document.getElementById('llm-prompt-editor').innerText;
 		const model = document.getElementById('llm-model-input').value;
 		const schema = document.getElementById('llm-json-schema').value;
 		const targetStr = document.getElementById('llm-target-cell').value;
 		const funcName = document.getElementById('llm-func-name').value || 'Run LLM';
-		
+
 		const includeHeaders = document.getElementById('llm-include-headers').checked;
 		const insertMode = document.querySelector('input[name="llm-insert-mode"]:checked').value;
-		
+
 		if (!prompt || !model || !targetStr) {
 			window.showCustomAlert('Please fill in all required fields.');
 			return;
 		}
-		
+
 		try {
 			JSON.parse(schema);
 		} catch (e) {
@@ -444,7 +444,7 @@ export const LLMManager = {
 			document.getElementById('llm-json-schema').classList.add('textarea-error');
 			return;
 		}
-		
+
 		const selected = document.querySelector('.selected-cell');
 		if (!selected) {
 			window.showCustomAlert('No cell selected to place the button.');
@@ -452,59 +452,68 @@ export const LLMManager = {
 		}
 		const sourceRow = selected.parentElement.rowIndex - 1;
 		const sourceCol = parseInt(selected.getAttribute('data-col'));
-		
+
 		const match = targetStr.match(/^([A-Z]+)([0-9]+)$/i);
 		if (!match) {
 			window.showCustomAlert('Invalid target cell format. Use A1, B2, etc.');
 			document.getElementById('llm-target-cell').classList.add('input-error');
 			return;
 		}
-		
+
 		const colLetter = match[1].toUpperCase();
 		const rowNum = parseInt(match[2]);
-		
+
 		let targetColIndex = 0;
 		for (let i = 0; i < colLetter.length; i++) {
 			targetColIndex = targetColIndex * 26 + (colLetter.charCodeAt(i) - 64);
 		}
 		targetColIndex -= 1;
 		const targetRowIndex = rowNum - 1;
-		
-		// Validation: Check if target is same as source
+
 		if (targetRowIndex === sourceRow && targetColIndex === sourceCol) {
 			window.showCustomAlert('Target cell cannot be the same as the button cell.');
 			document.getElementById('llm-target-cell').classList.add('input-error');
 			return;
 		}
-		
+
 		if (typeof window.HistoryManager !== 'undefined') window.HistoryManager.addState();
-		
+
 		const sheet = SheetDataManager.data.sheets[SheetDataManager.data.activeSheetIndex];
 		const key = sourceRow + '-' + sourceCol;
-		
+
 		if (!sheet.cells[key]) {
-			sheet.cells[key] = {};
+			sheet.cells[key] = {
+				rowspan: 1,
+				colspan: 1,
+				style: {},
+				cellStyle: {}
+			};
 		}
-		
-		sheet.cells[key].llm = {
-			prompt: prompt,
-			model: model,
-			jsonSchema: schema,
-			targetRow: targetRowIndex,
-			targetCol: targetColIndex,
-			funcName: funcName,
-			includeHeaders: includeHeaders,
-			insertMode: insertMode
+
+		// NEW STRUCTURE: Use type key, remove old llm/text/html keys
+		sheet.cells[key].type = {
+			name: 'llm_formula',
+			details: {
+				prompt: prompt,
+				model: model,
+				jsonSchema: schema,
+				targetRow: targetRowIndex,
+				targetCol: targetColIndex,
+				funcName: funcName,
+				includeHeaders: includeHeaders,
+				insertMode: insertMode,
+				component: 'button' // Added as requested
+			}
 		};
-		
-		if (!sheet.cells[key].text) {
-			sheet.cells[key].text = 'LLM Formula';
-			sheet.cells[key].html = 'LLM Formula';
-		}
-		
+
+		// Clean up any legacy keys if they exist
+		delete sheet.cells[key].llm;
+		delete sheet.cells[key].text;
+		delete sheet.cells[key].html;
+
 		SheetDataManager.renderSheet(SheetDataManager.data.activeSheetIndex);
 		SheetDataManager.setModified(true);
-		
+
 		document.getElementById('llmFormulaModal').close();
 		window.showToast(document.getElementById('llm-save-btn').textContent === 'Update' ? 'Formula Updated' : 'Formula Inserted');
 	},
@@ -643,33 +652,30 @@ export const LLMManager = {
 			return true;
 		}
 	},
-	
+
 	parseAndInsert: function (jsonData, startR, startC, schemaString, includeHeaders, insertMode) {
 		if (typeof window.HistoryManager !== 'undefined') window.HistoryManager.addState();
-		
+
 		const sheet = SheetDataManager.data.sheets[SheetDataManager.data.activeSheetIndex];
-		
+
 		// 1. Determine Insertion Point (Append Logic)
 		let actualStartR = startR;
-		
+
 		if (insertMode === 'append') {
-			// Find the next empty row in the target column
 			let r = startR;
 			while (r < sheet.rowCount) {
 				const key = r + '-' + startC;
 				const cell = sheet.cells[key];
-				if (!cell || (!cell.text && !cell.html)) {
-					// Found empty cell
+				// Check if cell is empty in the new structure
+				if (!cell || !cell.type || (cell.type.name === 'text' && !cell.type.details.value)) {
 					actualStartR = r;
 					break;
 				}
 				r++;
 			}
-			// If we reached the end of the sheet, we might need to expand it,
-			// but for now let's just stick to the limit or the last row.
 			if (r >= sheet.rowCount) actualStartR = sheet.rowCount;
 		}
-		
+
 		// 2. Handle Headers
 		let headers = [];
 		try {
@@ -690,16 +696,16 @@ export const LLMManager = {
 		} catch (e) {
 			console.warn('Could not parse schema for headers', e);
 		}
-		
+
 		let currentRow = actualStartR;
-		
+
 		if (includeHeaders && headers.length > 0) {
 			headers.forEach((header, idx) => {
 				this.setCellValue(sheet, currentRow, startC + idx, header);
 			});
 			currentRow++;
 		}
-		
+
 		// 3. Handle Data Rows
 		let rowsToInsert = [];
 		if (Array.isArray(jsonData)) {
@@ -718,7 +724,7 @@ export const LLMManager = {
 				}
 			}
 		}
-		
+
 		rowsToInsert.forEach((rowObj) => {
 			if (typeof rowObj !== 'object' || rowObj === null) {
 				this.setCellValue(sheet, currentRow, startC, rowObj);
@@ -744,18 +750,35 @@ export const LLMManager = {
 			}
 			currentRow++;
 		});
-		
+
 		SheetDataManager.renderSheet(SheetDataManager.data.activeSheetIndex);
 		SheetDataManager.setModified(true);
 		window.showToast('LLM Data Inserted');
 	},
-	
+
+	// Helper function updated for new JSON structure
 	setCellValue: function (sheet, r, c, val) {
 		const key = r + '-' + c;
 		if (!sheet.cells[key]) {
-			sheet.cells[key] = {};
+			sheet.cells[key] = {
+				rowspan: 1,
+				colspan: 1,
+				style: {},
+				cellStyle: {}
+			};
 		}
-		sheet.cells[key].text = String(val);
-		sheet.cells[key].html = String(val);
+
+		// NEW STRUCTURE: Use type: text
+		sheet.cells[key].type = {
+			name: 'text',
+			details: {
+				value: String(val)
+			}
+		};
+
+		// Remove legacy keys
+		delete sheet.cells[key].text;
+		delete sheet.cells[key].html;
+		delete sheet.cells[key].llm;
 	}
 };

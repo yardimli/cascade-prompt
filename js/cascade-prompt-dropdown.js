@@ -59,49 +59,73 @@ export const DropdownManager = {
 			selectionInput.appendChild(optionEl);
 		});
 	},
-	
+
 	saveDropdown: function () {
 		const optionsInput = document.getElementById('dropdown-options');
 		const selectionInput = document.getElementById('dropdown-selection');
-		
+
+		// 1. Parse options from textarea (split by newline or comma)
 		const text = optionsInput.value;
 		const options = text.split(/[\n,]/).map(s => s.trim()).filter(s => s !== '');
 		const selected = selectionInput.value;
-		
+
 		if (options.length === 0) {
 			if (typeof window.showCustomAlert === 'function') {
 				window.showCustomAlert('Please enter at least one option.');
 			}
 			return;
 		}
-		
-		const optionsStr = options.join(',');
-		const formula = `=dropdown("${optionsStr}", "${selected}")`;
-		
+
+		// 2. Record history state before change
 		if (typeof window.HistoryManager !== 'undefined') window.HistoryManager.addState();
-		
+
 		const selectedCell = document.querySelector('.selected-cell');
 		if (selectedCell) {
 			const r = selectedCell.parentElement.rowIndex - 1;
 			const c = parseInt(selectedCell.getAttribute('data-col'));
-			
+
 			const sheet = SheetDataManager.data.sheets[SheetDataManager.data.activeSheetIndex];
 			const key = r + '-' + c;
-			
-			if (!sheet.cells[key]) sheet.cells[key] = {};
-			
-			sheet.cells[key].text = formula;
-			sheet.cells[key].html = formula;
-			
+
+			// 3. Initialize cell object if it doesn't exist
+			if (!sheet.cells[key]) {
+				sheet.cells[key] = {
+					rowspan: 1,
+					colspan: 1,
+					style: {},
+					cellStyle: {}
+				};
+			}
+
+			// 4. Update to the NEW JSON STRUCTURE
+			sheet.cells[key].type = {
+				name: 'dropdown',
+				details: {
+					options: options, // Saved as an array
+					selected: selected  // Saved as a string
+				}
+			};
+
+			// 5. Explicitly remove legacy keys to ensure clean JSON
+			delete sheet.cells[key].text;
+			delete sheet.cells[key].html;
+			delete sheet.cells[key].llm;
+
+			// 6. Refresh UI
 			SheetDataManager.renderSheet(SheetDataManager.data.activeSheetIndex);
 			SheetDataManager.setModified(true);
-			
+
+			// Re-highlight the cell after rendering to ensure the formula bar
+			// displays the reconstructed =dropdown(...) string correctly.
 			setTimeout(() => {
 				const newCell = document.querySelector(`.spreadsheet tbody tr:nth-child(${r + 1}) td[data-col="${c}"]`);
-				if (newCell && typeof window.highlightCell === 'function') window.highlightCell(newCell);
+				if (newCell && typeof window.highlightCell === 'function') {
+					window.highlightCell(newCell);
+				}
 			}, 0);
 		}
-		
+
+		// 7. Close Modal
 		document.getElementById('dropdownModal').close();
 	},
 	

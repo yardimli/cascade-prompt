@@ -140,112 +140,121 @@ export const SheetDataManager = {
 			this.data.sheets[activeIndex] = this.collectDOMData(this.data.sheets[activeIndex]);
 		}
 	},
-	
+
 	collectDOMData: function (sheetObj) {
 		const cells = {};
 		const colWidths = {};
 		const rowHeights = {};
-		
+
 		const table = document.querySelector('.spreadsheet');
 		const tbody = table.querySelector('tbody');
 		const rows = tbody.rows;
-		
+
 		for (let r = 0; r < rows.length; r++) {
 			const row = rows[r];
 			const rowHeader = row.cells[0];
-			
+
+			// Collect Row Heights
 			if (rowHeader) {
 				const h = rowHeader.offsetHeight;
 				if (Math.abs(h - this.defaults.defaultRowHeight) > 1) {
 					rowHeights[r] = h;
 				}
 			}
-			
+
 			for (let c = 1; c < row.cells.length; c++) {
 				const cell = row.cells[c];
 				const colIndex = parseInt(cell.getAttribute('data-col'));
 				const contentDiv = cell.querySelector('.content-cut');
 				if (!contentDiv) continue;
-				
-				let text = '';
-				const dropdownFormula = contentDiv.getAttribute('data-formula');
-				
-				if (dropdownFormula) {
-					text = dropdownFormula;
-				} else {
-					const llmBtn = contentDiv.querySelector('.llm-run-btn');
-					if (llmBtn) {
-						const clone = contentDiv.cloneNode(true);
-						const btn = clone.querySelector('.llm-run-btn');
-						if (btn) btn.remove();
-						text = clone.innerText.trim();
-					} else {
-						text = contentDiv.innerText.trim();
-					}
-				}
-				
+
+				const cellKey = r + '-' + colIndex;
 				const rowspan = parseInt(cell.getAttribute('rowspan')) || 1;
 				const colspan = parseInt(cell.getAttribute('colspan')) || 1;
-				
+
+				// --- NEW TYPE LOGIC START ---
+				let typeObj = {
+					name: 'text',
+					details: {}
+				};
+
+				const dropdownFormula = contentDiv.getAttribute('data-formula');
+
+				// 1. Check if it's an LLM Formula
+				// We look at the existing data object to see if this cell was previously an LLM cell
+				if (sheetObj.cells[cellKey] && (sheetObj.cells[cellKey].llm || sheetObj.cells[cellKey].type?.name === 'llm_formula')) {
+					const llmConfig = sheetObj.cells[cellKey].llm || sheetObj.cells[cellKey].type.details;
+					typeObj.name = 'llm_formula';
+					typeObj.details = {
+						...llmConfig,
+						component: 'button' // Ensure component is set as requested
+					};
+				}
+				// 2. Check if it's a Dropdown
+				else if (dropdownFormula && dropdownFormula.toLowerCase().startsWith('=dropdown')) {
+					const regex = /^=dropdown\s*\(\s*"([^"]+)"(?:\s*,\s*"([^"]*)")?\s*\)$/i;
+					const match = dropdownFormula.match(regex);
+					typeObj.name = 'dropdown';
+					typeObj.details = {
+						options: match ? match[1].split(',').map(s => s.trim()) : [],
+						selected: match ? (match[2] || '') : contentDiv.innerText.trim()
+					};
+				}
+				// 3. Default to Text
+				else {
+					typeObj.name = 'text';
+					typeObj.details = {
+						value: contentDiv.innerText.trim()
+					};
+				}
+				// --- NEW TYPE LOGIC END ---
+
+				// Collect Inline Styles (on the content or button)
 				const style = {};
 				const allowedStyles = ['color', 'backgroundColor', 'fontWeight', 'fontStyle', 'fontSize', 'textAlign'];
 				let cleanCssText = '';
 				const llmBtn = contentDiv.querySelector('.llm-run-btn');
 				const styleSource = llmBtn || contentDiv;
-				
+
 				allowedStyles.forEach(prop => {
 					if (styleSource.style[prop]) {
 						const kebabProp = prop.replace(/([a-z0-9]|(?=[A-Z]))([A-Z])/g, '$1-$2').toLowerCase();
 						cleanCssText += `${kebabProp}:${styleSource.style[prop]};`;
 					}
 				});
-				
+
 				if (cleanCssText.length > 0) {
 					style.cssText = cleanCssText;
 				}
-				
+
+				// Collect Cell (TD) Styles
 				const cellStyle = {};
 				if (cell.style.backgroundColor) cellStyle.backgroundColor = cell.style.backgroundColor;
-				if (cell.style.border) cellStyle.border = cell.style.border;
-				if (cell.style.borderLeft) cellStyle.borderLeft = cell.style.borderLeft;
-				if (cell.style.borderRight) cellStyle.borderRight = cell.style.borderRight;
-				if (cell.style.borderTop) cellStyle.borderTop = cell.style.borderTop;
-				if (cell.style.borderBottom) cellStyle.borderBottom = cell.style.borderBottom;
-				
-				let llmConfig = null;
-				const existingKey = r + '-' + colIndex;
-				if (sheetObj.cells[existingKey] && sheetObj.cells[existingKey].llm) {
-					llmConfig = sheetObj.cells[existingKey].llm;
-				}
-				
-				let html = contentDiv.innerHTML;
-				if (llmConfig) {
-					html = '{{LLM_BUTTON}}';
-					if (!text) text = 'LLM Formula';
-				} else if (dropdownFormula) {
-					html = dropdownFormula;
-				}
-				
-				const hasContent = (text !== '');
-				const hasHtmlContent = (html !== '' && html !== '<br>' && html !== '<div></div>');
+				const borderProps = ['border', 'borderLeft', 'borderRight', 'borderTop', 'borderBottom'];
+				borderProps.forEach(prop => {
+					if (cell.style[prop]) cellStyle[prop] = cell.style[prop];
+				});
+
+				// Determine if cell is "empty" (to keep JSON sparse)
+				const hasValue = (typeObj.name === 'text' && typeObj.details.value !== '') ||
+					typeObj.name === 'dropdown' ||
+					typeObj.name === 'llm_formula';
 				const hasStyle = Object.keys(style).length > 0 || Object.keys(cellStyle).length > 0;
 				const isMerged = rowspan > 1 || colspan > 1;
-				const hasLLM = llmConfig !== null;
-				
-				if (hasContent || hasHtmlContent || isMerged || hasStyle || hasLLM) {
-					cells[r + '-' + colIndex] = {
-						html: html,
-						text: text,
+
+				if (hasValue || hasStyle || isMerged) {
+					cells[cellKey] = {
+						type: typeObj,
 						rowspan: rowspan,
 						colspan: colspan,
 						style: style,
-						cellStyle: cellStyle,
-						llm: llmConfig
+						cellStyle: cellStyle
 					};
 				}
 			}
 		}
-		
+
+		// Collect Column Widths
 		const headerCells = table.querySelectorAll('thead th.letter-cell');
 		headerCells.forEach(cell => {
 			const index = parseInt(cell.getAttribute('data-col'));
@@ -254,24 +263,25 @@ export const SheetDataManager = {
 				colWidths[index] = w;
 			}
 		});
-		
+
 		sheetObj.rowCount = rows.length;
 		sheetObj.colCount = headerCells.length;
 		sheetObj.cells = cells;
 		sheetObj.colWidths = colWidths;
 		sheetObj.rowHeights = rowHeights;
-		
+
+		// Preserve Selection State
 		const selectedCell = document.querySelector('.selected-cell');
 		if (selectedCell) {
 			const row = selectedCell.parentElement;
 			const rowIndex = row.rowIndex - 1;
 			const colIndex = parseInt(selectedCell.getAttribute('data-col'));
-			
+
 			sheetObj.selection = {
 				active: { r: rowIndex, c: colIndex },
 				range: null
 			};
-			
+
 			if (window.startCell && window.endCell && window.startCell !== window.endCell) {
 				const startRow = window.startCell.parentElement;
 				const endRow = window.endCell.parentElement;
@@ -285,140 +295,154 @@ export const SheetDataManager = {
 		} else {
 			sheetObj.selection = null;
 		}
-		
+
 		return sheetObj;
 	},
-	
+
 	renderSheet: function (index) {
 		const startTime = performance.now();
 		const sheet = this.data.sheets[index];
 		if (!sheet) return;
-		
+
+		// 1. Cleanup UI State
 		if (typeof window.stopEditing === 'function') window.stopEditing();
-		
+
 		const selected = document.getElementsByClassName('selected-cell');
 		while (selected.length > 0) selected[0].classList.remove('selected-cell');
-		
+
 		const highlighted = document.getElementsByClassName('highlight');
 		while (highlighted.length > 0) highlighted[0].classList.remove('highlight');
-		
+
 		const areaSelected = document.getElementsByClassName('area-selected-cell');
 		while (areaSelected.length > 0) areaSelected[0].classList.remove('area-selected-cell');
-		
+
 		window.startCell = null;
 		window.endCell = null;
 		if (typeof window.updateSelection === 'function') window.updateSelection();
-		
+
 		const formulaInput = document.getElementById('formula-input');
 		formulaInput.textContent = '';
 		formulaInput.setAttribute('contenteditable', 'false');
-		
+
 		const table = document.querySelector('.spreadsheet');
 		const thead = table.querySelector('thead');
 		const tbody = table.querySelector('tbody');
-		
+
+		// 2. Render Headers
 		let headerHTML = '<th class="top-corner-cell"></th>';
 		let tableWidth = 0;
-		
+
 		for (let c = 0; c < sheet.colCount; c++) {
 			const letter = this.getColumnLetter(c);
 			const width = sheet.colWidths[c] || this.defaults.defaultColWidth;
 			headerHTML += `<th class="letter-cell" data-col="${c}" style="width: ${width}px;">${letter}</th>`;
 			tableWidth += width;
 		}
-		
+
 		thead.rows[0].innerHTML = headerHTML;
 		table.style.width = (tableWidth + 50) + 'px';
-		
+
+		// 3. Render Body
 		let bodyHTML = '';
-		
+
 		for (let r = 0; r < sheet.rowCount; r++) {
 			const height = sheet.rowHeights[r] || this.defaults.defaultRowHeight;
 			bodyHTML += '<tr>';
 			bodyHTML += `<th class="counter-cell" style="height: ${height}px;">${r + 1}</th>`;
-			
+
 			for (let c = 0; c < sheet.colCount; c++) {
+				// Skip cells that are covered by a merge (rowspan/colspan)
 				if (this.isCellHiddenByMerge(sheet, r, c)) {
 					continue;
 				}
-				
+
 				const cellKey = r + '-' + c;
 				const cellData = sheet.cells[cellKey];
 				let cellHTML = '';
 				let tdAttrs = `class="text-cell" data-col="${c}"`;
 				let tdStyle = '';
-				
+
+				// Calculate dimensions for the current cell (considering merges)
 				let cellWidth = sheet.colWidths[c] || this.defaults.defaultColWidth;
 				let cellHeight = height;
-				
+
 				if (cellData) {
+					// Apply TD (Cell) Styles (Borders, Background)
 					if (cellData.cellStyle) {
 						for (const [prop, val] of Object.entries(cellData.cellStyle)) {
 							const cssProp = prop.replace(/([a-z0-9]|(?=[A-Z]))([A-Z])/g, '$1-$2').toLowerCase();
 							tdStyle += `${cssProp}:${val};`;
 						}
 					}
-					
+
 					if (cellData.rowspan > 1) tdAttrs += ` rowspan="${cellData.rowspan}"`;
 					if (cellData.colspan > 1) tdAttrs += ` colspan="${cellData.colspan}"`;
-					
+
+					// Calculate total width if merged across columns
 					if (cellData.colspan > 1) {
 						cellWidth = 0;
 						for (let k = 0; k < cellData.colspan; k++) {
 							cellWidth += (sheet.colWidths[c + k] || this.defaults.defaultColWidth);
 						}
 					}
-					
+
+					// Calculate total height if merged across rows
 					if (cellData.rowspan > 1) {
 						cellHeight = 0;
 						for (let k = 0; k < cellData.rowspan; k++) {
 							cellHeight += (sheet.rowHeights[r + k] || this.defaults.defaultRowHeight);
 						}
 					}
-					
+
 					let divStyle = `width:${cellWidth - 3}px; height:${cellHeight - 3}px;`;
-					let userStyle = '';
-					if (cellData.style && cellData.style.cssText) {
-						userStyle = cellData.style.cssText;
-					}
-					
-					let content = cellData.html || cellData.text || '';
-					
-					if (cellData.llm) {
-						const btnText = cellData.llm.funcName || 'Run LLM';
-						// MODIFIED: Removed inline onclick, added pointer-events:none to allow single click selection on TD
-						content = `<button class="llm-run-btn" style="${userStyle}; pointer-events: none;" contenteditable="false" title="Double Click to Run LLM Formula">${btnText}</button>`;
-						cellHTML = `<div class="content-cut" style="${divStyle}">${content}</div>`;
-					} else {
-						const dropdownRegex = /^=dropdown\s*\(\s*"([^"]+)"(?:\s*,\s*"([^"]*)")?\s*\)$/i;
-						const match = content.match(dropdownRegex);
-						
-						if (match) {
-							const selectedVal = match[2] || '';
-							cellHTML = `<div class="content-cut" style="${divStyle}${userStyle}" data-formula="${content.replace(/"/g, '&quot;')}">${selectedVal}</div>`;
-						} else {
-							content = content.replace(/<button class="llm-run-btn".*?<\/button>/g, '');
-							if (content === '{{LLM_BUTTON}}') {
-								content = '';
-							}
-							cellHTML = `<div class="content-cut" style="${divStyle}${userStyle}">${content}</div>`;
+					let userStyle = (cellData.style && cellData.style.cssText) ? cellData.style.cssText : '';
+
+					// --- NEW TYPE RENDERING LOGIC ---
+					if (cellData.type) {
+						const typeName = cellData.type.name;
+						const details = cellData.type.details;
+
+						if (typeName === 'llm_formula') {
+							// Render LLM Button
+							const btnText = details.funcName || 'Run LLM';
+							// pointer-events: none allows the click to pass through to the TD for selection
+							const content = `<button class="llm-run-btn" style="${userStyle}; pointer-events: none;" contenteditable="false" title="Double Click to Run LLM Formula">${btnText}</button>`;
+							cellHTML = `<div class="content-cut" style="${divStyle}">${content}</div>`;
 						}
+						else if (typeName === 'dropdown') {
+							// Render Dropdown
+							const optionsStr = (details.options || []).join(',');
+							const selectedVal = details.selected || '';
+							const formula = `=dropdown("${optionsStr}", "${selectedVal}")`;
+							cellHTML = `<div class="content-cut" style="${divStyle}${userStyle}" data-formula="${formula.replace(/"/g, '&quot;')}">${selectedVal}</div>`;
+						}
+						else if (typeName === 'text') {
+							// Render Standard Text
+							const val = details.value || '';
+							cellHTML = `<div class="content-cut" style="${divStyle}${userStyle}">${val}</div>`;
+						}
+					} else {
+						// Fallback for empty data objects
+						cellHTML = `<div class="content-cut" style="${divStyle}"></div>`;
 					}
 				} else {
+					// Render Empty Cell
 					cellHTML = `<div class="content-cut" style="width:${cellWidth - 3}px; height:${height - 3}px;"></div>`;
 				}
-				
+
 				bodyHTML += `<td ${tdAttrs} style="${tdStyle}">${cellHTML}</td>`;
 			}
 			bodyHTML += '</tr>';
 		}
-		
+
 		tbody.innerHTML = bodyHTML;
-		
+
+		// 4. Post-Render: Re-attach resize handles and restore selection
 		requestAnimationFrame(() => {
 			this.rebindResizeHandlers();
 			this.restoreSelection(sheet, tbody);
 		});
+
 		console.log('Sheet rendered in ' + (performance.now() - startTime).toFixed(2) + ' ms');
 	},
 	

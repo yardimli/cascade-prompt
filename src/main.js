@@ -67,64 +67,92 @@ window.highlightCell = function (cell) {
 	const tbody = row.parentElement;
 	if (!tbody) return;
 	const rowIndex = Array.from(tbody.children).indexOf(row);
-	
+
+	// 1. Clear previous selection/highlight UI states
 	const highlights = document.getElementsByClassName('highlight');
 	while (highlights.length > 0) highlights[0].classList.remove('highlight');
-	
+
 	const selected = document.getElementsByClassName('selected-cell');
 	while (selected.length > 0) selected[0].classList.remove('selected-cell');
-	
+
 	const editing = document.getElementsByClassName('edit-cell');
 	while (editing.length > 0) editing[0].classList.remove('edit-cell');
-	
+
+	// 2. Highlight Row and Column Headers
 	const letterCell = document.querySelector('.letter-cell[data-col="' + cellIndex + '"]');
 	if (letterCell) letterCell.classList.add('highlight');
-	
+
 	const counterCells = document.querySelectorAll('.counter-cell');
 	if (counterCells[rowIndex]) counterCells[rowIndex].classList.add('highlight');
-	
+
+	// 3. Mark current cell as selected
 	cell.classList.add('selected-cell');
-	
-	const contentDiv = cell.querySelector('.content-cut');
-	const cellContent = contentDiv.textContent;
-	const cellFormula = contentDiv.getAttribute('data-formula');
+
+	// 4. Update Formula Bar based on the new JSON "type" structure
 	const formulaInput = document.getElementById('formula-input');
-	
 	const sheet = SheetDataManager.data.sheets[SheetDataManager.data.activeSheetIndex];
 	const key = rowIndex + '-' + cellIndex;
-	
+	const cellData = sheet.cells[key];
+
 	formulaInput.classList.remove('pointer-cursor');
-	
-	if (sheet.cells[key] && sheet.cells[key].llm) {
-		const funcName = sheet.cells[key].llm.funcName || 'Run LLM';
-		formulaInput.textContent = `=LLM("${funcName}")`;
-		formulaInput.setAttribute('contenteditable', 'false');
-		formulaInput.classList.add('pointer-cursor');
-	} else if (cellFormula && cellFormula.toLowerCase().startsWith('=dropdown')) {
-		formulaInput.textContent = cellFormula;
-		formulaInput.setAttribute('contenteditable', 'false');
-		formulaInput.classList.add('pointer-cursor');
+
+	if (cellData && cellData.type) {
+		const typeName = cellData.type.name;
+		const details = cellData.type.details;
+
+		if (typeName === 'llm_formula' && details.component === 'button') {
+			// Requirement: Show ={{LLM_BUTTON}}
+			formulaInput.textContent = `={{LLM_BUTTON}}`;
+			formulaInput.setAttribute('contenteditable', 'false');
+			formulaInput.classList.add('pointer-cursor');
+		}
+		else if (typeName === 'dropdown') {
+			// Requirement: Show =dropdown("option1,option2", "selected")
+			const optionsStr = (details.options || []).join(',');
+			const selectedVal = details.selected || '';
+			formulaInput.textContent = `=dropdown("${optionsStr}", "${selectedVal}")`;
+			formulaInput.setAttribute('contenteditable', 'false');
+			formulaInput.classList.add('pointer-cursor');
+		}
+		else if (typeName === 'text') {
+			// Show plain text value
+			formulaInput.textContent = details.value || '';
+			formulaInput.setAttribute('contenteditable', 'true');
+		}
+		else {
+			// Fallback for other types (image, checkbox, etc.)
+			formulaInput.textContent = details.value || '';
+			formulaInput.setAttribute('contenteditable', 'true');
+		}
 	} else {
-		formulaInput.textContent = cellContent;
+		// Empty cell
+		formulaInput.textContent = '';
 		formulaInput.setAttribute('contenteditable', 'true');
 	}
-	
+
+	// 5. UI Maintenance
 	scrollToViewWithOffsets(cell);
-	
+
 	const rowspan = parseInt(cell.getAttribute('rowspan')) || 1;
 	const colspan = parseInt(cell.getAttribute('colspan')) || 1;
 	const unmergeBtn = document.getElementById('unmerge-btn');
 	const mergeBtn = document.getElementById('merge-btn');
-	
+
+	// Enable unmerge only if cell is currently merged
 	if (rowspan > 1 || colspan > 1) {
 		unmergeBtn.disabled = false;
 	} else {
 		unmergeBtn.disabled = true;
 	}
+
+	// Merge button is handled by the selection range logic, disable by default here
 	mergeBtn.disabled = true;
-	
+
+	// Update coordinates in status bar (e.g., "B4")
 	window.updateStatusSelection(rowIndex, cellIndex);
-	window.saveState();
+
+	// Mark project as modified if necessary (optional depending on your state logic)
+	// window.saveState();
 };
 
 window.updateStatusSelection = function (rowIdx, colIdx) {

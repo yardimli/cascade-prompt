@@ -306,80 +306,105 @@ export function makeCellEditable(cell) {
 // --------------------------------------------------//
 export function stopEditing() {
 	if (!window.isEditing) return;
-	
+
 	const editingCell = document.querySelector('.edit-cell');
 	const editor = document.getElementById('cell-editor');
-	
+
 	if (editingCell) {
 		const contentDiv = editingCell.querySelector('.content-cut');
+		const r = editingCell.parentElement.rowIndex - 1;
+		const c = parseInt(editingCell.getAttribute('data-col'));
+		const sheet = SheetDataManager.data.sheets[SheetDataManager.data.activeSheetIndex];
+		const key = r + '-' + c;
+
 		let newText = '';
 		let isDropdownChange = false;
-		
+
+		// 1. Extract data from the editor (either a <select> or plain text)
 		const select = editor.querySelector('select');
-		
+
 		if (select) {
-			const selectedValue = select.value;
-			const formula = contentDiv.getAttribute('data-formula');
-			const regex = /^=dropdown\s*\(\s*"([^"]+)"(?:\s*,\s*"[^"]*")?\s*\)$/i;
-			const match = formula ? formula.match(regex) : null;
-			
-			if (match) {
-				const options = match[1];
-				const newFormula = `=dropdown("${options}", "${selectedValue}")`;
-				contentDiv.setAttribute('data-formula', newFormula);
-				newText = selectedValue;
-				isDropdownChange = true;
-			} else {
-				newText = selectedValue;
-			}
+			newText = select.value;
+			isDropdownChange = true;
 		} else {
 			newText = editor.innerText;
 		}
-		
+
+		// 2. Check for changes and record history state
 		const oldText = contentDiv.innerText;
-		
 		if (newText !== oldText || isDropdownChange) {
 			if (typeof window.HistoryManager !== 'undefined') {
 				window.HistoryManager.addState();
 			}
 		}
-		
+
+		// 3. Update the Data Manager using the new JSON structure
+		if (!sheet.cells[key]) {
+			sheet.cells[key] = {
+				rowspan: parseInt(editingCell.getAttribute('rowspan')) || 1,
+				colspan: parseInt(editingCell.getAttribute('colspan')) || 1,
+				style: {},
+				cellStyle: {}
+			};
+		}
+
+		if (isDropdownChange) {
+			// Retrieve existing options from the data-formula attribute
+			const formula = contentDiv.getAttribute('data-formula');
+			const regex = /^=dropdown\s*\(\s*"([^"]+)"(?:\s*,\s*"[^"]*")?\s*\)$/i;
+			const match = formula ? formula.match(regex) : null;
+			const optionsStr = match ? match[1] : "";
+
+			// Update the type structure
+			sheet.cells[key].type = {
+				name: 'dropdown',
+				details: {
+					options: optionsStr.split(',').map(s => s.trim()),
+					selected: newText
+				}
+			};
+
+			// Update the DOM attribute so highlightCell/formula bar stays in sync
+			const newFormula = `=dropdown("${optionsStr}", "${newText}")`;
+			contentDiv.setAttribute('data-formula', newFormula);
+		} else {
+			// Update as standard text
+			sheet.cells[key].type = {
+				name: 'text',
+				details: {
+					value: newText
+				}
+			};
+		}
+
+		// 4. Update the UI
 		contentDiv.innerText = newText;
 		contentDiv.style.visibility = 'visible';
-		
+
+		// Synchronize styles from editor back to content (for text cells)
 		if (!select) {
 			contentDiv.style.fontWeight = editor.style.fontWeight;
 			contentDiv.style.fontStyle = editor.style.fontStyle;
 			contentDiv.style.textAlign = editor.style.textAlign;
 			contentDiv.style.color = editor.style.color;
 			contentDiv.style.fontSize = editor.style.fontSize;
+
+			// Update the style object in data
+			if (!sheet.cells[key].style) sheet.cells[key].style = {};
+			sheet.cells[key].style.cssText = `color:${editor.style.color};font-weight:${editor.style.fontWeight};font-style:${editor.style.fontStyle};font-size:${editor.style.fontSize};text-align:${editor.style.textAlign};`;
 		}
-		
-		const r = editingCell.parentElement.rowIndex - 1;
-		const c = parseInt(editingCell.getAttribute('data-col'));
-		const sheet = SheetDataManager.data.sheets[SheetDataManager.data.activeSheetIndex];
-		const key = r + '-' + c;
-		
-		if (!sheet.cells[key]) sheet.cells[key] = {};
-		
-		if (isDropdownChange) {
-			const updatedFormula = contentDiv.getAttribute('data-formula');
-			sheet.cells[key].text = updatedFormula;
-			sheet.cells[key].html = updatedFormula;
-		} else {
-			sheet.cells[key].text = newText;
-			sheet.cells[key].html = newText;
-		}
-		
+
+		// 5. Cleanup Editor
 		editor.innerHTML = '';
 		editor.style.display = 'none';
 		editor.style.width = '';
 		editor.style.height = '';
 		editor.oninput = null;
-		
+
 		editingCell.classList.remove('edit-cell');
 		window.isEditing = false;
-		
+
+		// Mark project as modified
 		SheetDataManager.setModified(true);
 	}
 }
