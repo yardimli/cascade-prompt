@@ -68,7 +68,7 @@ window.highlightCell = function (cell) {
 	if (!tbody) return;
 	const rowIndex = Array.from(tbody.children).indexOf(row);
 
-	// 1. Clear previous selection/highlight UI states
+	// 1. Clear previous UI states
 	const highlights = document.getElementsByClassName('highlight');
 	while (highlights.length > 0) highlights[0].classList.remove('highlight');
 
@@ -94,20 +94,24 @@ window.highlightCell = function (cell) {
 	const key = rowIndex + '-' + cellIndex;
 	const cellData = sheet.cells[key];
 
+	// Reset formula bar state
 	formulaInput.classList.remove('pointer-cursor');
+	formulaInput.setAttribute('contenteditable', 'true');
 
 	if (cellData && cellData.type) {
 		const typeName = cellData.type.name;
 		const details = cellData.type.details;
 
-		if (typeName === 'llm_formula' && details.component === 'button') {
-			// Requirement: Show ={{LLM_BUTTON}}
-			formulaInput.textContent = `={{LLM_BUTTON}}`;
+		if (typeName === 'llm_formula') {
+			// Display =LLM("Function Name")
+			const funcName = details.funcName || 'Run LLM';
+			formulaInput.textContent = `=LLM("${funcName}")`;
+			// Functional cells are not directly editable in the bar
 			formulaInput.setAttribute('contenteditable', 'false');
 			formulaInput.classList.add('pointer-cursor');
 		}
 		else if (typeName === 'dropdown') {
-			// Requirement: Show =dropdown("option1,option2", "selected")
+			// Display =dropdown("option1,option2", "selected")
 			const optionsStr = (details.options || []).join(',');
 			const selectedVal = details.selected || '';
 			formulaInput.textContent = `=dropdown("${optionsStr}", "${selectedVal}")`;
@@ -115,12 +119,12 @@ window.highlightCell = function (cell) {
 			formulaInput.classList.add('pointer-cursor');
 		}
 		else if (typeName === 'text') {
-			// Show plain text value
+			// Standard text value
 			formulaInput.textContent = details.value || '';
 			formulaInput.setAttribute('contenteditable', 'true');
 		}
 		else {
-			// Fallback for other types (image, checkbox, etc.)
+			// Fallback for other types
 			formulaInput.textContent = details.value || '';
 			formulaInput.setAttribute('contenteditable', 'true');
 		}
@@ -130,7 +134,7 @@ window.highlightCell = function (cell) {
 		formulaInput.setAttribute('contenteditable', 'true');
 	}
 
-	// 5. UI Maintenance
+	// 5. Maintenance and UI Updates
 	scrollToViewWithOffsets(cell);
 
 	const rowspan = parseInt(cell.getAttribute('rowspan')) || 1;
@@ -145,13 +149,13 @@ window.highlightCell = function (cell) {
 		unmergeBtn.disabled = true;
 	}
 
-	// Merge button is handled by the selection range logic, disable by default here
+	// Merge button is handled by selection range logic, disable by default here
 	mergeBtn.disabled = true;
 
 	// Update coordinates in status bar (e.g., "B4")
 	window.updateStatusSelection(rowIndex, cellIndex);
 
-	// Mark project as modified if necessary (optional depending on your state logic)
+	// Optional: Mark project as modified if selection changes are considered state
 	// window.saveState();
 };
 

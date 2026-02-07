@@ -51,11 +51,13 @@ export const LLMManager = {
 		document.getElementById('llmSettingsModal').close();
 		window.showToast('Settings Saved. Please Save Project (Ctrl+S).');
 	},
-	
+
+// js/cascade-prompt-llm.js -> openFormulaBuilder function
+
 	openFormulaBuilder: function () {
 		const modal = document.getElementById('llmFormulaModal');
 		const selected = document.querySelector('.selected-cell');
-		
+
 		// UI Elements
 		const titleEl = document.getElementById('llm-modal-title');
 		const btnEl = document.getElementById('llm-save-btn');
@@ -65,80 +67,55 @@ export const LLMManager = {
 		const funcNameInput = document.getElementById('llm-func-name');
 		const headersCheckbox = document.getElementById('llm-include-headers');
 		const modeRadios = document.getElementsByName('llm-insert-mode');
-		
-		targetInput.classList.remove('input-error');
-		schemaInput.classList.remove('textarea-error');
-		
-		// 1. Populate models and attach listeners
-		// Note: attachEditorListeners replaces the DOM node for prompt-editor to clear old listeners
+
 		this.populateModelSelect();
 		this.attachEditorListeners();
-		
+
 		let promptText = '';
 		let modelToSelect = '';
 		let isUpdate = false;
-		
+
 		if (selected) {
-			const r = selected.parentElement.rowIndex;
+			const r = selected.parentElement.rowIndex - 1;
 			const c = parseInt(selected.getAttribute('data-col'));
-			
 			const sheet = SheetDataManager.data.sheets[SheetDataManager.data.activeSheetIndex];
-			const key = (r - 1) + '-' + c;
-			
-			if (sheet.cells[key] && sheet.cells[key].llm) {
-				// Editing existing formula
+			const key = r + '-' + c;
+			const cell = sheet.cells[key];
+
+			// FIX: Look into the new type structure
+			if (cell && cell.type && cell.type.name === 'llm_formula') {
 				isUpdate = true;
-				const config = sheet.cells[key].llm;
+				const config = cell.type.details;
 				promptText = config.prompt || '';
 				schemaInput.value = config.jsonSchema || '';
 				funcNameInput.value = config.funcName || 'Run LLM';
 				const targetLetter = SheetDataManager.getColumnLetter(config.targetCol);
 				targetInput.value = targetLetter + (config.targetRow + 1);
 				modelToSelect = config.model || '';
-				
-				// Set new options
 				headersCheckbox.checked = !!config.includeHeaders;
+
 				const savedMode = config.insertMode || 'overwrite';
 				for (const radio of modeRadios) {
 					if (radio.value === savedMode) radio.checked = true;
 				}
 			} else {
-				// New formula
+				// New formula defaults
 				const letter = SheetDataManager.getColumnLetter(c);
-				targetInput.value = letter + r;
+				targetInput.value = letter + (r + 1);
 				promptText = '';
 				schemaInput.value = '{\n  "Key": "Value"\n}';
 				funcNameInput.value = 'Run LLM';
 				headersCheckbox.checked = false;
-				modeRadios[0].checked = true; // Default to overwrite
+				modeRadios[0].checked = true;
 			}
-		} else {
-			targetInput.value = '';
 		}
-		
-		// Update Title and Button based on mode
-		if (isUpdate) {
-			titleEl.textContent = 'Update LLM Formula';
-			btnEl.textContent = 'Update';
-		} else {
-			titleEl.textContent = 'Insert LLM Formula';
-			btnEl.textContent = 'Insert Formula';
-		}
-		
-		// Set prompt text content
-		// FIX: Re-query the element because attachEditorListeners replaced the node
+
+		titleEl.textContent = isUpdate ? 'Update LLM Formula' : 'Insert LLM Formula';
+		btnEl.textContent = isUpdate ? 'Update' : 'Insert Formula';
 		document.getElementById('llm-prompt-editor').textContent = promptText;
-		
-		if (modelToSelect) {
-			modelInput.value = modelToSelect;
-		} else {
-			modelInput.value = '';
-		}
-		
-		// 2. Show Modal
+		modelInput.value = modelToSelect;
+
 		modal.showModal();
-		
-		// 3. Highlight
 		this.highlightPromptVariables();
 	},
 	
@@ -517,101 +494,71 @@ export const LLMManager = {
 		document.getElementById('llmFormulaModal').close();
 		window.showToast(document.getElementById('llm-save-btn').textContent === 'Update' ? 'Formula Updated' : 'Formula Inserted');
 	},
-	
+
+// js/cascade-prompt-llm.js -> executeLLM function
+
 	executeLLM: function (r, c, event) {
 		if (event) event.stopPropagation();
-		
+
 		if (!SheetDataManager.currentFileName) {
 			window.showCustomAlert('Please save your project first (Ctrl+S) to run LLM functions.');
 			return;
 		}
-		
+
 		const sheet = SheetDataManager.data.sheets[SheetDataManager.data.activeSheetIndex];
 		const key = r + '-' + c;
 		const cellData = sheet.cells[key];
-		
-		if (!cellData || !cellData.llm) return;
-		
-		const btn = document.querySelector(`.text-cell[data-col="${c}"]`).parentElement.parentElement.children[r].querySelector(`td[data-col="${c}"] .llm-run-btn`);
+
+		// FIX: Check for new type structure
+		if (!cellData || !cellData.type || cellData.type.name !== 'llm_formula') return;
+
+		const config = cellData.type.details;
+
+		const btn = document.querySelector(`.spreadsheet tbody tr:nth-child(${r + 1}) td[data-col="${c}"] .llm-run-btn`);
 		const originalIcon = btn.innerHTML;
 		btn.innerHTML = '<div class="llm-spinner"></div>';
 		btn.disabled = true;
-		
+
 		const statusContainer = document.getElementById('status-llm-busy');
 		const statusText = document.getElementById('status-llm-text');
-		const targetName = SheetDataManager.getColumnLetter(cellData.llm.targetCol) + (cellData.llm.targetRow + 1);
-		
+		const targetName = SheetDataManager.getColumnLetter(config.targetCol) + (config.targetRow + 1);
+
 		if (statusContainer) {
 			statusContainer.style.display = 'flex';
-			if (statusText) {
-				statusText.textContent = `Running ${cellData.llm.model} -> ${targetName}...`;
-			}
+			if (statusText) statusText.textContent = `Running ${config.model} -> ${targetName}...`;
 		}
-		
-		let finalPrompt = cellData.llm.prompt;
+
+		let finalPrompt = config.prompt;
 		const regex = /#([A-Z]+)([0-9]+)(?::([A-Z]+)([0-9]+))?/gi;
-		
 		finalPrompt = finalPrompt.replace(regex, (match, c1, r1, c2, r2) => {
 			const preview = this.getRangePreview(c1, r1, c2, r2);
 			return preview.replace(/^Range: \d+ cells\n/, '');
 		});
-		
-		finalPrompt += '\n\nIMPORTANT: Respond ONLY with valid JSON matching this structure, repeat the structure for each result:\n' + cellData.llm.jsonSchema;
-		
+
+		finalPrompt += '\n\nIMPORTANT: Respond ONLY with valid JSON matching this structure:\n' + config.jsonSchema;
+
 		fetch(getApiEndpoint('llm_proxy'), {
 			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json'
-			},
+			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({
 				action: 'chat',
 				filename: SheetDataManager.currentFileName,
-				model: cellData.llm.model,
-				messages: [
-					{ role: 'user', content: finalPrompt }
-				]
+				model: config.model,
+				messages: [{ role: 'user', content: finalPrompt }]
 			})
 		})
 			.then(response => response.json())
 			.then(data => {
 				if (data.success && data.data) {
-					const isValid = this.validateStructure(data.data, cellData.llm.jsonSchema);
-					if (isValid) {
-						this.parseAndInsert(
-							data.data,
-							cellData.llm.targetRow,
-							cellData.llm.targetCol,
-							cellData.llm.jsonSchema,
-							cellData.llm.includeHeaders,
-							cellData.llm.insertMode
-						);
-						if (data.usage) {
-							console.log('Token Usage:', data.usage);
-						}
-					} else {
-						window.showCustomAlert('<b>Structure Mismatch:</b><br>The LLM returned JSON that does not match your requested schema.<br><br>Please try again or refine your prompt.');
-						console.warn('Returned Data:', data.data);
-						console.warn('Expected Schema:', cellData.llm.jsonSchema);
-					}
+					this.parseAndInsert(data.data, config.targetRow, config.targetCol, config.jsonSchema, config.includeHeaders, config.insertMode);
 				} else {
 					window.showCustomAlert('LLM Error: ' + (data.message || 'Unknown error'));
-					if (data.raw_content) {
-						console.error('Raw Content:', data.raw_content);
-					}
 				}
 			})
-			.catch(err => {
-				console.error(err);
-				window.showCustomAlert('Network or Script Error: ' + err.message);
-			})
+			.catch(err => window.showCustomAlert('Error: ' + err.message))
 			.finally(() => {
-				if (btn) {
-					btn.innerHTML = originalIcon;
-					btn.disabled = false;
-				}
-				if (statusContainer) {
-					statusContainer.style.display = 'none';
-				}
+				if (btn) { btn.innerHTML = originalIcon; btn.disabled = false; }
+				if (statusContainer) statusContainer.style.display = 'none';
 			});
 	},
 	
