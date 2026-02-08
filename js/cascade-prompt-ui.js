@@ -347,6 +347,11 @@ export function stopEditing() {
 				cellStyle: {}
 			};
 		}
+		function isNumeric(v) {
+			return typeof v === "number"
+				? Number.isFinite(v)
+				: (typeof v === "string" && v.trim() !== "" && Number.isFinite(Number(v)));
+		}
 
 		if (isDropdownChange) {
 			// Retrieve existing options from the data-formula attribute
@@ -367,7 +372,14 @@ export function stopEditing() {
 			// Update the DOM attribute so highlightCell/formula bar stays in sync
 			const newFormula = `=dropdown("${optionsStr}", "${newText}")`;
 			contentDiv.setAttribute('data-formula', newFormula);
-		} else {
+		}else if(isNumeric(newText)) {
+			sheet.cells[key].type = {
+				name: 'number',
+				details: {
+					value: newText
+				}
+			};
+		}else {
 			// Update as standard text
 			sheet.cells[key].type = {
 				name: 'text',

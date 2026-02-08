@@ -142,6 +142,12 @@ export const SheetDataManager = {
 	},
 
 	collectDOMData: function (sheetObj) {
+		function isNumeric(v) {
+			return typeof v === "number"
+				? Number.isFinite(v)
+				: (typeof v === "string" && v.trim() !== "" && Number.isFinite(Number(v)));
+		}
+
 		const cells = {};
 		const colWidths = {};
 		const rowHeights = {};
@@ -198,6 +204,12 @@ export const SheetDataManager = {
 					typeObj.details = {
 						options: match ? match[1].split(',').map(s => s.trim()) : [],
 						selected: match ? (match[2] || '') : contentDiv.innerText.trim()
+					};
+				}
+				else if (isNumeric(sheetObj.cells[cellKey])) {
+					typeObj.name = 'number';
+					typeObj.details = {
+						value: contentDiv.innerText.trim()
 					};
 				}
 				// 3. Default to Text
@@ -416,7 +428,7 @@ export const SheetDataManager = {
 							const formula = `=dropdown("${optionsStr}", "${selectedVal}")`;
 							cellHTML = `<div class="content-cut" style="${divStyle}${userStyle}" data-formula="${formula.replace(/"/g, '&quot;')}">${selectedVal}</div>`;
 						}
-						else if (typeName === 'text') {
+						else if (typeName === 'text' || typeName === 'number') {
 							// Render Standard Text
 							const val = details.value || '';
 							cellHTML = `<div class="content-cut" style="${divStyle}${userStyle}">${val}</div>`;
