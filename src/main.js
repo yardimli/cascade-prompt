@@ -118,7 +118,7 @@ window.highlightCell = function (cell) {
 			formulaInput.setAttribute('contenteditable', 'false');
 			formulaInput.classList.add('pointer-cursor');
 		}
-		else if (typeName === 'text') {
+		else if (typeName === 'text' || typeName === 'number') {
 			// Standard text value
 			formulaInput.textContent = details.value || '';
 			formulaInput.setAttribute('contenteditable', 'true');

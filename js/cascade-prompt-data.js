@@ -185,7 +185,6 @@ export const SheetDataManager = {
 				};
 
 				const dropdownFormula = contentDiv.getAttribute('data-formula');
-
 				// 1. Check if it's an LLM Formula
 				// We look at the existing data object to see if this cell was previously an LLM cell
 				if (sheetObj.cells[cellKey] && (sheetObj.cells[cellKey].llm || sheetObj.cells[cellKey].type?.name === 'llm_formula')) {
@@ -206,18 +205,19 @@ export const SheetDataManager = {
 						selected: match ? (match[2] || '') : contentDiv.innerText.trim()
 					};
 				}
-				else if (isNumeric(sheetObj.cells[cellKey])) {
-					typeObj.name = 'number';
-					typeObj.details = {
-						value: contentDiv.innerText.trim()
-					};
-				}
-				// 3. Default to Text
 				else {
-					typeObj.name = 'text';
-					typeObj.details = {
-						value: contentDiv.innerText.trim()
-					};
+					if(isNumeric(contentDiv.innerText.trim())){
+						typeObj.name = 'number';
+						typeObj.details = {
+							value: contentDiv.innerText.trim()
+						};
+					} else {
+						typeObj.name = 'text';
+						typeObj.details = {
+							value: contentDiv.innerText.trim()
+						};
+					}
+
 				}
 				// --- NEW TYPE LOGIC END ---
 
