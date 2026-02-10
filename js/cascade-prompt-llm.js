@@ -8,19 +8,19 @@ import { getApiEndpoint } from './api-config.js';
 
 export const LLMManager = {
 	models: [],
-	
+
 	init: function () {
 		const cachedModels = localStorage.getItem('openrouter_models');
 		if (cachedModels) {
 			this.models = JSON.parse(cachedModels);
 		}
 	},
-	
+
 	openSettings: function () {
 		const modal = document.getElementById('llmSettingsModal');
 		const apiKeyInput = document.getElementById('llm-api-key');
 		const falKeyInput = document.getElementById('llm-fal-key');
-		
+
 		if (SheetDataManager.data.llmSettings) {
 			apiKeyInput.value = SheetDataManager.data.llmSettings.apiKey || '';
 			falKeyInput.value = SheetDataManager.data.llmSettings.falAiKey || '';
@@ -28,37 +28,34 @@ export const LLMManager = {
 			apiKeyInput.value = '';
 			falKeyInput.value = '';
 		}
-		
+
 		modal.showModal();
 	},
-	
+
 	saveSettings: function () {
 		const apiKeyInput = document.getElementById('llm-api-key');
 		const falKeyInput = document.getElementById('llm-fal-key');
-		
+
 		const apiKey = apiKeyInput.value.trim();
 		const falKey = falKeyInput.value.trim();
-		
+
 		if (!SheetDataManager.data.llmSettings) {
 			SheetDataManager.data.llmSettings = {};
 		}
-		
+
 		SheetDataManager.data.llmSettings.apiKey = apiKey;
 		SheetDataManager.data.llmSettings.falAiKey = falKey;
-		
+
 		SheetDataManager.setModified(true);
-		
+
 		document.getElementById('llmSettingsModal').close();
 		window.showToast('Settings Saved. Please Save Project (Ctrl+S).');
 	},
-
-// js/cascade-prompt-llm.js -> openFormulaBuilder function
 
 	openFormulaBuilder: function () {
 		const modal = document.getElementById('llmFormulaModal');
 		const selected = document.querySelector('.selected-cell');
 
-		// UI Elements
 		const titleEl = document.getElementById('llm-modal-title');
 		const btnEl = document.getElementById('llm-save-btn');
 		const targetInput = document.getElementById('llm-target-cell');
@@ -82,7 +79,6 @@ export const LLMManager = {
 			const key = r + '-' + c;
 			const cell = sheet.cells[key];
 
-			// FIX: Look into the new type structure
 			if (cell && cell.type && cell.type.name === 'llm_formula') {
 				isUpdate = true;
 				const config = cell.type.details;
@@ -99,7 +95,6 @@ export const LLMManager = {
 					if (radio.value === savedMode) radio.checked = true;
 				}
 			} else {
-				// New formula defaults
 				const letter = SheetDataManager.getColumnLetter(c);
 				targetInput.value = letter + (r + 1);
 				promptText = '';
@@ -118,13 +113,13 @@ export const LLMManager = {
 		modal.showModal();
 		this.highlightPromptVariables();
 	},
-	
+
 	attachEditorListeners: function () {
 		const promptEditor = document.getElementById('llm-prompt-editor');
 		const newEditor = promptEditor.cloneNode(true);
 		promptEditor.parentNode.replaceChild(newEditor, promptEditor);
 		const editor = document.getElementById('llm-prompt-editor');
-		
+
 		let timeout;
 		const debouncedHighlight = () => {
 			clearTimeout(timeout);
@@ -132,30 +127,30 @@ export const LLMManager = {
 				this.highlightPromptVariables();
 			}, 300);
 		};
-		
+
 		editor.addEventListener('input', () => {
 			debouncedHighlight();
 		});
-		
+
 		editor.addEventListener('paste', (e) => {
 			e.preventDefault();
 			const text = (e.originalEvent || e).clipboardData.getData('text/plain');
 			document.execCommand('insertText', false, text);
 		});
-		
+
 		editor.addEventListener('mouseover', (e) => {
 			if (e.target.classList.contains('llm-var-tag')) {
 				const preview = e.target.getAttribute('data-preview');
 				this.showTooltip(e.target, preview);
 			}
 		});
-		
+
 		editor.addEventListener('mouseout', (e) => {
 			if (e.target.classList.contains('llm-var-tag')) {
 				this.hideTooltip();
 			}
 		});
-		
+
 		const schemaInput = document.getElementById('llm-json-schema');
 		schemaInput.onblur = function () {
 			try {
@@ -165,7 +160,7 @@ export const LLMManager = {
 				this.classList.add('textarea-error');
 			}
 		};
-		
+
 		const targetInput = document.getElementById('llm-target-cell');
 		targetInput.oninput = function () {
 			const val = this.value.toUpperCase();
@@ -176,11 +171,11 @@ export const LLMManager = {
 			}
 		};
 	},
-	
+
 	highlightPromptVariables: function () {
 		const editor = document.getElementById('llm-prompt-editor');
 		if (!editor) return;
-		
+
 		const selection = window.getSelection();
 		let savedOffset = 0;
 		if (selection.rangeCount > 0 && editor.contains(selection.anchorNode)) {
@@ -190,16 +185,16 @@ export const LLMManager = {
 			preCaretRange.setEnd(range.endContainer, range.endOffset);
 			savedOffset = preCaretRange.toString().length;
 		}
-		
+
 		const text = editor.innerText;
 		let html = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 		const regex = /#([A-Z]+)([0-9]+)(?::([A-Z]+)([0-9]+))?/gi;
-		
+
 		html = html.replace(regex, (match, c1, r1, c2, r2) => {
 			const preview = this.getRangePreview(c1, r1, c2, r2);
 			return `<span class="llm-var-tag" data-preview="${preview.replace(/"/g, '&quot;')}">${match}</span>`;
 		});
-		
+
 		if (editor.innerHTML !== html) {
 			editor.innerHTML = html;
 			try {
@@ -207,7 +202,7 @@ export const LLMManager = {
 				const sel = window.getSelection();
 				let charIndex = 0;
 				let rangeFound = false;
-				
+
 				function traverseNodes(node) {
 					if (rangeFound) return;
 					if (node.nodeType === 3) {
@@ -224,7 +219,7 @@ export const LLMManager = {
 						}
 					}
 				}
-				
+
 				traverseNodes(editor);
 				if (rangeFound) {
 					sel.removeAllRanges();
@@ -241,10 +236,10 @@ export const LLMManager = {
 			}
 		}
 	},
-	
+
 	getRangePreview: function (c1, r1, c2, r2) {
 		const sheet = SheetDataManager.data.sheets[SheetDataManager.data.activeSheetIndex];
-		
+
 		const getColIdx = (letter) => {
 			let idx = 0;
 			letter = letter.toUpperCase();
@@ -253,23 +248,25 @@ export const LLMManager = {
 			}
 			return idx - 1;
 		};
-		
+
 		const startC = getColIdx(c1);
 		const startR = parseInt(r1) - 1;
-		
+
 		const getCellValue = (r, c) => {
 			const key = r + '-' + c;
 			const cellData = sheet.cells[key];
-			if (!cellData) return 'Empty';
-			const text = cellData.text || '';
-			const dropdownRegex = /^=dropdown\s*\(\s*"[^"]+"(?:\s*,\s*"([^"]*)")?\s*\)$/i;
-			const match = text.match(dropdownRegex);
-			if (match) {
-				return match[1] || '';
+			if (!cellData || !cellData.type) return 'Empty';
+
+			const type = cellData.type;
+			if (type.name === 'text' || type.name === 'number') {
+				return type.details.value || '';
 			}
-			return text;
+			if (type.name === 'dropdown') {
+				return type.details.selected || '';
+			}
+			return '';
 		};
-		
+
 		if (c2 && r2) {
 			const endC = getColIdx(c2);
 			const endR = parseInt(r2) - 1;
@@ -277,10 +274,10 @@ export const LLMManager = {
 			const maxC = Math.max(startC, endC);
 			const minR = Math.min(startR, endR);
 			const maxR = Math.max(startR, endR);
-			
+
 			let count = 0;
 			let previewText = "";
-			
+
 			for (let r = minR; r <= maxR; r++) {
 				for (let c = minC; c <= maxC; c++) {
 					count++;
@@ -290,7 +287,7 @@ export const LLMManager = {
 					}
 				}
 			}
-			
+
 			if (count > 3) previewText += `...and ${count - 3} more`;
 			return `Range: ${count} cells\n${previewText}`;
 		} else {
@@ -298,70 +295,57 @@ export const LLMManager = {
 			return `${val}`;
 		}
 	},
-	
+
 	showTooltip: function (target, text) {
 		let tooltip = document.getElementById('llm-global-tooltip');
 		if (!tooltip) {
 			tooltip = document.createElement('div');
 			tooltip.id = 'llm-global-tooltip';
 			tooltip.className = 'llm-var-tooltip-global';
-			// Initial append to body, but we will move it if needed
 			document.body.appendChild(tooltip);
 		}
-		
-		// FIX: Move tooltip into the modal if it's open, to ensure it sits on top (Top Layer)
-		// This fixes the z-index issue where the tooltip appears behind the dialog.
+
 		const modal = document.getElementById('llmFormulaModal');
 		if (modal && modal.hasAttribute('open') && tooltip.parentElement !== modal) {
 			modal.appendChild(tooltip);
 		} else if ((!modal || !modal.hasAttribute('open')) && tooltip.parentElement !== document.body) {
 			document.body.appendChild(tooltip);
 		}
-		
+
 		tooltip.textContent = text;
 		tooltip.style.display = 'block';
-		
-		// Use getBoundingClientRect for viewport coordinates
+
 		const rect = target.getBoundingClientRect();
-		
-		// Position above the cursor/element
 		let top = rect.top - tooltip.offsetHeight - 5;
 		let left = rect.left;
-		
-		// If too close to top edge, flip to bottom
-		if (top < 10) {
-			top = rect.bottom + 5;
-		}
-		
-		// Ensure it doesn't go off the right edge
+
+		if (top < 10) top = rect.bottom + 5;
 		if (left + tooltip.offsetWidth > window.innerWidth) {
 			left = window.innerWidth - tooltip.offsetWidth - 10;
 		}
-		
+
 		tooltip.style.top = top + 'px';
 		tooltip.style.left = left + 'px';
 	},
-	
+
 	hideTooltip: function () {
 		const tooltip = document.getElementById('llm-global-tooltip');
 		if (tooltip) tooltip.style.display = 'none';
 	},
-	
+
 	fetchModels: function () {
 		if (!SheetDataManager.currentFileName) {
 			window.showCustomAlert('Please save your project first (Ctrl+S) to use LLM features.');
 			return;
 		}
-		
+
 		const btn = document.getElementById('refresh-models-btn');
 		const icon = btn.querySelector('i');
 		icon.classList.add('animate-spin');
-		
+
 		fetch(getApiEndpoint('llm_proxy'), {
 			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json'
-			},
+			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({
 				action: 'models',
 				filename: SheetDataManager.currentFileName
@@ -386,11 +370,11 @@ export const LLMManager = {
 				icon.classList.remove('animate-spin');
 			});
 	},
-	
+
 	populateModelSelect: function () {
 		const datalist = document.getElementById('llm-models-datalist');
 		datalist.innerHTML = '';
-		
+
 		this.models.forEach(m => {
 			const opt = document.createElement('option');
 			opt.value = m.id;
@@ -459,15 +443,9 @@ export const LLMManager = {
 		const key = sourceRow + '-' + sourceCol;
 
 		if (!sheet.cells[key]) {
-			sheet.cells[key] = {
-				rowspan: 1,
-				colspan: 1,
-				style: {},
-				cellStyle: {}
-			};
+			sheet.cells[key] = { rowspan: 1, colspan: 1, style: {}, cellStyle: {} };
 		}
 
-		// NEW STRUCTURE: Use type key, remove old llm/text/html keys
 		sheet.cells[key].type = {
 			name: 'llm_formula',
 			details: {
@@ -479,11 +457,10 @@ export const LLMManager = {
 				funcName: funcName,
 				includeHeaders: includeHeaders,
 				insertMode: insertMode,
-				component: 'button' // Added as requested
+				component: 'button'
 			}
 		};
 
-		// Clean up any legacy keys if they exist
 		delete sheet.cells[key].llm;
 		delete sheet.cells[key].text;
 		delete sheet.cells[key].html;
@@ -494,8 +471,6 @@ export const LLMManager = {
 		document.getElementById('llmFormulaModal').close();
 		window.showToast(document.getElementById('llm-save-btn').textContent === 'Update' ? 'Formula Updated' : 'Formula Inserted');
 	},
-
-// js/cascade-prompt-llm.js -> executeLLM function
 
 	executeLLM: function (r, c, event) {
 		if (event) event.stopPropagation();
@@ -509,7 +484,6 @@ export const LLMManager = {
 		const key = r + '-' + c;
 		const cellData = sheet.cells[key];
 
-		// FIX: Check for new type structure
 		if (!cellData || !cellData.type || cellData.type.name !== 'llm_formula') return;
 
 		const config = cellData.type.details;
@@ -550,7 +524,24 @@ export const LLMManager = {
 			.then(response => response.json())
 			.then(data => {
 				if (data.success && data.data) {
-					this.parseAndInsert(data.data, config.targetRow, config.targetCol, config.jsonSchema, config.includeHeaders, config.insertMode);
+					// RESTORED: Validate structure before inserting
+					const isValid = this.validateStructure(data.data, config.jsonSchema);
+					if (isValid) {
+						this.parseAndInsert(
+							data.data,
+							config.targetRow,
+							config.targetCol,
+							config.jsonSchema,
+							config.includeHeaders,
+							config.insertMode
+						);
+						if (data.usage) {
+							console.log('Token Usage:', data.usage);
+						}
+					} else {
+						window.showCustomAlert('LLM returned data that does not match the expected JSON schema.');
+						console.warn('Schema mismatch. Data:', data.data, 'Schema:', config.jsonSchema);
+					}
 				} else {
 					window.showCustomAlert('LLM Error: ' + (data.message || 'Unknown error'));
 				}
@@ -561,7 +552,7 @@ export const LLMManager = {
 				if (statusContainer) statusContainer.style.display = 'none';
 			});
 	},
-	
+
 	validateStructure: function (returnedData, schemaString) {
 		try {
 			const schema = JSON.parse(schemaString);
@@ -577,12 +568,12 @@ export const LLMManager = {
 				}
 				return [];
 			};
-			
+
 			const schemaKeys = getKeys(schema);
 			const dataKeys = getKeys(returnedData);
-			
+
 			if (schemaKeys.length === 0) return true;
-			
+
 			if (JSON.stringify(schemaKeys) !== JSON.stringify(dataKeys)) {
 				if (Array.isArray(returnedData) && !Array.isArray(schema)) {
 					const itemKeys = getKeys(returnedData);
@@ -592,7 +583,7 @@ export const LLMManager = {
 				}
 				return false;
 			}
-			
+
 			return true;
 		} catch (e) {
 			console.error('Validation Logic Error', e);
@@ -605,7 +596,6 @@ export const LLMManager = {
 
 		const sheet = SheetDataManager.data.sheets[SheetDataManager.data.activeSheetIndex];
 
-		// 1. Determine Insertion Point (Append Logic)
 		let actualStartR = startR;
 
 		if (insertMode === 'append') {
@@ -613,7 +603,6 @@ export const LLMManager = {
 			while (r < sheet.rowCount) {
 				const key = r + '-' + startC;
 				const cell = sheet.cells[key];
-				// Check if cell is empty in the new structure
 				if (!cell || !cell.type || (cell.type.name === 'text' && !cell.type.details.value)) {
 					actualStartR = r;
 					break;
@@ -623,20 +612,15 @@ export const LLMManager = {
 			if (r >= sheet.rowCount) actualStartR = sheet.rowCount;
 		}
 
-		// 2. Handle Headers
 		let headers = [];
 		try {
 			const schema = JSON.parse(schemaString);
 			const getKeys = (obj) => {
 				if (Array.isArray(obj)) {
-					if (obj.length > 0 && typeof obj[0] === 'object') {
-						return Object.keys(obj[0]);
-					}
+					if (obj.length > 0 && typeof obj[0] === 'object') return Object.keys(obj[0]);
 					return [];
 				}
-				if (typeof obj === 'object' && obj !== null) {
-					return Object.keys(obj);
-				}
+				if (typeof obj === 'object' && obj !== null) return Object.keys(obj);
 				return [];
 			};
 			headers = getKeys(schema);
@@ -653,7 +637,6 @@ export const LLMManager = {
 			currentRow++;
 		}
 
-		// 3. Handle Data Rows
 		let rowsToInsert = [];
 		if (Array.isArray(jsonData)) {
 			rowsToInsert = jsonData;
@@ -703,19 +686,12 @@ export const LLMManager = {
 		window.showToast('LLM Data Inserted');
 	},
 
-	// Helper function updated for new JSON structure
 	setCellValue: function (sheet, r, c, val) {
 		const key = r + '-' + c;
 		if (!sheet.cells[key]) {
-			sheet.cells[key] = {
-				rowspan: 1,
-				colspan: 1,
-				style: {},
-				cellStyle: {}
-			};
+			sheet.cells[key] = { rowspan: 1, colspan: 1, style: {}, cellStyle: {} };
 		}
 
-		// NEW STRUCTURE: Use type: text
 		sheet.cells[key].type = {
 			name: 'text',
 			details: {
@@ -723,7 +699,6 @@ export const LLMManager = {
 			}
 		};
 
-		// Remove legacy keys
 		delete sheet.cells[key].text;
 		delete sheet.cells[key].html;
 		delete sheet.cells[key].llm;
