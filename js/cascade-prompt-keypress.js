@@ -33,6 +33,7 @@ export function initKeypressListeners() {
 	
 	cellEditor.addEventListener('input', function () {
 		if (window.isEditing) {
+			if (this.querySelector('select')) return;
 			formulaInput.textContent = this.textContent;
 		}
 	});

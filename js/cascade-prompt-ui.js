@@ -418,6 +418,11 @@ export function stopEditing() {
 
 		// Mark project as modified
 		SheetDataManager.setModified(true);
+
+		//Explicitly refresh the formula bar and UI state for the cell
+		if (typeof window.highlightCell === 'function' && isDropdownChange) {
+			window.highlightCell(editingCell);
+		}
 	}
 }
 
