@@ -65,6 +65,77 @@ add a button to the cell when user clicks on the button the llm formula is exect
 
 - in llm dialog add checkbox to continue adding results at the end instead of overwriting specified target area.
 
+- for the preparation of supporting image input when making llm call, remove key "html" and "text" with the new key "type". Key "type" is for the cell has "text" or "number" or "dropdown" or "llm_formula" or "checkbox" or "datetime". Implementation doesn't have backward compatibility and the project json is ignored, so need to create new file for testing.
+example of "text"->
+"0-1": {
+          "type": {
+            "name": "text",
+            "details": {
+              "value": ""
+            }
+          },
+          "rowspan": 1,
+          "colspan": 1,
+          "style": {
+            "cssText": "color:oklch(0.21 0.006 285.885);font-weight:400;font-style:normal;font-size:16px;text-align:start;"
+          },
+          "cellStyle": {}
+        }
+example of "number"->
+"2-5": {
+          "type": {
+            "name": "number",
+            "details": {
+              "value": "10"
+            }
+          },
+          "rowspan": 1,
+          "colspan": 1,
+          "style": {
+            "cssText": "color:oklch(0.21 0.006 285.885);font-weight:400;font-style:normal;font-size:16px;text-align:start;"
+          },
+          "cellStyle": {}
+        }
+example of dropdown->
+"3-0": {
+          "type": {
+            "name": "dropdown",
+            "details": {
+              "options": [
+                "Fantasy",
+                "Adventure",
+                "Science Fiction",
+                "Nonfiction"
+              ],
+              "selected": "Nonfiction"
+            }
+          },
+          "rowspan": 1,
+          "colspan": 1,
+          "style": {},
+          "cellStyle": {}
+        }
+example of button with llm formula->
+"0-3": {
+          "type": {
+            "name": "llm_formula",
+            "details": {
+              "prompt": "Create 3 book titles and hooks(maximum 255 characters) from the subject in #A2 for the target age specified in #A4",
+              "model": "openai/gpt-5.2",
+              "jsonSchema": "{\n  \"Title\": \"String\",\n  \"SubTitle\":\"String\"\n}",
+              "targetRow": 2,
+              "targetCol": 3,
+              "funcName": "Generate Title and SubTitle",
+              "includeHeaders": false,
+              "insertMode": "overwrite",
+              "component": "button"
+            }
+          },
+          "rowspan": 1,
+          "colspan": 1,
+          "style": {},
+          "cellStyle": {}
+        }
 
 TODO:
 
