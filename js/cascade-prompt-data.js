@@ -148,6 +148,9 @@ export const SheetDataManager = {
 				: (typeof v === "string" && v.trim() !== "" && Number.isFinite(Number(v)));
 		}
 
+		// We create a new cells object, but we will reference the OLD sheetObj.cells
+		// to preserve type data that is no longer stored in the DOM (like dropdown options).
+		const oldCells = sheetObj.cells || {};
 		const cells = {};
 		const colWidths = {};
 		const rowHeights = {};
@@ -177,47 +180,48 @@ export const SheetDataManager = {
 				const cellKey = r + '-' + colIndex;
 				const rowspan = parseInt(cell.getAttribute('rowspan')) || 1;
 				const colspan = parseInt(cell.getAttribute('colspan')) || 1;
+				const innerText = contentDiv.innerText.trim();
 
 				// --- NEW TYPE LOGIC START ---
+				// We look at the EXISTING data object to determine the type,
+				// because the DOM no longer holds the 'data-formula' attribute.
+
 				let typeObj = {
 					name: 'text',
-					details: {}
+					details: { value: innerText }
 				};
 
-				const dropdownFormula = contentDiv.getAttribute('data-formula');
-				// 1. Check if it's an LLM Formula
-				// We look at the existing data object to see if this cell was previously an LLM cell
-				if (sheetObj.cells[cellKey] && (sheetObj.cells[cellKey].llm || sheetObj.cells[cellKey].type?.name === 'llm_formula')) {
-					const llmConfig = sheetObj.cells[cellKey].llm || sheetObj.cells[cellKey].type.details;
-					typeObj.name = 'llm_formula';
-					typeObj.details = {
-						...llmConfig,
-						component: 'button' // Ensure component is set as requested
-					};
-				}
-				// 2. Check if it's a Dropdown
-				else if (dropdownFormula && dropdownFormula.toLowerCase().startsWith('=dropdown')) {
-					const regex = /^=dropdown\s*\(\s*"([^"]+)"(?:\s*,\s*"([^"]*)")?\s*\)$/i;
-					const match = dropdownFormula.match(regex);
-					typeObj.name = 'dropdown';
-					typeObj.details = {
-						options: match ? match[1].split(',').map(s => s.trim()) : [],
-						selected: match ? (match[2] || '') : contentDiv.innerText.trim()
-					};
-				}
-				else {
-					if(isNumeric(contentDiv.innerText.trim())){
-						typeObj.name = 'number';
-						typeObj.details = {
-							value: contentDiv.innerText.trim()
-						};
-					} else {
-						typeObj.name = 'text';
-						typeObj.details = {
-							value: contentDiv.innerText.trim()
+				const existingCell = oldCells[cellKey];
+
+				if (existingCell && existingCell.type) {
+					if (existingCell.type.name === 'llm_formula') {
+						// Keep existing LLM configuration
+						typeObj = JSON.parse(JSON.stringify(existingCell.type));
+					}
+					else if (existingCell.type.name === 'dropdown') {
+						// Keep existing Dropdown configuration, but update the 'selected' value
+						// based on what is currently visible in the DOM (in case user typed/pasted)
+						typeObj = {
+							name: 'dropdown',
+							details: {
+								options: existingCell.type.details.options || [],
+								selected: innerText // Update selection from DOM
+							}
 						};
 					}
-
+					else {
+						// It was text or number, re-evaluate based on current text
+						if (isNumeric(innerText)) {
+							typeObj = { name: 'number', details: { value: innerText } };
+						} else {
+							typeObj = { name: 'text', details: { value: innerText } };
+						}
+					}
+				} else {
+					// No existing state, infer from text
+					if (isNumeric(innerText)) {
+						typeObj = { name: 'number', details: { value: innerText } };
+					}
 				}
 				// --- NEW TYPE LOGIC END ---
 
@@ -422,11 +426,9 @@ export const SheetDataManager = {
 							cellHTML = `<div class="content-cut" style="${divStyle}">${content}</div>`;
 						}
 						else if (typeName === 'dropdown') {
-							// Render Dropdown
-							const optionsStr = (details.options || []).join(',');
+							// Render Dropdown - REMOVED data-formula attribute
 							const selectedVal = details.selected || '';
-							const formula = `=dropdown("${optionsStr}", "${selectedVal}")`;
-							cellHTML = `<div class="content-cut" style="${divStyle}${userStyle}" data-formula="${formula.replace(/"/g, '&quot;')}">${selectedVal}</div>`;
+							cellHTML = `<div class="content-cut" style="${divStyle}${userStyle}">${selectedVal}</div>`;
 						}
 						else if (typeName === 'text' || typeName === 'number') {
 							// Render Standard Text

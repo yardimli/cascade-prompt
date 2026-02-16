@@ -164,26 +164,26 @@ export function makeCellEditable(cell) {
 	if (!cell.classList.contains('selected-cell')) {
 		window.highlightCell(cell);
 	}
-	
+
 	if (cell.querySelector('.llm-run-btn')) {
 		if (typeof window.showToast === 'function') {
 			window.showToast('LLM Button cells cannot be edited directly.');
 		}
 		return;
 	}
-	
+
 	if (!cell.classList.contains('edit-cell')) {
 		cell.classList.add('edit-cell');
 	}
-	
+
 	document.querySelectorAll('.spreadsheet .area-selected-cell').forEach(el => el.classList.remove('area-selected-cell'));
-	
+
 	const contentDiv = cell.querySelector('.content-cut');
 	const width = cell.offsetWidth;
 	const height = cell.offsetHeight;
 	const cellLeft = cell.offsetLeft;
 	const cellTop = cell.offsetTop;
-	
+
 	const editor = document.getElementById('cell-editor');
 	editor.style.position = 'absolute';
 	editor.style.top = cellTop + 'px';
@@ -193,7 +193,7 @@ export function makeCellEditable(cell) {
 	editor.style.minWidth = width + 'px';
 	editor.style.minHeight = height + 'px';
 	editor.style.display = 'block';
-	
+
 	const computedStyle = window.getComputedStyle(contentDiv);
 	editor.style.textAlign = computedStyle.textAlign;
 	editor.style.fontWeight = computedStyle.fontWeight;
@@ -202,23 +202,26 @@ export function makeCellEditable(cell) {
 	editor.style.fontSize = computedStyle.fontSize;
 	editor.style.fontFamily = computedStyle.fontFamily;
 	editor.style.backgroundColor = window.getComputedStyle(cell).backgroundColor;
-	
-	const formula = contentDiv.getAttribute('data-formula');
-	const dropdownRegex = /^=dropdown\s*\(\s*"([^"]+)"(?:\s*,\s*"([^"]*)")?\s*\)$/i;
-	
-	if (formula && formula.match(dropdownRegex)) {
-		const match = formula.match(dropdownRegex);
-		const optionsStr = match[1];
-		const currentSelection = match[2] || '';
-		const options = optionsStr.split(',').map(o => o.trim());
-		
+
+	// --- CHANGED: Look up state instead of data-formula ---
+	const r = cell.parentElement.rowIndex - 1;
+	const c = parseInt(cell.getAttribute('data-col'));
+	const sheet = SheetDataManager.data.sheets[SheetDataManager.data.activeSheetIndex];
+	const key = r + '-' + c;
+	const cellData = sheet.cells[key];
+
+	const isDropdown = cellData && cellData.type && cellData.type.name === 'dropdown';
+
+	if (isDropdown) {
+		const options = cellData.type.details.options || [];
+		const currentSelection = cellData.type.details.selected || '';
+
 		const wrapper = document.createElement('div');
 		wrapper.className = 'floating-select-wrapper w-full h-full';
-		
+
 		const select = document.createElement('select');
-		// Removed select-bordered to blend better, added focus:outline-none and min-h-0
 		select.className = 'select select-xs w-full h-full rounded-none focus:outline-none min-h-0 block p-0 m-0';
-		
+
 		// Apply styles to match cell
 		select.style.textAlign = computedStyle.textAlign;
 		select.style.fontWeight = computedStyle.fontWeight;
@@ -227,14 +230,12 @@ export function makeCellEditable(cell) {
 		select.style.fontFamily = computedStyle.fontFamily;
 		select.style.color = computedStyle.color;
 		select.style.backgroundColor = window.getComputedStyle(cell).backgroundColor;
-		
-		// Remove default borders and outlines
+
 		select.style.border = 'none';
 		select.style.outline = 'none';
 		select.style.boxShadow = 'none';
-		// Adjust padding to match standard cell padding
 		select.style.padding = '0 5px';
-		
+
 		options.forEach(opt => {
 			const option = document.createElement('option');
 			option.value = opt;
@@ -244,27 +245,26 @@ export function makeCellEditable(cell) {
 			}
 			select.appendChild(option);
 		});
-		
+
 		select.addEventListener('change', function () {
 			stopEditing();
 		});
-		
+
 		select.addEventListener('blur', function () {
 			stopEditing();
 		});
-		
+
 		select.addEventListener('click', function (e) {
 			e.stopPropagation();
 		});
-		
+
 		wrapper.appendChild(select);
 		editor.innerHTML = '';
 		editor.appendChild(wrapper);
 		editor.contentEditable = false;
 		editor.style.padding = '0';
 		select.focus();
-		
-		// Attempt to auto-open the dropdown
+
 		try {
 			if (typeof select.showPicker === 'function') {
 				select.showPicker();
@@ -272,19 +272,19 @@ export function makeCellEditable(cell) {
 		} catch (e) {
 			console.warn('Auto-open dropdown failed:', e);
 		}
-		
+
 	} else {
 		editor.innerText = contentDiv.innerText;
 		editor.contentEditable = true;
 		editor.style.padding = '2px 5px';
 		editor.focus();
-		
+
 		editor.oninput = function () {
 			this.style.height = 'auto';
 			this.style.width = 'auto';
 			const scrollHeight = this.scrollHeight;
 			const scrollWidth = this.scrollWidth;
-			
+
 			if (scrollHeight > height) {
 				this.style.height = scrollHeight + 'px';
 			} else {
@@ -298,7 +298,7 @@ export function makeCellEditable(cell) {
 		};
 		editor.dispatchEvent(new Event('input'));
 	}
-	
+
 	contentDiv.style.visibility = 'hidden';
 	window.isEditing = true;
 }
@@ -354,32 +354,28 @@ export function stopEditing() {
 		}
 
 		if (isDropdownChange) {
-			// Retrieve existing options from the data-formula attribute
-			const formula = contentDiv.getAttribute('data-formula');
-			const regex = /^=dropdown\s*\(\s*"([^"]+)"(?:\s*,\s*"[^"]*")?\s*\)$/i;
-			const match = formula ? formula.match(regex) : null;
-			const optionsStr = match ? match[1] : "";
+			// Retrieve existing options from the STATE, not the DOM
+			const existingOptions = (sheet.cells[key].type && sheet.cells[key].type.details.options)
+				? sheet.cells[key].type.details.options
+				: [];
 
 			// Update the type structure
 			sheet.cells[key].type = {
 				name: 'dropdown',
 				details: {
-					options: optionsStr.split(',').map(s => s.trim()),
+					options: existingOptions,
 					selected: newText
 				}
 			};
-
-			// Update the DOM attribute so highlightCell/formula bar stays in sync
-			const newFormula = `=dropdown("${optionsStr}", "${newText}")`;
-			contentDiv.setAttribute('data-formula', newFormula);
-		}else if(isNumeric(newText)) {
+			// Note: We do NOT update any data-formula attribute here.
+		} else if (isNumeric(newText)) {
 			sheet.cells[key].type = {
 				name: 'number',
 				details: {
 					value: newText
 				}
 			};
-		}else {
+		} else {
 			// Update as standard text
 			sheet.cells[key].type = {
 				name: 'text',
@@ -419,7 +415,7 @@ export function stopEditing() {
 		// Mark project as modified
 		SheetDataManager.setModified(true);
 
-		//Explicitly refresh the formula bar and UI state for the cell
+		// Explicitly refresh the formula bar and UI state for the cell
 		if (typeof window.highlightCell === 'function' && isDropdownChange) {
 			window.highlightCell(editingCell);
 		}

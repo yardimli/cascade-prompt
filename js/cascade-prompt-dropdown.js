@@ -1,3 +1,5 @@
+// In js/cascade-prompt-dropdown.js
+
 import { SheetDataManager } from './cascade-prompt-data.js';
 
 export const DropdownManager = {
@@ -9,48 +11,48 @@ export const DropdownManager = {
 			}
 			return;
 		}
-		
+
 		const modal = document.getElementById('dropdownModal');
 		const optionsInput = document.getElementById('dropdown-options');
 		const selectionInput = document.getElementById('dropdown-selection');
-		
+
 		optionsInput.value = '';
 		selectionInput.innerHTML = '<option value="">(None)</option>';
 		selectionInput.value = '';
-		
-		const contentDiv = selected.querySelector('.content-cut');
-		const formula = contentDiv.getAttribute('data-formula');
-		
-		if (formula && formula.toLowerCase().startsWith('=dropdown')) {
-			const regex = /^=dropdown\s*\(\s*"([^"]+)"(?:\s*,\s*"([^"]*)")?\s*\)$/i;
-			const match = formula.match(regex);
-			
-			if (match) {
-				const optionsStr = match[1];
-				const currentSelection = match[2] || '';
-				const options = optionsStr.split(',').map(s => s.trim());
-				optionsInput.value = options.join('\n');
-				this.updateSelectionPreview(options, currentSelection);
-			}
+
+		// --- CHANGED: Read from State instead of data-formula ---
+		const r = selected.parentElement.rowIndex - 1;
+		const c = parseInt(selected.getAttribute('data-col'));
+		const sheet = SheetDataManager.data.sheets[SheetDataManager.data.activeSheetIndex];
+		const key = r + '-' + c;
+		const cellData = sheet.cells[key];
+
+		if (cellData && cellData.type && cellData.type.name === 'dropdown') {
+			const details = cellData.type.details;
+			const options = details.options || [];
+			const currentSelection = details.selected || '';
+
+			optionsInput.value = options.join('\n');
+			this.updateSelectionPreview(options, currentSelection);
 		}
-		
+
 		modal.showModal();
 	},
-	
+
 	updateSelectionPreview: function (optionsArray = null, selectedValue = '') {
 		const optionsInput = document.getElementById('dropdown-options');
 		const selectionInput = document.getElementById('dropdown-selection');
-		
+
 		let options = optionsArray;
 		if (!options) {
 			const text = optionsInput.value;
 			options = text.split(/[\n,]/).map(s => s.trim()).filter(s => s !== '');
 		}
-		
+
 		if (!selectedValue) selectedValue = selectionInput.value;
-		
+
 		selectionInput.innerHTML = '<option value="">(None)</option>';
-		
+
 		options.forEach(opt => {
 			const optionEl = document.createElement('option');
 			optionEl.value = opt;
@@ -115,8 +117,7 @@ export const DropdownManager = {
 			SheetDataManager.renderSheet(SheetDataManager.data.activeSheetIndex);
 			SheetDataManager.setModified(true);
 
-			// Re-highlight the cell after rendering to ensure the formula bar
-			// displays the reconstructed =dropdown(...) string correctly.
+			// Re-highlight the cell after rendering to ensure the formula bar updates
 			setTimeout(() => {
 				const newCell = document.querySelector(`.spreadsheet tbody tr:nth-child(${r + 1}) td[data-col="${c}"]`);
 				if (newCell && typeof window.highlightCell === 'function') {
@@ -128,40 +129,36 @@ export const DropdownManager = {
 		// 7. Close Modal
 		document.getElementById('dropdownModal').close();
 	},
-	
+
 	removeDropdown: function () {
 		const selectedCell = document.querySelector('.selected-cell');
 		if (!selectedCell) return;
-		
+
 		if (typeof window.HistoryManager !== 'undefined') window.HistoryManager.addState();
-		
+
 		const r = selectedCell.parentElement.rowIndex - 1;
 		const c = parseInt(selectedCell.getAttribute('data-col'));
-		
+
 		const sheet = SheetDataManager.data.sheets[SheetDataManager.data.activeSheetIndex];
 		const key = r + '-' + c;
-		
+
 		if (sheet.cells[key]) {
-			const contentDiv = selectedCell.querySelector('.content-cut');
+			// Get current value from state to convert to plain text
 			let currentVal = '';
-			
-			const select = contentDiv.querySelector('select');
-			if (select) {
-				currentVal = select.value;
-			} else {
-				const formula = contentDiv.getAttribute('data-formula');
-				const regex = /^=dropdown\s*\(\s*"[^"]+"(?:\s*,\s*"([^"]*)")?\s*\)$/i;
-				const match = formula ? formula.match(regex) : null;
-				if (match) currentVal = match[1] || '';
+			if (sheet.cells[key].type && sheet.cells[key].type.name === 'dropdown') {
+				currentVal = sheet.cells[key].type.details.selected || '';
 			}
-			
-			sheet.cells[key].text = currentVal;
-			sheet.cells[key].html = currentVal;
+
+			// Convert back to simple text type
+			sheet.cells[key].type = {
+				name: 'text',
+				details: { value: currentVal }
+			};
 		}
-		
+
 		SheetDataManager.renderSheet(SheetDataManager.data.activeSheetIndex);
 		SheetDataManager.setModified(true);
-		
+
 		document.getElementById('dropdownModal').close();
 	}
 };
