@@ -444,17 +444,30 @@
 			<!-- DaisyUI Tabs using the radio button pattern -->
 			<div role="tablist" class="tabs tabs-lifted">
 				<!-- Tab 1: Link -->
-				<input type="radio" name="image_insert_tabs" role="tab" class="tab" aria-label="By Link" checked />
+				<input type="radio" name="image_insert_tabs" role="tab" class="tab" aria-label="By Link" checked onclick="ImageManager.switchTab('link')" />
 				<div role="tabpanel" class="tab-content bg-base-100 border-base-300 rounded-box p-6">
-					<p class="text-sm text-base-content/60">Provide a URL to an image hosted online.</p>
-					<!-- Form fields will go here later -->
+					<div class="form-control w-full">
+						<label class="label">
+							<span class="label-text">Image URL</span>
+						</label>
+						<input type="text" id="img-url-input" placeholder="https://example.com/image.png" class="input input-bordered w-full" oninput="ImageManager.handleUrlInput(this.value)" />
+						<label class="label">
+							<span class="label-text-alt text-error" id="img-url-error" style="display:none;">Invalid Image URL</span>
+						</label>
+					</div>
+
+					<!-- Preview Area -->
+					<div id="img-url-preview" class="mt-4 border border-dashed border-base-300 rounded flex items-center justify-center bg-base-200 min-h-[150px] relative">
+						<span class="text-base-content/30 text-sm">Image Preview</span>
+						<img id="img-preview-element" src="" style="display:none; max-height: 200px; max-width: 100%; object-fit: contain;" />
+						<span id="img-loading" class="loading loading-spinner loading-md text-primary absolute" style="display:none;"></span>
+					</div>
 				</div>
 
-				<!-- Tab 2: Upload -->
-				<input type="radio" name="image_insert_tabs" role="tab" class="tab" aria-label="Upload" />
+				<!-- Tab 2: Upload (Placeholder for future) -->
+				<input type="radio" name="image_insert_tabs" role="tab" class="tab" aria-label="Upload" onclick="ImageManager.switchTab('upload')" />
 				<div role="tabpanel" class="tab-content bg-base-100 border-base-300 rounded-box p-6">
-					<p class="text-sm text-base-content/60">Choose an image file from your computer.</p>
-					<!-- Upload fields will go here later -->
+					<p class="text-sm text-base-content/60">Upload feature coming soon.</p>
 				</div>
 			</div>
 		</div>
@@ -462,7 +475,7 @@
 			<form method="dialog">
 				<button class="btn">Cancel</button>
 			</form>
-			<button class="btn btn-primary" onclick="ImageManager.insertImage()">Insert</button>
+			<button class="btn btn-primary" id="btn-insert-image" onclick="ImageManager.insertImage()" disabled>Insert</button>
 		</div>
 	</div>
 </dialog>

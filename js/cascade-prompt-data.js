@@ -1,6 +1,8 @@
+// ... existing imports ...
 import { getApiEndpoint } from './api-config.js';
 
 export const SheetDataManager = {
+	// ... existing data properties ...
 	data: {
 		activeSheetIndex: 0,
 		sheets: [],
@@ -9,18 +11,19 @@ export const SheetDataManager = {
 			falAiKey: ''
 		}
 	},
-	
+
 	currentFileName: null,
 	isModified: false,
-	
+
 	defaults: {
 		rows: 100,
 		cols: 26,
 		sheetNamePrefix: 'Sheet',
 		defaultRowHeight: 25,
-		defaultColWidth: 100 // Adjusted default
+		defaultColWidth: 100
 	},
-	
+
+	// ... existing init, measureDefaults, createSheet, generateUniqueSheetName ...
 	init: function () {
 		this.measureDefaults();
 		const lastFile = localStorage.getItem('lastOpenedFile');
@@ -33,35 +36,33 @@ export const SheetDataManager = {
 			this.updateStatusUI();
 		}
 	},
-	
+
 	measureDefaults: function () {
 		const sampleRowHeader = document.querySelector('.spreadsheet tbody tr:first-child th.counter-cell');
 		if (sampleRowHeader) {
 			const h = sampleRowHeader.offsetHeight;
-			// FIX: If measurement is too small (collapsed), use hardcoded default
 			this.defaults.defaultRowHeight = (h > 10) ? h : 25;
 		} else {
 			this.defaults.defaultRowHeight = 25;
 		}
-		
+
 		const sampleColHeader = document.querySelector('.spreadsheet thead th.letter-cell');
 		if (sampleColHeader) {
 			const w = sampleColHeader.offsetWidth;
-			// FIX: If measurement is too small, use hardcoded default
 			this.defaults.defaultColWidth = (w > 20) ? w : 100;
 		} else {
 			this.defaults.defaultColWidth = 100;
 		}
-		
+
 		console.log(`Defaults measured: RowHeight=${this.defaults.defaultRowHeight}, ColWidth=${this.defaults.defaultColWidth}`);
 	},
-	
+
 	createSheet: function (name, isInitial) {
 		let finalName = name;
 		if (!isInitial) {
 			finalName = this.generateUniqueSheetName(name);
 		}
-		
+
 		let newSheet = {
 			name: finalName,
 			rowCount: this.defaults.rows,
@@ -74,13 +75,13 @@ export const SheetDataManager = {
 				range: null
 			}
 		};
-		
+
 		if (isInitial) {
 			newSheet = this.collectDOMData(newSheet);
 		}
-		
+
 		this.data.sheets.push(newSheet);
-		
+
 		if (!isInitial) {
 			this.selectSheet(this.data.sheets.length - 1);
 			this.setModified(true);
@@ -88,7 +89,7 @@ export const SheetDataManager = {
 			this.renderTabs();
 		}
 	},
-	
+
 	generateUniqueSheetName: function (baseName) {
 		let name = baseName;
 		let counter = 1;
@@ -105,35 +106,35 @@ export const SheetDataManager = {
 		}
 		return name;
 	},
-	
+
 	updateSheetProperties: function (index, newName, newRows, newCols) {
 		if (index < 0 || index >= this.data.sheets.length) return;
-		
+
 		const sheet = this.data.sheets[index];
 		sheet.name = newName;
 		sheet.rowCount = parseInt(newRows);
 		sheet.colCount = parseInt(newCols);
-		
+
 		if (index === this.data.activeSheetIndex) {
 			this.renderSheet(index);
 			this.renderTabs();
 		} else {
 			this.renderTabs();
 		}
-		
+
 		this.setModified(true);
 	},
-	
+
 	selectSheet: function (index) {
 		if (index < 0 || index >= this.data.sheets.length) return;
 		if (index === this.data.activeSheetIndex) return;
-		
+
 		this.updateCurrentSheetData();
 		this.data.activeSheetIndex = index;
 		this.renderSheet(index);
 		this.renderTabs();
 	},
-	
+
 	updateCurrentSheetData: function () {
 		const activeIndex = this.data.activeSheetIndex;
 		if (this.data.sheets[activeIndex]) {
@@ -148,8 +149,6 @@ export const SheetDataManager = {
 				: (typeof v === "string" && v.trim() !== "" && Number.isFinite(Number(v)));
 		}
 
-		// We create a new cells object, but we will reference the OLD sheetObj.cells
-		// to preserve type data that is no longer stored in the DOM (like dropdown options).
 		const oldCells = sheetObj.cells || {};
 		const cells = {};
 		const colWidths = {};
@@ -163,7 +162,6 @@ export const SheetDataManager = {
 			const row = rows[r];
 			const rowHeader = row.cells[0];
 
-			// Collect Row Heights
 			if (rowHeader) {
 				const h = rowHeader.offsetHeight;
 				if (Math.abs(h - this.defaults.defaultRowHeight) > 1) {
@@ -182,10 +180,6 @@ export const SheetDataManager = {
 				const colspan = parseInt(cell.getAttribute('colspan')) || 1;
 				const innerText = contentDiv.innerText.trim();
 
-				// --- NEW TYPE LOGIC START ---
-				// We look at the EXISTING data object to determine the type,
-				// because the DOM no longer holds the 'data-formula' attribute.
-
 				let typeObj = {
 					name: 'text',
 					details: { value: innerText }
@@ -195,22 +189,31 @@ export const SheetDataManager = {
 
 				if (existingCell && existingCell.type) {
 					if (existingCell.type.name === 'llm_formula') {
-						// Keep existing LLM configuration
 						typeObj = JSON.parse(JSON.stringify(existingCell.type));
 					}
 					else if (existingCell.type.name === 'dropdown') {
-						// Keep existing Dropdown configuration, but update the 'selected' value
-						// based on what is currently visible in the DOM (in case user typed/pasted)
 						typeObj = {
 							name: 'dropdown',
 							details: {
 								options: existingCell.type.details.options || [],
-								selected: innerText // Update selection from DOM
+								selected: innerText
 							}
 						};
 					}
+					else if (existingCell.type.name === 'image') {
+						// Preserve image type if the text content is empty (user didn't overwrite it)
+						if (innerText === '') {
+							typeObj = JSON.parse(JSON.stringify(existingCell.type));
+						} else {
+							// User typed text over the image, converting it to text
+							if (isNumeric(innerText)) {
+								typeObj = { name: 'number', details: { value: innerText } };
+							} else {
+								typeObj = { name: 'text', details: { value: innerText } };
+							}
+						}
+					}
 					else {
-						// It was text or number, re-evaluate based on current text
 						if (isNumeric(innerText)) {
 							typeObj = { name: 'number', details: { value: innerText } };
 						} else {
@@ -218,14 +221,11 @@ export const SheetDataManager = {
 						}
 					}
 				} else {
-					// No existing state, infer from text
 					if (isNumeric(innerText)) {
 						typeObj = { name: 'number', details: { value: innerText } };
 					}
 				}
-				// --- NEW TYPE LOGIC END ---
 
-				// Collect Inline Styles (on the content or button)
 				const style = {};
 				const allowedStyles = ['color', 'backgroundColor', 'fontWeight', 'fontStyle', 'fontSize', 'textAlign'];
 				let cleanCssText = '';
@@ -243,7 +243,6 @@ export const SheetDataManager = {
 					style.cssText = cleanCssText;
 				}
 
-				// Collect Cell (TD) Styles
 				const cellStyle = {};
 				if (cell.style.backgroundColor) cellStyle.backgroundColor = cell.style.backgroundColor;
 				const borderProps = ['border', 'borderLeft', 'borderRight', 'borderTop', 'borderBottom'];
@@ -251,10 +250,11 @@ export const SheetDataManager = {
 					if (cell.style[prop]) cellStyle[prop] = cell.style[prop];
 				});
 
-				// Determine if cell is "empty" (to keep JSON sparse)
 				const hasValue = (typeObj.name === 'text' && typeObj.details.value !== '') ||
 					typeObj.name === 'dropdown' ||
-					typeObj.name === 'llm_formula';
+					typeObj.name === 'llm_formula' ||
+					typeObj.name === 'image'; // Image counts as value
+
 				const hasStyle = Object.keys(style).length > 0 || Object.keys(cellStyle).length > 0;
 				const isMerged = rowspan > 1 || colspan > 1;
 
@@ -270,7 +270,6 @@ export const SheetDataManager = {
 			}
 		}
 
-		// Collect Column Widths
 		const headerCells = table.querySelectorAll('thead th.letter-cell');
 		headerCells.forEach(cell => {
 			const index = parseInt(cell.getAttribute('data-col'));
@@ -286,7 +285,6 @@ export const SheetDataManager = {
 		sheetObj.colWidths = colWidths;
 		sheetObj.rowHeights = rowHeights;
 
-		// Preserve Selection State
 		const selectedCell = document.querySelector('.selected-cell');
 		if (selectedCell) {
 			const row = selectedCell.parentElement;
@@ -320,7 +318,6 @@ export const SheetDataManager = {
 		const sheet = this.data.sheets[index];
 		if (!sheet) return;
 
-		// 1. Cleanup UI State
 		if (typeof window.stopEditing === 'function') window.stopEditing();
 
 		const selected = document.getElementsByClassName('selected-cell');
@@ -344,7 +341,6 @@ export const SheetDataManager = {
 		const thead = table.querySelector('thead');
 		const tbody = table.querySelector('tbody');
 
-		// 2. Render Headers
 		let headerHTML = '<th class="top-corner-cell"></th>';
 		let tableWidth = 0;
 
@@ -358,7 +354,6 @@ export const SheetDataManager = {
 		thead.rows[0].innerHTML = headerHTML;
 		table.style.width = (tableWidth + 50) + 'px';
 
-		// 3. Render Body
 		let bodyHTML = '';
 
 		for (let r = 0; r < sheet.rowCount; r++) {
@@ -367,7 +362,6 @@ export const SheetDataManager = {
 			bodyHTML += `<th class="counter-cell" style="height: ${height}px;">${r + 1}</th>`;
 
 			for (let c = 0; c < sheet.colCount; c++) {
-				// Skip cells that are covered by a merge (rowspan/colspan)
 				if (this.isCellHiddenByMerge(sheet, r, c)) {
 					continue;
 				}
@@ -378,12 +372,10 @@ export const SheetDataManager = {
 				let tdAttrs = `class="text-cell" data-col="${c}"`;
 				let tdStyle = '';
 
-				// Calculate dimensions for the current cell (considering merges)
 				let cellWidth = sheet.colWidths[c] || this.defaults.defaultColWidth;
 				let cellHeight = height;
 
 				if (cellData) {
-					// Apply TD (Cell) Styles (Borders, Background)
 					if (cellData.cellStyle) {
 						for (const [prop, val] of Object.entries(cellData.cellStyle)) {
 							const cssProp = prop.replace(/([a-z0-9]|(?=[A-Z]))([A-Z])/g, '$1-$2').toLowerCase();
@@ -394,7 +386,6 @@ export const SheetDataManager = {
 					if (cellData.rowspan > 1) tdAttrs += ` rowspan="${cellData.rowspan}"`;
 					if (cellData.colspan > 1) tdAttrs += ` colspan="${cellData.colspan}"`;
 
-					// Calculate total width if merged across columns
 					if (cellData.colspan > 1) {
 						cellWidth = 0;
 						for (let k = 0; k < cellData.colspan; k++) {
@@ -402,7 +393,6 @@ export const SheetDataManager = {
 						}
 					}
 
-					// Calculate total height if merged across rows
 					if (cellData.rowspan > 1) {
 						cellHeight = 0;
 						for (let k = 0; k < cellData.rowspan; k++) {
@@ -413,34 +403,35 @@ export const SheetDataManager = {
 					let divStyle = `width:${cellWidth - 3}px; height:${cellHeight - 3}px;`;
 					let userStyle = (cellData.style && cellData.style.cssText) ? cellData.style.cssText : '';
 
-					// --- NEW TYPE RENDERING LOGIC ---
 					if (cellData.type) {
 						const typeName = cellData.type.name;
 						const details = cellData.type.details;
 
 						if (typeName === 'llm_formula') {
-							// Render LLM Button
 							const btnText = details.funcName || 'Run LLM';
-							// pointer-events: none allows the click to pass through to the TD for selection
 							const content = `<button class="llm-run-btn" style="${userStyle}; pointer-events: none;" contenteditable="false" title="Double Click to Run LLM Formula">${btnText}</button>`;
 							cellHTML = `<div class="content-cut" style="${divStyle}">${content}</div>`;
 						}
 						else if (typeName === 'dropdown') {
-							// Render Dropdown - REMOVED data-formula attribute
 							const selectedVal = details.selected || '';
 							cellHTML = `<div class="content-cut" style="${divStyle}${userStyle}">${selectedVal}</div>`;
 						}
+						else if (typeName === 'image') {
+							// Render Image
+							const url = details.url || '';
+							// Flex center and object-fit: contain for "scale to fit" behavior
+							cellHTML = `<div class="content-cut" style="${divStyle}${userStyle} display: flex; justify-content: center; align-items: center; overflow: hidden;">
+								<img src="${url}" style="max-width: 100%; max-height: 100%; object-fit: contain; pointer-events: none;">
+							</div>`;
+						}
 						else if (typeName === 'text' || typeName === 'number') {
-							// Render Standard Text
 							const val = details.value || '';
 							cellHTML = `<div class="content-cut" style="${divStyle}${userStyle}">${val}</div>`;
 						}
 					} else {
-						// Fallback for empty data objects
 						cellHTML = `<div class="content-cut" style="${divStyle}"></div>`;
 					}
 				} else {
-					// Render Empty Cell
 					cellHTML = `<div class="content-cut" style="width:${cellWidth - 3}px; height:${height - 3}px;"></div>`;
 				}
 
@@ -451,7 +442,6 @@ export const SheetDataManager = {
 
 		tbody.innerHTML = bodyHTML;
 
-		// 4. Post-Render: Re-attach resize handles and restore selection
 		requestAnimationFrame(() => {
 			this.rebindResizeHandlers();
 			this.restoreSelection(sheet, tbody);
@@ -459,12 +449,13 @@ export const SheetDataManager = {
 
 		console.log('Sheet rendered in ' + (performance.now() - startTime).toFixed(2) + ' ms');
 	},
-	
+
+	// ... existing restoreSelection, isCellHiddenByMerge, getColumnLetter, rebindResizeHandlers ...
 	restoreSelection: function (sheet, tbody) {
 		if (sheet.selection && sheet.selection.active) {
 			const activeR = sheet.selection.active.r;
 			const activeC = sheet.selection.active.c;
-			
+
 			const targetRow = tbody.children[activeR];
 			if (targetRow) {
 				const targetCell = targetRow.querySelector(`td[data-col="${activeC}"]`);
@@ -472,25 +463,25 @@ export const SheetDataManager = {
 					if (typeof window.highlightCell === 'function') {
 						window.highlightCell(targetCell);
 					}
-					
+
 					if (sheet.selection.range) {
 						const sR = sheet.selection.range.startR;
 						const sC = sheet.selection.range.startC;
 						const eR = sheet.selection.range.endR;
 						const eC = sheet.selection.range.endC;
-						
+
 						const startRow = tbody.children[sR];
 						const endRow = tbody.children[eR];
-						
+
 						if (startRow && endRow) {
 							const domStartCell = startRow.querySelector(`td[data-col="${sC}"]`);
 							const domEndCell = endRow.querySelector(`td[data-col="${eC}"]`);
-							
+
 							if (domStartCell && domEndCell) {
 								window.startCell = domStartCell;
 								window.endCell = domEndCell;
 								window.isSelecting = false;
-								
+
 								if (typeof window.updateSelection === 'function') {
 									window.updateSelection();
 								}
@@ -501,19 +492,19 @@ export const SheetDataManager = {
 			}
 		}
 	},
-	
+
 	isCellHiddenByMerge: function (sheet, row, col) {
 		for (const key in sheet.cells) {
 			const data = sheet.cells[key];
 			if ((data.rowspan || 1) === 1 && (data.colspan || 1) === 1) continue;
-			
+
 			const parts = key.split('-');
 			const r = parseInt(parts[0]);
 			const c = parseInt(parts[1]);
-			
+
 			const endR = r + (data.rowspan || 1) - 1;
 			const endC = c + (data.colspan || 1) - 1;
-			
+
 			if (row >= r && row <= endR && col >= c && col <= endC) {
 				if (row === r && col === c) return false;
 				return true;
@@ -521,7 +512,7 @@ export const SheetDataManager = {
 		}
 		return false;
 	},
-	
+
 	getColumnLetter: function (index) {
 		let letter = '';
 		while (index >= 0) {
@@ -530,52 +521,52 @@ export const SheetDataManager = {
 		}
 		return letter;
 	},
-	
+
 	rebindResizeHandlers: function () {
 		const event = new Event('sheetRendered');
 		document.dispatchEvent(event);
 	},
-	
+
 	renderTabs: function () {
 		const container = document.getElementById('sheet-tabs-container');
 		const existingTabs = container.querySelectorAll('.sheet-tab');
 		existingTabs.forEach(el => el.remove());
-		
+
 		const self = this;
 		const addBtn = container.querySelector('.add-sheet-btn');
-		
+
 		this.data.sheets.forEach(function (sheet, index) {
 			const tab = document.createElement('div');
 			tab.className = 'sheet-tab';
 			tab.textContent = sheet.name;
-			
+
 			if (index === self.data.activeSheetIndex) {
 				tab.classList.add('active');
 			}
-			
+
 			tab.addEventListener('click', function () {
 				self.selectSheet(index);
 			});
-			
+
 			container.insertBefore(tab, addBtn);
 		});
 	},
-	
+
 	moveRange: function (range, targetR, targetC) {
 		const sheet = this.data.sheets[this.data.activeSheetIndex];
 		if (!sheet) return;
-		
+
 		const rowOffset = targetR - range.startR;
 		const colOffset = targetC - range.startC;
-		
+
 		if (rowOffset === 0 && colOffset === 0) return;
-		
+
 		if (typeof window.HistoryManager !== 'undefined') {
 			window.HistoryManager.addState();
 		}
-		
+
 		const movingCells = [];
-		
+
 		for (let r = range.startR; r <= range.endR; r++) {
 			for (let c = range.startC; c <= range.endC; c++) {
 				const key = r + '-' + c;
@@ -589,11 +580,11 @@ export const SheetDataManager = {
 				}
 			}
 		}
-		
+
 		movingCells.forEach(item => {
 			delete sheet.cells[item.oldR + '-' + item.oldC];
 		});
-		
+
 		movingCells.forEach(item => {
 			const newR = item.oldR + rowOffset;
 			const newC = item.oldC + colOffset;
@@ -601,29 +592,29 @@ export const SheetDataManager = {
 				sheet.cells[newR + '-' + newC] = item.data;
 			}
 		});
-		
+
 		this.renderSheet(this.data.activeSheetIndex);
 		this.setModified(true);
-		
+
 		setTimeout(() => {
 			const table = document.querySelector('.spreadsheet tbody');
 			const newStartR = range.startR + rowOffset;
 			const newStartC = range.startC + colOffset;
 			const newEndR = range.endR + rowOffset;
 			const newEndC = range.endC + colOffset;
-			
+
 			const startRow = table.children[newStartR];
 			const endRow = table.children[newEndR];
-			
+
 			if (startRow && endRow) {
 				const newStartCell = startRow.querySelector(`td[data-col="${newStartC}"]`);
 				const newEndCell = endRow.querySelector(`td[data-col="${newEndC}"]`);
-				
+
 				if (newStartCell && newEndCell) {
 					window.startCell = newStartCell;
 					window.endCell = newEndCell;
 					window.isSelecting = false;
-					
+
 					if (typeof window.updateSelection === 'function') {
 						window.updateSelection();
 					}
@@ -634,15 +625,15 @@ export const SheetDataManager = {
 			}
 		}, 0);
 	},
-	
+
 	saveProject: function (filename) {
 		this.updateCurrentSheetData();
-		
+
 		if (!filename) {
 			window.showCustomAlert('Filename is required.');
 			return;
 		}
-		
+
 		fetch(getApiEndpoint('save_project'), {
 			method: 'POST',
 			headers: {
@@ -670,7 +661,7 @@ export const SheetDataManager = {
 				window.showCustomAlert('An error occurred while saving.');
 			});
 	},
-	
+
 	loadProject: function (filename, isInitialLoad) {
 		fetch(getApiEndpoint('load_project') + '?filename=' + encodeURIComponent(filename))
 			.then(response => response.json())
@@ -680,11 +671,11 @@ export const SheetDataManager = {
 					if (!this.data.llmSettings) {
 						this.data.llmSettings = { apiKey: '', falAiKey: '' };
 					}
-					
+
 					this.currentFileName = filename;
 					localStorage.setItem('lastOpenedFile', filename);
 					document.title = filename + ' - Cascade Prompt';
-					
+
 					this.renderSheet(this.data.activeSheetIndex || 0);
 					this.renderTabs();
 					this.setModified(false);
@@ -703,7 +694,7 @@ export const SheetDataManager = {
 				if (!isInitialLoad) window.showCustomAlert('An error occurred while loading.');
 			});
 	},
-	
+
 	listProjects: function (callback) {
 		fetch(getApiEndpoint('list_projects'))
 			.then(response => response.json())
@@ -713,10 +704,10 @@ export const SheetDataManager = {
 				}
 			});
 	},
-	
+
 	deleteProject: function (filename, callback) {
 		if (!confirm('Are you sure you want to delete "' + filename + '"?')) return;
-		
+
 		fetch(getApiEndpoint('delete_project'), {
 			method: 'POST',
 			headers: {
@@ -733,7 +724,7 @@ export const SheetDataManager = {
 				}
 			});
 	},
-	
+
 	newProject: function () {
 		if (confirm('Create new project? Unsaved changes will be lost.')) {
 			this.data = {
@@ -744,10 +735,10 @@ export const SheetDataManager = {
 			this.currentFileName = null;
 			localStorage.removeItem('lastOpenedFile');
 			document.title = 'Cascade Prompt';
-			
+
 			const table = document.querySelector('.spreadsheet tbody');
 			table.innerHTML = '';
-			
+
 			this.data.sheets.push({
 				name: 'Sheet1',
 				rowCount: this.defaults.rows,
@@ -762,20 +753,20 @@ export const SheetDataManager = {
 			this.setModified(false);
 		}
 	},
-	
+
 	updateStatusUI: function () {
 		const fileEl = document.getElementById('status-file');
 		const modEl = document.getElementById('status-modified');
-		
+
 		if (fileEl) {
 			fileEl.textContent = this.currentFileName || 'Untitled';
 		}
-		
+
 		if (modEl) {
 			modEl.style.display = this.isModified ? 'inline' : 'none';
 		}
 	},
-	
+
 	setModified: function (isModified) {
 		this.isModified = isModified;
 		this.updateStatusUI();

@@ -1,3 +1,4 @@
+// ... existing imports ...
 import './style.css';
 
 import { SheetDataManager } from '../js/cascade-prompt-data.js';
@@ -21,7 +22,6 @@ import {
 	attachResizeHandlers,
 	initMenuHandlers
 } from '../js/cascade-prompt-ui.js';
-// Import Project UI handlers
 import {
 	openProjectModal,
 	performSave,
@@ -29,7 +29,7 @@ import {
 } from '../js/cascade-prompt-project-ui.js';
 import { ImageManager } from '../js/cascade-prompt-image.js';
 
-// Expose Managers to Window for HTML event handlers
+// ... existing window exposures ...
 window.SheetDataManager = SheetDataManager;
 window.HistoryManager = HistoryManager;
 window.FormatManager = FormatManager;
@@ -39,7 +39,6 @@ window.DropdownManager = DropdownManager;
 window.SheetPropertiesManager = SheetPropertiesManager;
 window.ImageManager = ImageManager;
 
-// Expose UI Functions
 window.setTheme = setTheme;
 window.setUiFontSize = setUiFontSize;
 window.scrollToViewWithOffsets = scrollToViewWithOffsets;
@@ -50,17 +49,14 @@ window.unmergeCells = unmergeCells;
 window.attachResizeHandlers = attachResizeHandlers;
 window.initMenuHandlers = initMenuHandlers;
 
-// Expose Project Functions to Window
 window.openProjectModal = openProjectModal;
 window.performSave = performSave;
 
-// Global State Variables (migrated from cascade-prompt.js)
 window.isEditing = false;
 window.isSelecting = false;
 window.startCell = null;
 window.endCell = null;
 
-// Global Helper Functions (migrated from cascade-prompt.js)
 window.highlightCell = function (cell) {
 	const cellIndex = parseInt(cell.getAttribute('data-col'));
 	const row = cell.parentElement;
@@ -68,7 +64,6 @@ window.highlightCell = function (cell) {
 	if (!tbody) return;
 	const rowIndex = Array.from(tbody.children).indexOf(row);
 
-	// 1. Clear previous UI states
 	const highlights = document.getElementsByClassName('highlight');
 	while (highlights.length > 0) highlights[0].classList.remove('highlight');
 
@@ -78,23 +73,19 @@ window.highlightCell = function (cell) {
 	const editing = document.getElementsByClassName('edit-cell');
 	while (editing.length > 0) editing[0].classList.remove('edit-cell');
 
-	// 2. Highlight Row and Column Headers
 	const letterCell = document.querySelector('.letter-cell[data-col="' + cellIndex + '"]');
 	if (letterCell) letterCell.classList.add('highlight');
 
 	const counterCells = document.querySelectorAll('.counter-cell');
 	if (counterCells[rowIndex]) counterCells[rowIndex].classList.add('highlight');
 
-	// 3. Mark current cell as selected
 	cell.classList.add('selected-cell');
 
-	// 4. Update Formula Bar based on the new JSON "type" structure
 	const formulaInput = document.getElementById('formula-input');
 	const sheet = SheetDataManager.data.sheets[SheetDataManager.data.activeSheetIndex];
 	const key = rowIndex + '-' + cellIndex;
 	const cellData = sheet.cells[key];
 
-	// Reset formula bar state
 	formulaInput.classList.remove('pointer-cursor');
 	formulaInput.setAttribute('contenteditable', 'true');
 
@@ -103,38 +94,36 @@ window.highlightCell = function (cell) {
 		const details = cellData.type.details;
 
 		if (typeName === 'llm_formula') {
-			// Display =LLM("Function Name")
 			const funcName = details.funcName || 'Run LLM';
 			formulaInput.textContent = `=LLM("${funcName}")`;
-			// Functional cells are not directly editable in the bar
 			formulaInput.setAttribute('contenteditable', 'false');
 			formulaInput.classList.add('pointer-cursor');
 		}
 		else if (typeName === 'dropdown') {
-			// Display =dropdown("option1,option2", "selected")
 			const optionsStr = (details.options || []).join(',');
 			const selectedVal = details.selected || '';
 			formulaInput.textContent = `=dropdown("${optionsStr}", "${selectedVal}")`;
 			formulaInput.setAttribute('contenteditable', 'false');
 			formulaInput.classList.add('pointer-cursor');
 		}
+		else if (typeName === 'image') {
+			// Image cells show blank in formula bar
+			formulaInput.textContent = '';
+			formulaInput.setAttribute('contenteditable', 'true');
+		}
 		else if (typeName === 'text' || typeName === 'number') {
-			// Standard text value
 			formulaInput.textContent = details.value || '';
 			formulaInput.setAttribute('contenteditable', 'true');
 		}
 		else {
-			// Fallback for other types
 			formulaInput.textContent = details.value || '';
 			formulaInput.setAttribute('contenteditable', 'true');
 		}
 	} else {
-		// Empty cell
 		formulaInput.textContent = '';
 		formulaInput.setAttribute('contenteditable', 'true');
 	}
 
-	// 5. Maintenance and UI Updates
 	scrollToViewWithOffsets(cell);
 
 	const rowspan = parseInt(cell.getAttribute('rowspan')) || 1;
@@ -142,23 +131,18 @@ window.highlightCell = function (cell) {
 	const unmergeBtn = document.getElementById('unmerge-btn');
 	const mergeBtn = document.getElementById('merge-btn');
 
-	// Enable unmerge only if cell is currently merged
 	if (rowspan > 1 || colspan > 1) {
 		unmergeBtn.disabled = false;
 	} else {
 		unmergeBtn.disabled = true;
 	}
 
-	// Merge button is handled by selection range logic, disable by default here
 	mergeBtn.disabled = true;
 
-	// Update coordinates in status bar (e.g., "B4")
 	window.updateStatusSelection(rowIndex, cellIndex);
-
-	// Optional: Mark project as modified if selection changes are considered state
-	// window.saveState();
 };
 
+// ... existing helper functions (updateStatusSelection, getColumnWidthRange, etc.) ...
 window.updateStatusSelection = function (rowIdx, colIdx) {
 	const statusSel = document.getElementById('status-selection');
 	if (statusSel) {
@@ -218,29 +202,29 @@ window.snapToCell = function (position, dimensionArray) {
 window.updateSelection = function () {
 	const areaSelected = document.getElementsByClassName('area-selected-cell');
 	while (areaSelected.length > 0) areaSelected[0].classList.remove('area-selected-cell');
-	
+
 	const helperDiv = document.getElementById('selection-helper');
 	const mergeBtn = document.getElementById('merge-btn');
 	const formulaInput = document.getElementById('formula-input');
-	
+
 	if (window.startCell === null || window.endCell === null || window.startCell === window.endCell) {
 		helperDiv.querySelectorAll('.selection-helper-edge').forEach(el => el.remove());
 		helperDiv.style.display = 'none';
 		mergeBtn.disabled = true;
 		return;
 	}
-	
+
 	mergeBtn.disabled = false;
-	
+
 	const startRowIdx = window.startCell.parentElement.rowIndex;
 	const endRowIdx = window.endCell.parentElement.rowIndex;
 	const startRow = Math.min(startRowIdx, endRowIdx);
 	const endRow = Math.max(startRowIdx, endRowIdx);
 	const startCol = Math.min(parseInt(window.startCell.getAttribute('data-col')), parseInt(window.endCell.getAttribute('data-col')));
 	const endCol = Math.max(parseInt(window.startCell.getAttribute('data-col')), parseInt(window.endCell.getAttribute('data-col')));
-	
+
 	const tableRows = document.querySelectorAll('.spreadsheet tr');
-	
+
 	for (let i = startRow; i <= endRow; i++) {
 		const row = tableRows[i];
 		if (!row) continue;
@@ -249,13 +233,13 @@ window.updateSelection = function () {
 			if (cell) cell.classList.add('area-selected-cell');
 		}
 	}
-	
+
 	formulaInput.textContent = '';
 	formulaInput.setAttribute('contenteditable', 'false');
-	
+
 	const container = document.querySelector('.spreadsheet-container');
 	const containerRect = container.getBoundingClientRect();
-	
+
 	let firstSelectedCell = tableRows[startRow].querySelector('td[data-col="' + startCol + '"]');
 	if (!firstSelectedCell) {
 		const cells = Array.from(tableRows[startRow].querySelectorAll('td'));
@@ -266,37 +250,37 @@ window.updateSelection = function () {
 			}
 		}
 	}
-	
+
 	if (!firstSelectedCell) return;
-	
+
 	const firstCellRect = firstSelectedCell.getBoundingClientRect();
 	const scrollLeft = container.scrollLeft;
 	const scrollTop = container.scrollTop;
-	
+
 	const top = firstCellRect.top - containerRect.top - 1 + scrollTop;
 	const left = firstCellRect.left - containerRect.left - 1 + scrollLeft;
-	
+
 	const heightStart = startRow - 1;
 	const heightEnd = endRow - 1;
-	
+
 	const width = window.getColumnWidthRange(startCol, endCol);
 	const height = window.getRowHeightRange(heightStart, heightEnd);
-	
+
 	helperDiv.style.top = top + 'px';
 	helperDiv.style.left = left + 'px';
 	helperDiv.style.width = width + 'px';
 	helperDiv.style.height = height + 'px';
 	helperDiv.style.display = 'block';
-	
+
 	helperDiv.querySelectorAll('.selection-helper-edge').forEach(el => el.remove());
-	
+
 	const edges = [
 		{ class: 'top', style: { top: '-3px', left: '0', width: '100%' } },
 		{ class: 'right', style: { top: '0', right: '-3px', height: '100%' } },
 		{ class: 'bottom', style: { bottom: '-3px', left: '0', width: '100%' } },
 		{ class: 'left', style: { top: '0', left: '-3px', height: '100%' } }
 	];
-	
+
 	edges.forEach(edgeData => {
 		const div = document.createElement('div');
 		div.className = 'selection-helper-edge ' + edgeData.class;
@@ -315,7 +299,7 @@ window.saveState = function () {
 window.updateColumnWidth = function (colIndex, newWidth) {
 	const header = document.querySelector('.letter-cell[data-col="' + colIndex + '"]');
 	if (header) header.style.width = newWidth + 'px';
-	
+
 	const rows = document.querySelectorAll('.spreadsheet tbody tr');
 	rows.forEach(row => {
 		const cell = row.querySelector('td[data-col="' + colIndex + '"]');
@@ -350,10 +334,10 @@ window.updateRowHeight = function (rowIndex, newHeight) {
 	if (counterCells[rowIndex]) {
 		counterCells[rowIndex].style.height = newHeight + 'px';
 	}
-	
+
 	const rows = document.querySelectorAll('.spreadsheet tbody tr');
 	const row = rows[rowIndex];
-	
+
 	row.querySelectorAll('td.text-cell').forEach(cell => {
 		const rowspan = parseInt(cell.getAttribute('rowspan')) || 1;
 		const contentDiv = cell.querySelector('.content-cut');
@@ -364,7 +348,7 @@ window.updateRowHeight = function (rowIndex, newHeight) {
 			contentDiv.style.height = (totalHeight - 3) + 'px';
 		}
 	});
-	
+
 	for (let i = 0; i < rowIndex; i++) {
 		const prevRow = rows[i];
 		prevRow.querySelectorAll('td[rowspan]').forEach(pCell => {
@@ -391,26 +375,24 @@ window.showToast = function (message) {
 	}, 3000);
 };
 
-// Initialize
+// ... existing initialization code ...
 document.addEventListener('DOMContentLoaded', function () {
 	initTheme();
 	initUiSize();
 	initMenuHandlers();
-	
-	// Listen for the custom event dispatched by renderSheet to re-attach handlers
+
 	document.addEventListener('sheetRendered', function () {
 		attachResizeHandlers();
 	});
-	
+
 	SheetDataManager.init();
 	HistoryManager.init();
 	LLMManager.init();
 	initKeypressListeners();
-	initProjectHandlers(); // Initialize Project UI Handlers
-	
-	// Attach handlers for the initial server-rendered table
+	initProjectHandlers();
+
 	attachResizeHandlers();
-	
+
 	const addSheetBtn = document.querySelector('.add-sheet-btn');
 	if (addSheetBtn) {
 		addSheetBtn.addEventListener('click', function () {
@@ -419,7 +401,7 @@ document.addEventListener('DOMContentLoaded', function () {
 			SheetDataManager.createSheet('Sheet' + nextNum, false);
 		});
 	}
-	
+
 	const formulaInput = document.getElementById('formula-input');
 	let formulaBarDirty = false;
 	formulaInput.addEventListener('focus', function () { formulaBarDirty = false; });
@@ -463,14 +445,14 @@ document.addEventListener('DOMContentLoaded', function () {
 			DropdownManager.openDropdownBuilder();
 		}
 	});
-	
+
 	const selectionHelper = document.getElementById('selection-helper');
 	let isDraggingSelection = false;
 	let dragOffset = { top: 0, left: 0 };
 	let draggingEdge = null;
 	let initialStartCellIndex = { row: 0, col: 0 };
 	let initialEndCellIndex = { row: 0, col: 0 };
-	
+
 	selectionHelper.addEventListener('mousedown', function (e) {
 		if (e.target.classList.contains('selection-helper-edge')) return;
 		e.preventDefault();
@@ -483,24 +465,22 @@ document.addEventListener('DOMContentLoaded', function () {
 			col: parseInt(window.startCell.getAttribute('data-col'))
 		};
 	});
-	
+
 	const spreadsheet = document.querySelector('.spreadsheet');
 	spreadsheet.addEventListener('dblclick', function (e) {
 		const cell = e.target.closest('.text-cell');
 		if (cell) {
-			// Check for LLM Button
 			const llmBtn = cell.querySelector('.llm-run-btn');
 			if (llmBtn) {
 				const r = cell.parentElement.rowIndex - 1;
 				const c = parseInt(cell.getAttribute('data-col'));
 				LLMManager.executeLLM(r, c, e);
 			} else {
-				// Otherwise, standard edit/dropdown
 				makeCellEditable(cell);
 			}
 		}
 	});
-	
+
 	let mouseDown = false;
 	spreadsheet.addEventListener('mousedown', function (e) {
 		const cell = e.target.closest('.text-cell');
@@ -515,7 +495,7 @@ document.addEventListener('DOMContentLoaded', function () {
 		mouseDown = true;
 		e.preventDefault();
 	});
-	
+
 	spreadsheet.addEventListener('mousemove', function (e) {
 		const cell = e.target.closest('.text-cell');
 		if (!cell) return;
@@ -529,12 +509,12 @@ document.addEventListener('DOMContentLoaded', function () {
 		window.endCell = cell;
 		window.updateSelection();
 	});
-	
+
 	document.addEventListener('mouseup', function () {
 		mouseDown = false;
 		window.isSelecting = false;
 	});
-	
+
 	document.addEventListener('mousedown', function (e) {
 		if (e.target.classList.contains('selection-helper-edge')) {
 			draggingEdge = e.target;
@@ -548,7 +528,7 @@ document.addEventListener('DOMContentLoaded', function () {
 			};
 		}
 	});
-	
+
 	document.addEventListener('mousemove', function (e) {
 		const container = document.querySelector('.spreadsheet-container');
 		const containerOffset = container.getBoundingClientRect();
@@ -557,7 +537,7 @@ document.addEventListener('DOMContentLoaded', function () {
 		const topCorner = document.querySelector('.top-corner-cell');
 		const cornerHeight = topCorner ? topCorner.offsetHeight : 0;
 		const cornerWidth = topCorner ? topCorner.offsetWidth : 0;
-		
+
 		if (isDraggingSelection) {
 			e.preventDefault();
 			const rawTop = e.clientY - containerOffset.top + scrollTop - dragOffset.top - cornerHeight;
@@ -570,7 +550,7 @@ document.addEventListener('DOMContentLoaded', function () {
 			selectionHelper.style.left = (snappedLeft + cornerWidth) + 'px';
 			return;
 		}
-		
+
 		if (draggingEdge) {
 			e.preventDefault();
 			e.stopPropagation();
@@ -584,12 +564,12 @@ document.addEventListener('DOMContentLoaded', function () {
 				top: window.snapToCell(delta.top, rowHeights) + cornerHeight,
 				left: window.snapToCell(delta.left, columnWidths) + cornerWidth
 			};
-			
+
 			let topCellIndex = 0;
 			let leftCellIndex = 0;
 			let topPos = newPos.top - cornerHeight;
 			let leftPos = newPos.left - cornerWidth;
-			
+
 			for (let i = 0; i < rowHeights.length; i++) {
 				if (topPos <= 0) break;
 				if (topPos < rowHeights[i]) { topCellIndex = i; break; }
@@ -602,19 +582,19 @@ document.addEventListener('DOMContentLoaded', function () {
 				leftPos -= columnWidths[i];
 				leftCellIndex = i;
 			}
-			
+
 			const colDiff = initialEndCellIndex.col - initialStartCellIndex.col;
 			const rowDiff = initialEndCellIndex.row - initialStartCellIndex.row;
 			const newWidth = window.getColumnWidthRange(leftCellIndex, leftCellIndex + colDiff);
 			const newHeight = window.getRowHeightRange(topCellIndex, topCellIndex + rowDiff);
-			
+
 			selectionHelper.style.top = newPos.top + 'px';
 			selectionHelper.style.left = newPos.left + 'px';
 			selectionHelper.style.width = newWidth + 'px';
 			selectionHelper.style.height = newHeight + 'px';
 		}
 	});
-	
+
 	document.addEventListener('mouseup', function () {
 		if (draggingEdge) draggingEdge = null;
 		if (isDraggingSelection) {
@@ -626,7 +606,7 @@ document.addEventListener('DOMContentLoaded', function () {
 			const cornerWidth = topCorner ? topCorner.offsetWidth : 0;
 			const rowHeights = window.getRowHeights();
 			const colWidths = window.getColumnWidths();
-			
+
 			let targetRow = 0;
 			let targetCol = 0;
 			let currentH = 0;
@@ -643,7 +623,7 @@ document.addEventListener('DOMContentLoaded', function () {
 				currentW += colWidths[i];
 				targetCol = i + 1;
 			}
-			
+
 			if (window.startCell && window.endCell) {
 				const startRowIdx = window.startCell.parentElement.rowIndex - 1;
 				const endRowIdx = window.endCell.parentElement.rowIndex - 1;
