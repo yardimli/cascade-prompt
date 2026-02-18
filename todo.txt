@@ -136,6 +136,7 @@ example of button with llm formula->
           "style": {},
           "cellStyle": {}
         }
+- allow user to add image to a cell from url. images should resize to fit the cell but keep aspect ratio.
 
 TODO:
 
@@ -147,7 +148,7 @@ selecting single cell is not working, also after making a selection making it sm
 - add =filereader("filepath") formula that reads a file content and feeds it to the llm one line at a time
 - =folerreader and =filereader should also work with full output
 
-- allow user to add image to a cell from local file or url. images should resize to fit the cell but keep aspect ratio.
+- allow user to add image to a cell from local file or url. images should resize to fit the cell but keep aspect ratio.(from url is done)
 
 - allow user to create =imagegen() formula that uses fal.ai to generate images based on a prompt from the sheet cell content.
 
