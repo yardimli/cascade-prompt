@@ -137,6 +137,7 @@ example of button with llm formula->
           "cellStyle": {}
         }
 - allow user to add image to a cell from url. images should resize to fit the cell but keep aspect ratio.
+- refactor javascript files based on their tasks and purpose
 
 TODO:
 
