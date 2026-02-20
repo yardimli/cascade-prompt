@@ -1,11 +1,11 @@
-import { SheetDataManager } from './cascade-prompt-data.js';
+import { SheetDataManager } from '../cascade-prompt-data.js';
 
 export const ClipboardManager = {
 	clipboardData: null,
-	
+
 	copy: function (isCut) {
 		let sR, sC, eR, eC;
-		
+
 		if (window.startCell && window.endCell) {
 			const r1 = window.startCell.parentElement.rowIndex - 1;
 			const c1 = parseInt(window.startCell.getAttribute('data-col'));
@@ -23,11 +23,11 @@ export const ClipboardManager = {
 			sC = parseInt(selected.getAttribute('data-col'));
 			eC = sC;
 		}
-		
+
 		const sheet = SheetDataManager.data.sheets[SheetDataManager.data.activeSheetIndex];
 		const copiedCells = [];
 		let plainTextBuffer = '';
-		
+
 		for (let r = sR; r <= eR; r++) {
 			let rowText = [];
 			for (let c = sC; c <= eC; c++) {
@@ -48,29 +48,29 @@ export const ClipboardManager = {
 			}
 			plainTextBuffer += rowText.join('\t') + '\n';
 		}
-		
+
 		this.clipboardData = {
 			rows: eR - sR + 1,
 			cols: eC - sC + 1,
 			cells: copiedCells
 		};
-		
+
 		if (navigator.clipboard) {
 			navigator.clipboard.writeText(plainTextBuffer).catch(err => {
 				console.error('Failed to write to system clipboard', err);
 			});
 		}
-		
+
 		if (!isCut) {
 			const toastMsg = 'Copied ' + copiedCells.length + ' cell(s)';
 			if (typeof window.showToast === 'function') window.showToast(toastMsg);
 		}
 	},
-	
+
 	cut: function () {
 		this.copy(true);
 		if (typeof window.HistoryManager !== 'undefined') window.HistoryManager.addState();
-		
+
 		let sR, sC, eR, eC;
 		if (window.startCell && window.endCell) {
 			const r1 = window.startCell.parentElement.rowIndex - 1;
@@ -89,7 +89,7 @@ export const ClipboardManager = {
 			eR = sR;
 			eC = sC;
 		}
-		
+
 		const sheet = SheetDataManager.data.sheets[SheetDataManager.data.activeSheetIndex];
 		for (let r = sR; r <= eR; r++) {
 			for (let c = sC; c <= eC; c++) {
@@ -99,12 +99,12 @@ export const ClipboardManager = {
 				}
 			}
 		}
-		
+
 		SheetDataManager.renderSheet(SheetDataManager.data.activeSheetIndex);
 		SheetDataManager.setModified(true);
 		if (typeof window.showToast === 'function') window.showToast('Cut selection');
 	},
-	
+
 	paste: function () {
 		if (!this.clipboardData) {
 			if (navigator.clipboard) {
@@ -114,12 +114,12 @@ export const ClipboardManager = {
 			}
 			return;
 		}
-		
+
 		if (typeof window.HistoryManager !== 'undefined') window.HistoryManager.addState();
-		
+
 		let targetR, targetC;
 		const selected = document.querySelector('.selected-cell');
-		
+
 		if (window.startCell && window.endCell) {
 			const r1 = window.startCell.parentElement.rowIndex - 1;
 			const c1 = parseInt(window.startCell.getAttribute('data-col'));
@@ -133,9 +133,9 @@ export const ClipboardManager = {
 		} else {
 			return;
 		}
-		
+
 		const sheet = SheetDataManager.data.sheets[SheetDataManager.data.activeSheetIndex];
-		
+
 		this.clipboardData.cells.forEach(item => {
 			const destR = targetR + item.rOffset;
 			const destC = targetC + item.cOffset;
@@ -144,22 +144,22 @@ export const ClipboardManager = {
 				sheet.cells[key] = JSON.parse(JSON.stringify(item.data));
 			}
 		});
-		
+
 		SheetDataManager.renderSheet(SheetDataManager.data.activeSheetIndex);
 		SheetDataManager.setModified(true);
-		
+
 		setTimeout(() => {
 			const tbody = document.querySelector('.spreadsheet tbody');
 			const endR = targetR + this.clipboardData.rows - 1;
 			const endC = targetC + this.clipboardData.cols - 1;
-			
+
 			if (endR < sheet.rowCount && endC < sheet.colCount) {
 				const startRow = tbody.children[targetR];
 				const endRow = tbody.children[endR];
 				if (startRow && endRow) {
 					const domStart = startRow.querySelector(`td[data-col="${targetC}"]`);
 					const domEnd = endRow.querySelector(`td[data-col="${endC}"]`);
-					
+
 					if (domStart && domEnd) {
 						window.startCell = domStart;
 						window.endCell = domEnd;
@@ -170,29 +170,29 @@ export const ClipboardManager = {
 				}
 			}
 		}, 0);
-		
+
 		if (typeof window.showToast === 'function') window.showToast('Pasted');
 	},
-	
+
 	pasteText: function (text) {
 		if (typeof window.HistoryManager !== 'undefined') window.HistoryManager.addState();
-		
+
 		const selected = document.querySelector('.selected-cell');
 		if (!selected) return;
-		
+
 		const startR = selected.parentElement.rowIndex - 1;
 		const startC = parseInt(selected.getAttribute('data-col'));
 		const sheet = SheetDataManager.data.sheets[SheetDataManager.data.activeSheetIndex];
-		
+
 		const rows = text.split(/\r\n|\n|\r/);
-		
+
 		rows.forEach((rowStr, rIdx) => {
 			if (rowStr === '' && rIdx === rows.length - 1) return;
 			const cols = rowStr.split('\t');
 			cols.forEach((colData, cIdx) => {
 				const destR = startR + rIdx;
 				const destC = startC + cIdx;
-				
+
 				if (destR < sheet.rowCount && destC < sheet.colCount) {
 					const key = destR + '-' + destC;
 					if (!sheet.cells[key]) {
@@ -204,7 +204,7 @@ export const ClipboardManager = {
 				}
 			});
 		});
-		
+
 		SheetDataManager.renderSheet(SheetDataManager.data.activeSheetIndex);
 		SheetDataManager.setModified(true);
 	}

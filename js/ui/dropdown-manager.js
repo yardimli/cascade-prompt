@@ -1,6 +1,4 @@
-// In js/cascade-prompt-dropdown.js
-
-import { SheetDataManager } from './cascade-prompt-data.js';
+import { SheetDataManager } from '../cascade-prompt-data.js';
 
 export const DropdownManager = {
 	openDropdownBuilder: function () {

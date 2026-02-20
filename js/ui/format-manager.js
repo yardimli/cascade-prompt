@@ -1,22 +1,22 @@
-import { SheetDataManager } from './cascade-prompt-data.js';
+import { SheetDataManager } from '../cascade-prompt-data.js';
 
 export const FormatManager = {
 	savedRange: null,
 	activeColorMode: null,
-	
+
 	toggleStyle: function (command) {
 		if (typeof window.HistoryManager !== 'undefined') window.HistoryManager.addState();
-		
+
 		if (window.isEditing) {
 			document.execCommand(command, false, null);
 		} else {
 			this.applyToSelection(function (cell) {
 				const contentDiv = cell.querySelector('.content-cut');
 				if (!contentDiv) return;
-				
+
 				const btn = contentDiv.querySelector('.llm-run-btn');
 				const target = btn || contentDiv;
-				
+
 				if (command === 'bold') {
 					target.style.fontWeight = (target.style.fontWeight === 'bold') ? 'normal' : 'bold';
 				} else if (command === 'italic') {
@@ -26,10 +26,10 @@ export const FormatManager = {
 			if (typeof window.saveState === 'function') window.saveState();
 		}
 	},
-	
+
 	setFontSize: function (size) {
 		if (typeof window.HistoryManager !== 'undefined') window.HistoryManager.addState();
-		
+
 		let pixelSize = '14px';
 		switch (size) {
 			case 'small':
@@ -45,7 +45,7 @@ export const FormatManager = {
 				pixelSize = '24px';
 				break;
 		}
-		
+
 		if (window.isEditing) {
 			const editor = document.getElementById('cell-editor');
 			if (editor) editor.style.fontSize = pixelSize;
@@ -61,15 +61,15 @@ export const FormatManager = {
 			if (typeof window.saveState === 'function') window.saveState();
 		}
 	},
-	
+
 	toggleFontSizeMenu: function (btn) {
 		this.saveSelectionContext();
 		const dropdownContent = btn.nextElementSibling;
 		const isActive = dropdownContent.classList.contains('active');
-		
+
 		document.querySelectorAll('.border-dropdown.active').forEach(el => el.classList.remove('active'));
 		document.querySelectorAll('.dropdown-content.active').forEach(el => el.classList.remove('active'));
-		
+
 		if (!isActive) {
 			dropdownContent.classList.add('active');
 			const closeMenu = function (e) {
@@ -81,10 +81,10 @@ export const FormatManager = {
 			setTimeout(() => document.addEventListener('click', closeMenu), 0);
 		}
 	},
-	
+
 	setAlignment: function (align) {
 		if (typeof window.HistoryManager !== 'undefined') window.HistoryManager.addState();
-		
+
 		if (window.isEditing) {
 			document.execCommand('justify' + align, false, null);
 		} else {
@@ -99,30 +99,30 @@ export const FormatManager = {
 			if (typeof window.saveState === 'function') window.saveState();
 		}
 	},
-	
+
 	openColorDialog: function (mode) {
 		this.activeColorMode = mode;
 		this.saveSelectionContext();
-		
+
 		const modal = document.getElementById('colorPickerModal');
 		const modalTitle = document.getElementById('colorPickerTitle');
 		const colorInput = document.getElementById('modal-color-input');
-		
+
 		if (mode === 'text') modalTitle.textContent = 'Text Color';
 		else if (mode === 'background') modalTitle.textContent = 'Background Color';
 		else if (mode === 'border') modalTitle.textContent = 'Border Color';
-		
+
 		colorInput.value = '#000000';
 		modal.showModal();
 	},
-	
+
 	applyColorDialog: function () {
 		const colorInput = document.getElementById('modal-color-input');
 		const color = colorInput.value;
 		const mode = this.activeColorMode;
-		
+
 		if (typeof window.HistoryManager !== 'undefined') window.HistoryManager.addState();
-		
+
 		if (mode === 'text') {
 			if (window.isEditing) {
 				document.execCommand('foreColor', false, color);
@@ -149,15 +149,15 @@ export const FormatManager = {
 		} else if (mode === 'border') {
 			this.setBorder('all', color);
 		}
-		
+
 		if (typeof window.saveState === 'function') window.saveState();
 		document.getElementById('colorPickerModal').close();
 	},
-	
+
 	resetColorDialog: function () {
 		const mode = this.activeColorMode;
 		if (typeof window.HistoryManager !== 'undefined') window.HistoryManager.addState();
-		
+
 		if (mode === 'text') {
 			if (window.isEditing) {
 				document.execCommand('removeFormat', false, 'foreColor');
@@ -184,19 +184,19 @@ export const FormatManager = {
 		} else if (mode === 'border') {
 			this.setBorder('none');
 		}
-		
+
 		if (typeof window.saveState === 'function') window.saveState();
 		document.getElementById('colorPickerModal').close();
 	},
-	
+
 	setBorder: function (type, color) {
 		if (typeof window.HistoryManager !== 'undefined') window.HistoryManager.addState();
-		
+
 		const borderColor = color || '#000000';
 		const borderStyle = '1px solid ' + borderColor;
 		let range = null;
 		let sR, eR, sC, eC;
-		
+
 		if (this.savedRange) {
 			sR = this.savedRange.sR;
 			eR = this.savedRange.eR;
@@ -220,11 +220,11 @@ export const FormatManager = {
 				eC = sC;
 			}
 		}
-		
+
 		if (sR !== undefined) {
 			range = { minR: sR, maxR: eR, minC: sC, maxC: eC };
 		}
-		
+
 		this.applyToSelection(function (cell) {
 			if (type === 'none') {
 				cell.style.border = '';
@@ -234,10 +234,10 @@ export const FormatManager = {
 				cell.style.borderBottom = '';
 				return;
 			}
-			
+
 			const r = cell.parentElement.rowIndex;
 			const c = parseInt(cell.getAttribute('data-col'));
-			
+
 			if (type === 'all') {
 				cell.style.border = borderStyle;
 			} else if (type === 'left') {
@@ -255,10 +255,10 @@ export const FormatManager = {
 				if (r === range.maxR) cell.style.borderBottom = borderStyle;
 			}
 		}, true);
-		
+
 		if (typeof window.saveState === 'function') window.saveState();
 	},
-	
+
 	applyToSelection: function (callback, useSaved) {
 		if (useSaved && this.savedRange) {
 			const { sR, eR, sC, eC } = this.savedRange;
@@ -274,7 +274,7 @@ export const FormatManager = {
 			this.savedRange = null;
 			return;
 		}
-		
+
 		const areaCells = document.querySelectorAll('.area-selected-cell');
 		if (areaCells.length > 0) {
 			areaCells.forEach(callback);
@@ -285,7 +285,7 @@ export const FormatManager = {
 			}
 		}
 	},
-	
+
 	saveSelectionContext: function () {
 		let sR, sC, eR, eC;
 		if (window.startCell && window.endCell) {
@@ -311,7 +311,7 @@ export const FormatManager = {
 		}
 		this.savedRange = { sR, eR, sC, eC };
 	},
-	
+
 	toggleBorderMenu: function () {
 		this.saveSelectionContext();
 		const dropdown = document.getElementById('border-dropdown');

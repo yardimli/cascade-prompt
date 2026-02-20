@@ -1,21 +1,21 @@
-import { SheetDataManager } from './cascade-prompt-data.js';
+import { SheetDataManager } from '../cascade-prompt-data.js';
 
 export const HistoryManager = {
 	undoStack: [],
 	redoStack: [],
 	maxDepth: 50,
-	
+
 	init: function () {
 		this.undoStack = [];
 		this.redoStack = [];
 		this.updateUI();
 	},
-	
+
 	addState: function () {
 		if (typeof SheetDataManager !== 'undefined') {
 			SheetDataManager.updateCurrentSheetData();
 			const stateSnapshot = JSON.parse(JSON.stringify(SheetDataManager.data));
-			
+
 			if (this.undoStack.length > 0) {
 				const lastState = this.undoStack[this.undoStack.length - 1];
 				if (JSON.stringify(lastState) === JSON.stringify(stateSnapshot)) {
@@ -23,7 +23,7 @@ export const HistoryManager = {
 					return;
 				}
 			}
-			
+
 			this.undoStack.push(stateSnapshot);
 			if (this.undoStack.length > this.maxDepth) {
 				this.undoStack.shift();
@@ -33,7 +33,7 @@ export const HistoryManager = {
 			console.log('History state added. Undo stack size: ' + this.undoStack.length);
 		}
 	},
-	
+
 	undo: function () {
 		if (this.undoStack.length === 0) return;
 		SheetDataManager.updateCurrentSheetData();
@@ -44,7 +44,7 @@ export const HistoryManager = {
 		this.updateUI();
 		console.log('Undo performed.');
 	},
-	
+
 	redo: function () {
 		if (this.redoStack.length === 0) return;
 		SheetDataManager.updateCurrentSheetData();
@@ -55,7 +55,7 @@ export const HistoryManager = {
 		this.updateUI();
 		console.log('Redo performed.');
 	},
-	
+
 	restoreState: function (stateObj) {
 		if (!stateObj) return;
 		SheetDataManager.data = stateObj;
@@ -64,7 +64,7 @@ export const HistoryManager = {
 		SheetDataManager.renderTabs();
 		SheetDataManager.setModified(true);
 	},
-	
+
 	updateUI: function () {
 		// UI updates if needed
 	}

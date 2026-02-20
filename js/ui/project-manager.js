@@ -1,4 +1,4 @@
-import { SheetDataManager } from './cascade-prompt-data.js';
+import { SheetDataManager } from '../cascade-prompt-data.js';
 
 let currentModalMode = '';
 
@@ -14,18 +14,18 @@ export function openProjectModal (mode) {
 	const listSection = document.getElementById('modal-list-section');
 	const actionBtn = document.getElementById('modal-action-btn');
 	const filenameInput = document.getElementById('project-filename');
-	
+
 	if (!modal) return;
-	
+
 	saveSection.style.display = 'none';
 	listSection.style.display = 'none';
 	filenameInput.value = '';
-	
+
 	if (mode === 'new') {
 		SheetDataManager.newProject();
 		return;
 	}
-	
+
 	if (mode === 'save-as') {
 		title.textContent = 'Save Project As';
 		saveSection.style.display = 'block';
@@ -43,7 +43,7 @@ export function openProjectModal (mode) {
 		actionBtn.classList.add('btn-disabled');
 		loadProjectList(true);
 	}
-	
+
 	modal.showModal();
 }
 
@@ -54,11 +54,11 @@ export function openProjectModal (mode) {
 function loadProjectList (isSelectable) {
 	const listGroup = document.getElementById('project-list-group');
 	const noMsg = document.getElementById('no-projects-msg');
-	
+
 	if (!listGroup) return;
-	
+
 	listGroup.innerHTML = '';
-	
+
 	SheetDataManager.listProjects(function (files) {
 		if (files.length === 0) {
 			noMsg.style.display = 'block';
@@ -67,11 +67,11 @@ function loadProjectList (isSelectable) {
 			files.forEach(file => {
 				const item = document.createElement('div');
 				item.className = 'flex justify-between items-center p-2 hover:bg-base-200 cursor-pointer rounded project-list-item';
-				
+
 				const nameSpan = document.createElement('span');
 				nameSpan.textContent = file;
 				item.appendChild(nameSpan);
-				
+
 				const delBtn = document.createElement('button');
 				delBtn.className = 'btn btn-xs btn-outline btn-error';
 				delBtn.innerHTML = '<i class="bi bi-trash"></i>';
@@ -82,11 +82,11 @@ function loadProjectList (isSelectable) {
 					});
 				};
 				item.appendChild(delBtn);
-				
+
 				item.onclick = function () {
 					document.querySelectorAll('.project-list-item').forEach(el => el.classList.remove('bg-primary', 'text-primary-content'));
 					item.classList.add('bg-primary', 'text-primary-content');
-					
+
 					if (currentModalMode === 'save-as') {
 						document.getElementById('project-filename').value = file;
 					} else if (currentModalMode === 'open') {
@@ -139,7 +139,7 @@ export function initProjectHandlers () {
 			}
 		});
 	}
-	
+
 	document.addEventListener('keydown', function (e) {
 		if ((e.ctrlKey || e.metaKey) && e.key === 's') {
 			e.preventDefault();

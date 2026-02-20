@@ -1,24 +1,24 @@
-import { SheetDataManager } from './cascade-prompt-data.js';
+import { SheetDataManager } from '../cascade-prompt-data.js';
 
 export function initKeypressListeners() {
 	const cellEditor = document.getElementById('cell-editor');
 	const formulaInput = document.getElementById('formula-input');
-	
+
 	cellEditor.addEventListener('keydown', function (e) {
 		if (e.key === 'Enter') {
 			if (!e.shiftKey) {
 				e.preventDefault();
 				e.stopPropagation();
 				console.log('Cell Editor Enter key pressed');
-				
+
 				const editingCell = document.querySelector('.edit-cell');
 				if (editingCell) {
 					const currentRow = editingCell.closest('tr');
 					const nextRow = currentRow ? currentRow.nextElementSibling : null;
-					
+
 					window.stopEditing();
 					if (typeof window.saveState === 'function') window.saveState();
-					
+
 					if (nextRow) {
 						const cellCol = parseInt(editingCell.getAttribute('data-col'));
 						const nextCell = nextRow.querySelector('td[data-col="' + cellCol + '"]');
@@ -30,21 +30,21 @@ export function initKeypressListeners() {
 			}
 		}
 	});
-	
+
 	cellEditor.addEventListener('input', function () {
 		if (window.isEditing) {
 			if (this.querySelector('select')) return;
 			formulaInput.textContent = this.textContent;
 		}
 	});
-	
+
 	document.addEventListener('keydown', function (e) {
 		// Check if any dialog is open
 		const openDialog = document.querySelector('dialog[open]');
 		if (openDialog) {
 			return;
 		}
-		
+
 		if ((e.ctrlKey || e.metaKey) && !window.isEditing) {
 			if (e.key === 'z') {
 				e.preventDefault();
@@ -82,24 +82,24 @@ export function initKeypressListeners() {
 				return;
 			}
 		}
-		
+
 		if (e.key === 'Delete' && !window.isEditing) {
 			e.preventDefault();
 			if (typeof window.HistoryManager !== 'undefined') window.HistoryManager.addState();
-			
+
 			const sheet = SheetDataManager.data.sheets[SheetDataManager.data.activeSheetIndex];
-			
+
 			const clearCell = (cell) => {
 				const r = cell.parentElement.rowIndex - 1;
 				const c = parseInt(cell.getAttribute('data-col'));
 				const key = r + '-' + c;
-				
+
 				const contentDiv = cell.querySelector('.content-cut');
 				if (contentDiv) {
 					contentDiv.innerHTML = '';
 					contentDiv.textContent = '';
 				}
-				
+
 				if (sheet.cells[key]) {
 					sheet.cells[key].text = '';
 					sheet.cells[key].html = '';
@@ -108,7 +108,7 @@ export function initKeypressListeners() {
 					}
 				}
 			};
-			
+
 			const areaCells = document.querySelectorAll('.area-selected-cell');
 			if (areaCells.length > 0) {
 				areaCells.forEach(clearCell);
@@ -116,31 +116,31 @@ export function initKeypressListeners() {
 				const selected = document.querySelector('.selected-cell');
 				if (selected) clearCell(selected);
 			}
-			
+
 			SheetDataManager.setModified(true);
 			if (typeof window.updateSelection === 'function') window.updateSelection();
 			return;
 		}
-		
+
 		if (window.isEditing) return;
-		
+
 		window.isSelecting = false;
 		document.querySelectorAll('.spreadsheet .area-selected-cell').forEach(el => el.classList.remove('area-selected-cell'));
-		
+
 		window.startCell = null;
 		window.endCell = null;
 		window.updateSelection();
-		
+
 		const selectedCell = document.querySelector('.selected-cell');
 		if (!selectedCell) return;
-		
+
 		const row = selectedCell.closest('tr');
 		const rows = Array.from(document.querySelectorAll('.spreadsheet tbody tr'));
 		const rowIndex = rows.indexOf(row);
-		
+
 		const cellCol = parseInt(selectedCell.getAttribute('data-col'));
 		const colspan = parseInt(selectedCell.getAttribute('colspan')) || 1;
-		
+
 		switch (e.key) {
 			case 'Enter':
 				e.preventDefault();

@@ -1,4 +1,4 @@
-import { SheetDataManager } from './cascade-prompt-data.js';
+import { SheetDataManager } from '../cascade-prompt-data.js';
 
 export const ImageManager = {
 	activeTab: 'link',
