@@ -3,6 +3,8 @@ import cors from 'cors';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import multer from 'multer'; // Required for file uploads
+import crypto from 'crypto'; // Required for random filenames
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -16,12 +18,49 @@ app.use(express.json({ limit: '50mb' })); // Increased limit for large JSON proj
 
 // Paths
 const PROJECTS_DIR = path.join(__dirname, 'projects');
+const IMAGES_DIR = path.join(PROJECTS_DIR, 'images'); // Path for images
 const LOG_FILE = path.join(__dirname, 'api', 'llm-log.json');
 
-// Ensure projects directory exists
+// Ensure directories exist
 if (!fs.existsSync(PROJECTS_DIR)) {
 	fs.mkdirSync(PROJECTS_DIR);
 }
+if (!fs.existsSync(IMAGES_DIR)) {
+	fs.mkdirSync(IMAGES_DIR, { recursive: true });
+}
+
+// --- Static File Serving ---
+// This allows the frontend to access images via http://localhost:3000/projects/images/filename.jpg
+app.use('/projects', express.static(PROJECTS_DIR));
+
+// --- Multer Configuration (Image Uploads) ---
+const storage = multer.diskStorage({
+	destination: function (req, file, cb) {
+		cb(null, IMAGES_DIR);
+	},
+	filename: function (req, file, cb) {
+		// Get extension (.png or .jpg)
+		const ext = path.extname(file.originalname).toLowerCase();
+		// Generate 10 random hex characters (5 bytes)
+		const randomName = crypto.randomBytes(5).toString('hex');
+		cb(null, randomName + ext);
+	}
+});
+
+const upload = multer({
+	storage: storage,
+	limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+	fileFilter: function (req, file, cb) {
+		const filetypes = /jpeg|jpg|png/;
+		const mimetype = filetypes.test(file.mimetype);
+		const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+
+		if (mimetype && extname) {
+			return cb(null, true);
+		}
+		cb(new Error('Invalid file type. Only JPG and PNG are allowed.'));
+	}
+});
 
 // Helper: Sanitize Filename
 const sanitizeFilename = (filename) => {
@@ -36,11 +75,11 @@ app.get('/api/list_projects', (req, res) => {
 		if (err) {
 			return res.status(500).json({ success: false, message: 'Unable to scan directory' });
 		}
-		
+
 		const jsonFiles = files
 			.filter(file => path.extname(file) === '.json')
 			.map(file => path.parse(file).name);
-		
+
 		res.json({ success: true, files: jsonFiles });
 	});
 });
@@ -48,19 +87,19 @@ app.get('/api/list_projects', (req, res) => {
 // 2. Save Project
 app.post('/api/save_project', (req, res) => {
 	const { filename, data } = req.body;
-	
+
 	if (!filename || !data) {
 		return res.status(400).json({ success: false, message: 'Invalid input' });
 	}
-	
+
 	const cleanName = sanitizeFilename(filename);
 	if (!cleanName) {
 		return res.status(400).json({ success: false, message: 'Invalid filename' });
 	}
-	
+
 	const filePath = path.join(PROJECTS_DIR, `${cleanName}.json`);
 	const jsonData = JSON.stringify(data, null, 2);
-	
+
 	fs.writeFile(filePath, jsonData, (err) => {
 		if (err) {
 			return res.status(500).json({ success: false, message: 'Failed to write file' });
@@ -72,14 +111,14 @@ app.post('/api/save_project', (req, res) => {
 // 3. Load Project
 app.get('/api/load_project', (req, res) => {
 	const { filename } = req.query;
-	
+
 	if (!filename) {
 		return res.status(400).json({ success: false, message: 'Filename required' });
 	}
-	
+
 	const cleanName = sanitizeFilename(filename);
 	const filePath = path.join(PROJECTS_DIR, `${cleanName}.json`);
-	
+
 	if (fs.existsSync(filePath)) {
 		fs.readFile(filePath, 'utf8', (err, data) => {
 			if (err) {
@@ -99,14 +138,14 @@ app.get('/api/load_project', (req, res) => {
 // 4. Delete Project
 app.post('/api/delete_project', (req, res) => {
 	const { filename } = req.body;
-	
+
 	if (!filename) {
 		return res.status(400).json({ success: false, message: 'Filename required' });
 	}
-	
+
 	const cleanName = sanitizeFilename(filename);
 	const filePath = path.join(PROJECTS_DIR, `${cleanName}.json`);
-	
+
 	if (fs.existsSync(filePath)) {
 		fs.unlink(filePath, (err) => {
 			if (err) {
@@ -119,20 +158,46 @@ app.post('/api/delete_project', (req, res) => {
 	}
 });
 
-// 5. LLM Proxy
+// 5. Upload Image (NEW)
+app.post('/api/upload_image', (req, res) => {
+	const uploader = upload.single('image');
+
+	uploader(req, res, function (err) {
+		if (err instanceof multer.MulterError) {
+			// A Multer error occurred when uploading (e.g. file too large)
+			return res.status(400).json({ success: false, message: err.message });
+		} else if (err) {
+			// An unknown error occurred when uploading
+			return res.status(400).json({ success: false, message: err.message });
+		}
+
+		if (!req.file) {
+			return res.status(400).json({ success: false, message: 'No file uploaded' });
+		}
+
+		// Success: Return the web-accessible path
+		// Since we mapped '/projects' to PROJECTS_DIR, and images are in PROJECTS_DIR/images
+		res.json({
+			success: true,
+			path: `/projects/images/${req.file.filename}`
+		});
+	});
+});
+
+// 6. LLM Proxy
 app.post('/api/llm_proxy', async (req, res) => {
 	const { action, filename, model, messages } = req.body;
-	
+
 	if (!action) return res.status(400).json({ success: false, message: 'Action required' });
 	if (!filename) return res.status(400).json({ success: false, message: 'Filename required' });
-	
+
 	const cleanName = sanitizeFilename(filename);
 	const filePath = path.join(PROJECTS_DIR, `${cleanName}.json`);
-	
+
 	if (!fs.existsSync(filePath)) {
 		return res.status(404).json({ success: false, message: 'Project file not found' });
 	}
-	
+
 	// Read API Key from project file
 	let apiKey = '';
 	try {
@@ -144,11 +209,11 @@ app.post('/api/llm_proxy', async (req, res) => {
 	} catch (e) {
 		return res.status(500).json({ success: false, message: 'Error reading project file' });
 	}
-	
+
 	if (!apiKey) {
 		return res.status(400).json({ success: false, message: 'API Key not found in project file' });
 	}
-	
+
 	const baseUrl = 'https://openrouter.ai/api/v1';
 	const headers = {
 		'Content-Type': 'application/json',
@@ -156,7 +221,7 @@ app.post('/api/llm_proxy', async (req, res) => {
 		'X-Title': 'Cascade Prompt',
 		'Authorization': `Bearer ${apiKey}`
 	};
-	
+
 	try {
 		if (action === 'models') {
 			const response = await fetch(`${baseUrl}/models`, { method: 'GET', headers });
@@ -166,16 +231,16 @@ app.post('/api/llm_proxy', async (req, res) => {
 			if (!model || !messages) {
 				return res.status(400).json({ success: false, message: 'Model and messages required' });
 			}
-			
+
 			const payload = { model, messages };
 			const response = await fetch(`${baseUrl}/chat/completions`, {
 				method: 'POST',
 				headers,
 				body: JSON.stringify(payload)
 			});
-			
+
 			const jsonResponse = await response.json();
-			
+
 			// Logging
 			const logEntry = {
 				timestamp: new Date().toISOString(),
@@ -184,7 +249,7 @@ app.post('/api/llm_proxy', async (req, res) => {
 				model,
 				usage: jsonResponse.usage || null
 			};
-			
+
 			// Simple append log logic
 			let currentLog = [];
 			if (fs.existsSync(LOG_FILE)) {
@@ -196,12 +261,12 @@ app.post('/api/llm_proxy', async (req, res) => {
 			currentLog.push(logEntry);
 			if (currentLog.length > 100) currentLog = currentLog.slice(-100);
 			fs.writeFileSync(LOG_FILE, JSON.stringify(currentLog, null, 2));
-			
+
 			// Process Content
 			if (jsonResponse.choices && jsonResponse.choices[0] && jsonResponse.choices[0].message) {
 				const rawContent = jsonResponse.choices[0].message.content;
 				const cleanContent = rawContent.replace(/^```json\s*|\s*```$/gs, '').trim();
-				
+
 				try {
 					const innerJson = JSON.parse(cleanContent);
 					res.json({

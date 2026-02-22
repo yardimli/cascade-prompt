@@ -441,7 +441,7 @@
 	<div class="modal-box">
 		<h3 class="font-bold text-lg">Insert Image</h3>
 		<div class="py-4">
-			<!-- DaisyUI Tabs using the radio button pattern -->
+			<!-- DaisyUI Tabs -->
 			<div role="tablist" class="tabs tabs-lifted">
 				<!-- Tab 1: Link -->
 				<input type="radio" name="image_insert_tabs" role="tab" class="tab" aria-label="By Link" checked onclick="ImageManager.switchTab('link')" />
@@ -464,10 +464,27 @@
 					</div>
 				</div>
 
-				<!-- Tab 2: Upload (Placeholder for future) -->
+				<!-- Tab 2: Upload -->
 				<input type="radio" name="image_insert_tabs" role="tab" class="tab" aria-label="Upload" onclick="ImageManager.switchTab('upload')" />
 				<div role="tabpanel" class="tab-content bg-base-100 border-base-300 rounded-box p-6">
-					<p class="text-sm text-base-content/60">Upload feature coming soon.</p>
+					<div class="form-control w-full">
+						<label class="label">
+							<span class="label-text">Upload Image (JPG/PNG, Max 10MB)</span>
+						</label>
+						<!-- File Input -->
+						<input type="file" id="img-upload-input" class="file-input file-input-bordered w-full" accept="image/png, image/jpeg" onchange="ImageManager.handleFileUpload(this.files)" />
+
+						<!-- Progress Bar -->
+						<div id="img-upload-progress-container" class="mt-4" style="display:none;">
+							<div class="flex justify-between text-xs mb-1">
+								<span>Uploading...</span>
+								<span id="img-upload-pct">0%</span>
+							</div>
+							<progress id="img-upload-progress" class="progress progress-primary w-full" value="0" max="100"></progress>
+						</div>
+
+						<div id="img-upload-error" class="text-error text-sm mt-2" style="display:none;"></div>
+					</div>
 				</div>
 			</div>
 		</div>
@@ -475,6 +492,7 @@
 			<form method="dialog">
 				<button class="btn">Cancel</button>
 			</form>
+			<!-- Only used for Link tab -->
 			<button class="btn btn-primary" id="btn-insert-image" onclick="ImageManager.insertImage()" disabled>Insert</button>
 		</div>
 	</div>

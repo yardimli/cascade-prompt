@@ -29,12 +29,18 @@ export default defineConfig(({ mode }) => {
 	// Node.js Proxy Configuration
 	if (mode === 'node') {
 		config.server.proxy = {
-			// 1. Match the full path including the base directory
+			// 1. Proxy API requests
 			[`^${basePath}api`]: {
 				target: 'http://localhost:3000',
 				changeOrigin: true,
-				// 2. Remove the base path before sending to Node server
-				// e.g. /cascade-prompt/api/list_projects -> /api/list_projects
+				rewrite: (path) => path.replace(new RegExp(`^${basePath}`), '')
+			},
+
+			// 2. NEW: Proxy Image/Project file requests
+			// This forwards /cascade-prompt/projects/... -> http://localhost:3000/projects/...
+			[`^${basePath}projects`]: {
+				target: 'http://localhost:3000',
+				changeOrigin: true,
 				rewrite: (path) => path.replace(new RegExp(`^${basePath}`), '')
 			}
 		};

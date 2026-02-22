@@ -93,10 +93,25 @@ export const SheetRender = {
 							const selectedVal = details.selected || '';
 							cellHTML = `<div class="content-cut" style="${divStyle}${userStyle}">${selectedVal}</div>`;
 						} else if (typeName === 'image') {
-							const url = details.url || '';
+							let src = '';
+
+							if (details.url) {
+								// External URL: Use as is
+								src = details.url;
+							} else if (details.path) {
+								// Local Path: Prepend the Vite Base URL
+								// import.meta.env.BASE_URL is '/cascade-prompt/' (from vite.config.js)
+								const baseUrl = import.meta.env.BASE_URL;
+
+								// Remove leading slash from path to prevent double slashes (e.g., /cascade-prompt//projects...)
+								const cleanPath = details.path.startsWith('/') ? details.path.slice(1) : details.path;
+
+								src = baseUrl + cleanPath;
+							}
+
 							cellHTML = `<div class="content-cut" style="${divStyle}${userStyle} display: flex; justify-content: center; align-items: center; overflow: hidden;">
-                                <img src="${url}" style="max-width: 100%; max-height: 100%; object-fit: contain; pointer-events: none;">
-                            </div>`;
+        <img src="${src}" style="max-width: 100%; max-height: 100%; object-fit: contain; pointer-events: none;">
+    </div>`;
 						} else {
 							const val = details.value || '';
 							cellHTML = `<div class="content-cut" style="${divStyle}${userStyle}">${val}</div>`;
