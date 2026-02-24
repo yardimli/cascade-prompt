@@ -122,10 +122,38 @@ export const LLMBuilder = {
 	},
 	showTooltip: function(target, text) {
 		let tooltip = document.getElementById('llm-global-tooltip');
-		if (!tooltip) { tooltip = document.createElement('div'); tooltip.id = 'llm-global-tooltip'; tooltip.className = 'llm-var-tooltip-global'; document.body.appendChild(tooltip); }
-		tooltip.textContent = text; tooltip.style.display = 'block';
+		const modal = document.getElementById('llmFormulaModal');
+
+		if (!tooltip) {
+			tooltip = document.createElement('div');
+			tooltip.id = 'llm-global-tooltip';
+			tooltip.className = 'llm-var-tooltip-global';
+			// Fix: Append to the dialog to ensure visibility in Top Layer
+			if (modal) {
+				modal.appendChild(tooltip);
+			} else {
+				document.body.appendChild(tooltip);
+			}
+		}
+
+		tooltip.textContent = text;
+		tooltip.style.display = 'block';
+
 		const rect = target.getBoundingClientRect();
-		tooltip.style.top = (rect.top - tooltip.offsetHeight - 5) + 'px'; tooltip.style.left = rect.left + 'px';
+		const offsetParent = tooltip.offsetParent;
+
+		let top = rect.top - tooltip.offsetHeight - 5;
+		let left = rect.left;
+
+		// Adjust if tooltip is positioned relative to a transformed parent (like the modal)
+		if (offsetParent && offsetParent !== document.body && offsetParent !== document.documentElement) {
+			const parentRect = offsetParent.getBoundingClientRect();
+			top -= parentRect.top;
+			left -= parentRect.left;
+		}
+
+		tooltip.style.top = top + 'px';
+		tooltip.style.left = left + 'px';
 	},
 	hideTooltip: function() { document.getElementById('llm-global-tooltip').style.display = 'none'; },
 	insertFormula: function() {
