@@ -250,7 +250,7 @@ html[data-ui-size="large"] {
 }
 
 .llm-var-tag {
-    @apply badge badge-info badge-outline font-mono text-xs cursor-help;
+    @apply badge badge-info badge-outline font-mono text-xs cursor-help select-none align-middle mx-0.5;
 }
 
 /* Tooltip for LLM Variables */

@@ -7,6 +7,8 @@ export const LLMBuilder = {
 		const cached = localStorage.getItem('openrouter_models');
 		if (cached) this.models = JSON.parse(cached);
 	},
+	// ... [fetchModels and populateModelSelect remain unchanged] ...
+
 	fetchModels: function() {
 		if (!SheetDataManager.currentFileName) return window.showCustomAlert('Please save your project first (Ctrl+S).');
 		const icon = document.querySelector('#refresh-models-btn i');
@@ -32,12 +34,13 @@ export const LLMBuilder = {
 			datalist.appendChild(opt);
 		});
 	},
+
 	openFormulaBuilder: function() {
 		const modal = document.getElementById('llmFormulaModal');
 		const selected = document.querySelector('.selected-cell');
 		this.populateModelSelect();
-		this.attachEditorListeners();
 
+		// 1. Initialize Editor Content First
 		let promptText = '', modelToSelect = '', isUpdate = false;
 		const targetInput = document.getElementById('llm-target-cell');
 		const schemaInput = document.getElementById('llm-json-schema');
@@ -66,37 +69,132 @@ export const LLMBuilder = {
 				document.getElementsByName('llm-insert-mode')[0].checked = true;
 			}
 		}
+
 		document.getElementById('llm-modal-title').textContent = isUpdate ? 'Update LLM Formula' : 'Insert LLM Formula';
 		document.getElementById('llm-save-btn').textContent = isUpdate ? 'Update' : 'Insert Formula';
-		document.getElementById('llm-prompt-editor').textContent = promptText;
 		document.getElementById('llm-model-input').value = modelToSelect;
+
+		// 2. Set content and parse existing tags (for loading saved formulas)
+		const editor = document.getElementById('llm-prompt-editor');
+		editor.innerText = promptText;
+		this.highlightPromptVariables(editor); // Initial highlight pass
+
+		// 3. Attach listeners
+		this.attachEditorListeners();
+
 		modal.showModal();
-		this.highlightPromptVariables();
 	},
+
 	attachEditorListeners: function() {
 		const editor = document.getElementById('llm-prompt-editor');
 		// Cloning to remove old listeners
 		const newEditor = editor.cloneNode(true);
 		editor.parentNode.replaceChild(newEditor, editor);
 
-		let timeout;
-		newEditor.addEventListener('input', () => { clearTimeout(timeout); timeout = setTimeout(() => this.highlightPromptVariables(), 300); });
-		newEditor.addEventListener('paste', (e) => { e.preventDefault(); document.execCommand('insertText', false, (e.originalEvent || e).clipboardData.getData('text/plain')); });
+		// --- NEW: Keydown Logic for Space/Enter ---
+		newEditor.addEventListener('keydown', (e) => {
+			if (e.key === ' ' || e.key === 'Enter') {
+				this.handleTagInsertion(e);
+			}
+		});
+
+		// --- NEW: Click Logic to force cursor before tag ---
+		newEditor.addEventListener('click', (e) => {
+			if (e.target.classList.contains('llm-var-tag')) {
+				const range = document.createRange();
+				range.setStartBefore(e.target);
+				range.collapse(true);
+				const sel = window.getSelection();
+				sel.removeAllRanges();
+				sel.addRange(range);
+			}
+		});
+
+		// Paste: Parse full text
+		newEditor.addEventListener('paste', (e) => {
+			e.preventDefault();
+			const text = (e.originalEvent || e).clipboardData.getData('text/plain');
+			document.execCommand('insertText', false, text);
+			// Run a full highlight pass after paste
+			setTimeout(() => this.highlightPromptVariables(newEditor), 0);
+		});
+
+		// Tooltips
 		newEditor.addEventListener('mouseover', (e) => { if (e.target.classList.contains('llm-var-tag')) this.showTooltip(e.target, e.target.getAttribute('data-preview')); });
 		newEditor.addEventListener('mouseout', (e) => { if (e.target.classList.contains('llm-var-tag')) this.hideTooltip(); });
 	},
-	highlightPromptVariables: function() {
-		const editor = document.getElementById('llm-prompt-editor');
+
+	handleTagInsertion: function(e) {
+		const selection = window.getSelection();
+		if (!selection.rangeCount) return;
+		const range = selection.getRangeAt(0);
+		const node = range.startContainer;
+
+		// Only process if we are inside a text node
+		if (node.nodeType === Node.TEXT_NODE) {
+			const textBefore = node.textContent.slice(0, range.startOffset);
+			// Regex to match #A1 or #A1:B2 at the end of the string
+			const regex = /(#([A-Z]+)([0-9]+)(?::([A-Z]+)([0-9]+))?)$/i;
+			const match = textBefore.match(regex);
+
+			if (match) {
+				e.preventDefault(); // Stop the actual space/enter insertion temporarily
+
+				const fullMatch = match[0];
+				const c1 = match[2], r1 = match[3], c2 = match[4], r2 = match[5];
+
+				// 1. Remove the plain text pattern
+				const startOffset = range.startOffset - fullMatch.length;
+				node.deleteData(startOffset, fullMatch.length);
+
+				// 2. Create the atomic tag element
+				const tag = document.createElement('span');
+				tag.className = 'llm-var-tag';
+				tag.contentEditable = 'false'; // Makes it atomic (delete/arrow keys work correctly)
+				tag.innerText = fullMatch;
+				tag.setAttribute('data-preview', this.getRangePreview(c1, r1, c2, r2).replace(/"/g, '&quot;'));
+
+				// 3. Insert the tag
+				const insertRange = document.createRange();
+				insertRange.setStart(node, startOffset);
+				insertRange.collapse(true);
+				insertRange.insertNode(tag);
+
+				// 4. Insert the trigger character (Space or Newline) AFTER the tag
+				// We use a non-breaking space if it's a space key to ensure caret visibility
+				const spacerChar = e.key === 'Enter' ? '\n' : '\u00A0';
+				const spacer = document.createTextNode(spacerChar);
+
+				insertRange.setStartAfter(tag);
+				insertRange.insertNode(spacer);
+
+				// 5. Move Cursor After the spacer
+				insertRange.setStartAfter(spacer);
+				insertRange.collapse(true);
+				selection.removeAllRanges();
+				selection.addRange(insertRange);
+			}
+		}
+	},
+
+	// Modified to only run on initialization or paste, not every input
+	highlightPromptVariables: function(editor) {
 		if (!editor) return;
-		// (Simplified logic for brevity - assume original implementation for cursor saving/restoring)
 		const text = editor.innerText;
+
+		// Simple HTML encoding
 		let html = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+		// Replace patterns with the atomic span structure
 		html = html.replace(/#([A-Z]+)([0-9]+)(?::([A-Z]+)([0-9]+))?/gi, (match, c1, r1, c2, r2) => {
 			const preview = this.getRangePreview(c1, r1, c2, r2);
-			return `<span class="llm-var-tag" data-preview="${preview.replace(/"/g, '&quot;')}">${match}</span>`;
+			// contenteditable="false" is key here
+			return `<span class="llm-var-tag" contenteditable="false" data-preview="${preview.replace(/"/g, '&quot;')}">${match}</span>`;
 		});
+
 		if (editor.innerHTML !== html) editor.innerHTML = html;
 	},
+
 	getRangePreview: function(c1, r1, c2, r2) {
 		const sheet = SheetDataManager.data.sheets[SheetDataManager.data.activeSheetIndex];
 		const getColIdx = (l) => l.toUpperCase().split('').reduce((acc, char) => acc * 26 + char.charCodeAt(0) - 64, 0) - 1;
@@ -120,6 +218,8 @@ export const LLMBuilder = {
 		}
 		return `${getVal(startR, startC)}`;
 	},
+
+	// ... [showTooltip, hideTooltip, insertFormula remain unchanged] ...
 	showTooltip: function(target, text) {
 		let tooltip = document.getElementById('llm-global-tooltip');
 		const modal = document.getElementById('llmFormulaModal');
@@ -128,7 +228,6 @@ export const LLMBuilder = {
 			tooltip = document.createElement('div');
 			tooltip.id = 'llm-global-tooltip';
 			tooltip.className = 'llm-var-tooltip-global';
-			// Fix: Append to the dialog to ensure visibility in Top Layer
 			if (modal) {
 				modal.appendChild(tooltip);
 			} else {
@@ -145,7 +244,6 @@ export const LLMBuilder = {
 		let top = rect.top - tooltip.offsetHeight - 5;
 		let left = rect.left;
 
-		// Adjust if tooltip is positioned relative to a transformed parent (like the modal)
 		if (offsetParent && offsetParent !== document.body && offsetParent !== document.documentElement) {
 			const parentRect = offsetParent.getBoundingClientRect();
 			top -= parentRect.top;
@@ -157,7 +255,7 @@ export const LLMBuilder = {
 	},
 	hideTooltip: function() { document.getElementById('llm-global-tooltip').style.display = 'none'; },
 	insertFormula: function() {
-		const prompt = document.getElementById('llm-prompt-editor').innerText;
+		const prompt = document.getElementById('llm-prompt-editor').innerText; // innerText gets the clean text
 		const model = document.getElementById('llm-model-input').value;
 		const schema = document.getElementById('llm-json-schema').value;
 		const targetStr = document.getElementById('llm-target-cell').value;
