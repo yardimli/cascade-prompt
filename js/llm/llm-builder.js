@@ -7,7 +7,6 @@ export const LLMBuilder = {
 		const cached = localStorage.getItem('openrouter_models');
 		if (cached) this.models = JSON.parse(cached);
 	},
-	// ... [fetchModels and populateModelSelect remain unchanged] ...
 
 	fetchModels: function() {
 		if (!SheetDataManager.currentFileName) return window.showCustomAlert('Please save your project first (Ctrl+S).');
@@ -25,6 +24,7 @@ export const LLMBuilder = {
 			} else window.showCustomAlert('Error fetching models: ' + data.message);
 		}).catch(e => window.showCustomAlert('Failed to fetch models.')).finally(() => icon.classList.remove('animate-spin'));
 	},
+
 	populateModelSelect: function() {
 		const datalist = document.getElementById('llm-models-datalist');
 		datalist.innerHTML = '';
@@ -76,7 +76,10 @@ export const LLMBuilder = {
 
 		// 2. Set content and parse existing tags (for loading saved formulas)
 		const editor = document.getElementById('llm-prompt-editor');
-		editor.innerText = promptText;
+		// FIX: Use textContent instead of innerText because the modal is hidden (display:none)
+		// innerText returns "" on hidden elements, causing data loss.
+		editor.textContent = promptText;
+
 		this.highlightPromptVariables(editor); // Initial highlight pass
 
 		// 3. Attach listeners
@@ -180,7 +183,9 @@ export const LLMBuilder = {
 	// Modified to only run on initialization or paste, not every input
 	highlightPromptVariables: function(editor) {
 		if (!editor) return;
-		const text = editor.innerText;
+		// FIX: Use textContent instead of innerText.
+		// innerText relies on layout and returns "" if the modal is hidden.
+		const text = editor.textContent;
 
 		// Simple HTML encoding
 		let html = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -255,7 +260,8 @@ export const LLMBuilder = {
 	},
 	hideTooltip: function() { document.getElementById('llm-global-tooltip').style.display = 'none'; },
 	insertFormula: function() {
-		const prompt = document.getElementById('llm-prompt-editor').innerText; // innerText gets the clean text
+		// FIX: Use textContent to get the clean text without HTML tags
+		const prompt = document.getElementById('llm-prompt-editor').textContent;
 		const model = document.getElementById('llm-model-input').value;
 		const schema = document.getElementById('llm-json-schema').value;
 		const targetStr = document.getElementById('llm-target-cell').value;
