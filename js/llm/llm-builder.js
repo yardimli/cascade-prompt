@@ -123,7 +123,15 @@ export const LLMBuilder = {
 		});
 
 		// Tooltips
-		newEditor.addEventListener('mouseover', (e) => { if (e.target.classList.contains('llm-var-tag')) this.showTooltip(e.target, e.target.getAttribute('data-preview')); });
+		newEditor.addEventListener('mouseover', (e) => {
+			if (e.target.classList.contains('llm-var-tag')) {
+				// MODIFICATION: Only show tooltip if data-preview is not empty
+				const previewText = e.target.getAttribute('data-preview');
+				if (previewText && previewText.trim() !== '') {
+					this.showTooltip(e.target, previewText);
+				}
+			}
+		});
 		newEditor.addEventListener('mouseout', (e) => { if (e.target.classList.contains('llm-var-tag')) this.hideTooltip(); });
 	},
 
@@ -207,7 +215,8 @@ export const LLMBuilder = {
 
 		const getVal = (r, c) => {
 			const cell = sheet.cells[`${r}-${c}`];
-			return (cell && cell.type && (cell.type.name === 'text' || cell.type.name === 'number')) ? cell.type.details.value : (cell?.type?.name === 'dropdown' ? cell.type.details.selected : 'Empty');
+			// MODIFICATION: Return empty string instead of 'Empty' if value is missing
+			return (cell && cell.type && (cell.type.name === 'text' || cell.type.name === 'number')) ? cell.type.details.value : (cell?.type?.name === 'dropdown' ? cell.type.details.selected : '');
 		};
 
 		if (c2 && r2) {
@@ -216,7 +225,8 @@ export const LLMBuilder = {
 			for (let r = Math.min(startR, endR); r <= Math.max(startR, endR); r++) {
 				for (let c = Math.min(startC, endC); c <= Math.max(startC, endC); c++) {
 					count++;
-					if (count <= 3) preview += `${getVal(r, c).substring(0, 20)}..., `;
+					const val = getVal(r, c);
+					if (count <= 3 && val !== '') preview += `${val.substring(0, 20)}..., `;
 				}
 			}
 			return `Range: ${count} cells\n${preview}`;
