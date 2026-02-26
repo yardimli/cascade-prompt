@@ -166,48 +166,72 @@
 	<button class="btn btn-primary btn-sm" onclick="LLMManager.openFormulaBuilder()"><i class="bi bi-robot mr-1"></i> LLM</button>
 </div>
 
-<!-- Formula Bar -->
-<div class="formula-bar-container">
-	<div class="formula-icon">fx</div>
-	<div id="formula-input" class="formula-input" contenteditable="false" placeholder="Select a cell..."></div>
-</div>
+<!-- Main Workspace Layout -->
+<div class="flex flex-row h-[calc(100vh-40px-35px-25px)] overflow-hidden">
 
-<!-- Spreadsheet Area -->
-<div class="spreadsheet-container" id="spreadsheet-container">
-	<!-- Overlay Editor -->
-	<div id="cell-editor" contenteditable="true" style="display:none;"></div>
-	<div id="selection-helper" class="no-select"></div>
-	<table class="spreadsheet no-select">
-		<thead>
-		<tr>
-			<th class="top-corner-cell"></th>
-			<!-- JS will populate headers if needed, but for static HTML we render default A-Z -->
-			<script>
-				const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
-				alphabet.forEach((letter, i) => {
-					document.write(`<th class='letter-cell' data-col='${i}' style='width: 100px;'>${letter}</th>`);
-				});
-			</script>
-		</tr>
-		</thead>
-		<tbody>
-		<script>
-			for (let i = 1; i <= 100; i++) {
-				document.write("<tr>");
-				document.write(`<th class='counter-cell'>${i}</th>`);
-				for (let j = 0; j < 26; j++) {
-					document.write(`<td class='text-cell' data-col='${j}'><div class='content-cut'></div></td>`);
-				}
-				document.write("</tr>");
-			}
-		</script>
-		</tbody>
-	</table>
-</div>
+	<!-- Left Side: Formula Bar + Spreadsheet -->
+	<div class="flex flex-col flex-grow min-w-0">
 
-<!-- Sheet Tabs -->
-<div class="sheet-tabs-container" id="sheet-tabs-container">
-	<div class="add-sheet-btn" title="Add Sheet"><i class="bi bi-plus"></i></div>
+		<!-- Formula Bar -->
+		<div class="formula-bar-container shrink-0">
+			<div class="formula-icon">fx</div>
+			<div id="formula-input" class="formula-input" contenteditable="false" placeholder="Select a cell..."></div>
+		</div>
+
+		<!-- Spreadsheet Area -->
+		<div class="spreadsheet-container flex-grow" id="spreadsheet-container">
+			<!-- Overlay Editor -->
+			<div id="cell-editor" contenteditable="true" style="display:none;"></div>
+			<div id="selection-helper" class="no-select"></div>
+			<table class="spreadsheet no-select">
+				<thead>
+				<tr>
+					<th class="top-corner-cell"></th>
+					<script>
+						const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+						alphabet.forEach((letter, i) => {
+							document.write(`<th class='letter-cell' data-col='${i}' style='width: 100px;'>${letter}</th>`);
+						});
+					</script>
+				</tr>
+				</thead>
+				<tbody>
+				<script>
+					for (let i = 1; i <= 100; i++) {
+						document.write("<tr>");
+						document.write(`<th class='counter-cell'>${i}</th>`);
+						for (let j = 0; j < 26; j++) {
+							document.write(`<td class='text-cell' data-col='${j}'><div class='content-cut'></div></td>`);
+						}
+						document.write("</tr>");
+					}
+				</script>
+				</tbody>
+			</table>
+		</div>
+
+		<!-- Sheet Tabs -->
+		<div class="sheet-tabs-container shrink-0" id="sheet-tabs-container">
+			<div class="add-sheet-btn" title="Add Sheet"><i class="bi bi-plus"></i></div>
+		</div>
+	</div>
+
+	<!-- Right Side: Property Panel -->
+	<aside id="property-panel" class="w-80 bg-base-100 border-l border-base-300 flex flex-col hidden transition-all duration-300 ease-in-out z-40 shadow-lg">
+		<!-- Panel Header -->
+		<div class="p-3 border-b border-base-300 flex justify-between items-center bg-base-200">
+			<span class="font-bold text-sm uppercase tracking-wide" id="prop-panel-title">Properties</span>
+			<button class="btn btn-ghost btn-xs btn-square" onclick="PropertyPanelManager.close()">
+				<i class="bi bi-x-lg"></i>
+			</button>
+		</div>
+
+		<!-- Panel Content -->
+		<div id="prop-panel-content" class="p-4 flex-grow overflow-y-auto">
+			<!-- Dynamic Content Injected Here -->
+		</div>
+	</aside>
+
 </div>
 
 <!-- Status Bar -->
@@ -389,34 +413,6 @@
 				<button class="btn">Cancel</button>
 			</form>
 			<button class="btn btn-primary" id="llm-save-btn" onclick="LLMManager.insertFormula()">Insert Formula</button>
-		</div>
-	</div>
-</dialog>
-
-<!-- Dropdown Modal -->
-<dialog id="dropdownModal" class="modal">
-	<div class="modal-box">
-		<h3 class="font-bold text-lg">Configure Dropdown</h3>
-		<div class="py-4 flex flex-col gap-3">
-			<div class="form-control">
-				<label class="label"><span class="label-text">Options (comma separated or new lines):</span></label>
-				<textarea class="textarea textarea-bordered h-24" id="dropdown-options" oninput="DropdownManager.updateSelectionPreview()"></textarea>
-			</div>
-			<div class="form-control">
-				<label class="label"><span class="label-text">Current Selection:</span></label>
-				<select class="select select-bordered" id="dropdown-selection">
-					<option value="">(None)</option>
-				</select>
-			</div>
-		</div>
-		<div class="modal-action justify-between">
-			<button class="btn btn-error btn-outline" onclick="DropdownManager.removeDropdown()">Remove</button>
-			<div class="flex gap-2">
-				<form method="dialog">
-					<button class="btn">Cancel</button>
-				</form>
-				<button class="btn btn-primary" onclick="DropdownManager.saveDropdown()">Save</button>
-			</div>
 		</div>
 	</div>
 </dialog>

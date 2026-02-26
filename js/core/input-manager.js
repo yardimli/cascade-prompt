@@ -45,6 +45,11 @@ export function initKeypressListeners() {
 			return;
 		}
 
+		// --- FIX: Ignore global shortcuts/navigation if interacting with the Property Panel ---
+		if (e.target.closest('#property-panel')) {
+			return;
+		}
+
 		if ((e.ctrlKey || e.metaKey) && !window.isEditing) {
 			if (e.key === 'z') {
 				e.preventDefault();

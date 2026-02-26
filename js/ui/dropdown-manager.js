@@ -1,6 +1,8 @@
 import { SheetDataManager } from '../cascade-prompt-data.js';
+import { PropertyPanelManager } from './property-panel.js';
 
 export const DropdownManager = {
+	// Called when clicking the button or formula bar
 	openDropdownBuilder: function () {
 		const selected = document.querySelector('.selected-cell');
 		if (!selected) {
@@ -10,15 +12,24 @@ export const DropdownManager = {
 			return;
 		}
 
-		const modal = document.getElementById('dropdownModal');
-		const optionsInput = document.getElementById('dropdown-options');
-		const selectionInput = document.getElementById('dropdown-selection');
+		// Open the panel
+		PropertyPanelManager.open('dropdown');
+	},
+
+	// Called by PropertyPanelManager after rendering HTML
+	populatePanelData: function() {
+		const selected = document.querySelector('.selected-cell');
+		if (!selected) return;
+
+		const optionsInput = document.getElementById('prop-dropdown-options');
+		const selectionInput = document.getElementById('prop-dropdown-selection');
+
+		if(!optionsInput || !selectionInput) return;
 
 		optionsInput.value = '';
 		selectionInput.innerHTML = '<option value="">(None)</option>';
 		selectionInput.value = '';
 
-		// --- CHANGED: Read from State instead of data-formula ---
 		const r = selected.parentElement.rowIndex - 1;
 		const c = parseInt(selected.getAttribute('data-col'));
 		const sheet = SheetDataManager.data.sheets[SheetDataManager.data.activeSheetIndex];
@@ -33,13 +44,13 @@ export const DropdownManager = {
 			optionsInput.value = options.join('\n');
 			this.updateSelectionPreview(options, currentSelection);
 		}
-
-		modal.showModal();
 	},
 
 	updateSelectionPreview: function (optionsArray = null, selectedValue = '') {
-		const optionsInput = document.getElementById('dropdown-options');
-		const selectionInput = document.getElementById('dropdown-selection');
+		const optionsInput = document.getElementById('prop-dropdown-options');
+		const selectionInput = document.getElementById('prop-dropdown-selection');
+
+		if(!optionsInput || !selectionInput) return;
 
 		let options = optionsArray;
 		if (!options) {
@@ -61,10 +72,9 @@ export const DropdownManager = {
 	},
 
 	saveDropdown: function () {
-		const optionsInput = document.getElementById('dropdown-options');
-		const selectionInput = document.getElementById('dropdown-selection');
+		const optionsInput = document.getElementById('prop-dropdown-options');
+		const selectionInput = document.getElementById('prop-dropdown-selection');
 
-		// 1. Parse options from textarea (split by newline or comma)
 		const text = optionsInput.value;
 		const options = text.split(/[\n,]/).map(s => s.trim()).filter(s => s !== '');
 		const selected = selectionInput.value;
@@ -76,7 +86,6 @@ export const DropdownManager = {
 			return;
 		}
 
-		// 2. Record history state before change
 		if (typeof window.HistoryManager !== 'undefined') window.HistoryManager.addState();
 
 		const selectedCell = document.querySelector('.selected-cell');
@@ -87,35 +96,25 @@ export const DropdownManager = {
 			const sheet = SheetDataManager.data.sheets[SheetDataManager.data.activeSheetIndex];
 			const key = r + '-' + c;
 
-			// 3. Initialize cell object if it doesn't exist
 			if (!sheet.cells[key]) {
-				sheet.cells[key] = {
-					rowspan: 1,
-					colspan: 1,
-					style: {},
-					cellStyle: {}
-				};
+				sheet.cells[key] = { rowspan: 1, colspan: 1, style: {}, cellStyle: {} };
 			}
 
-			// 4. Update to the NEW JSON STRUCTURE
 			sheet.cells[key].type = {
 				name: 'dropdown',
 				details: {
-					options: options, // Saved as an array
-					selected: selected  // Saved as a string
+					options: options,
+					selected: selected
 				}
 			};
 
-			// 5. Explicitly remove legacy keys to ensure clean JSON
 			delete sheet.cells[key].text;
 			delete sheet.cells[key].html;
 			delete sheet.cells[key].llm;
 
-			// 6. Refresh UI
 			SheetDataManager.renderSheet(SheetDataManager.data.activeSheetIndex);
 			SheetDataManager.setModified(true);
 
-			// Re-highlight the cell after rendering to ensure the formula bar updates
 			setTimeout(() => {
 				const newCell = document.querySelector(`.spreadsheet tbody tr:nth-child(${r + 1}) td[data-col="${c}"]`);
 				if (newCell && typeof window.highlightCell === 'function') {
@@ -124,8 +123,8 @@ export const DropdownManager = {
 			}, 0);
 		}
 
-		// 7. Close Modal
-		document.getElementById('dropdownModal').close();
+		window.showToast('Dropdown Applied');
+		// We do NOT close the panel automatically on save, allowing quick edits.
 	},
 
 	removeDropdown: function () {
@@ -141,13 +140,11 @@ export const DropdownManager = {
 		const key = r + '-' + c;
 
 		if (sheet.cells[key]) {
-			// Get current value from state to convert to plain text
 			let currentVal = '';
 			if (sheet.cells[key].type && sheet.cells[key].type.name === 'dropdown') {
 				currentVal = sheet.cells[key].type.details.selected || '';
 			}
 
-			// Convert back to simple text type
 			sheet.cells[key].type = {
 				name: 'text',
 				details: { value: currentVal }
@@ -157,6 +154,6 @@ export const DropdownManager = {
 		SheetDataManager.renderSheet(SheetDataManager.data.activeSheetIndex);
 		SheetDataManager.setModified(true);
 
-		document.getElementById('dropdownModal').close();
+		PropertyPanelManager.close();
 	}
 };

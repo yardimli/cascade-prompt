@@ -40,8 +40,9 @@ html[data-ui-size="large"] {
     margin: 10px 10px 0 10px;
     padding: 0;
     overflow: auto;
-    width: calc(100vw - 20px);
-    height: calc(100vh - 155px - 35px - 25px);
+    /* Removed fixed width/height calculations to allow Flexbox to handle sizing */
+    width: auto;
+    height: 100%;
     border: 1px solid var(--color-base-300);
     background-color: var(--color-base-100);
     position: relative;

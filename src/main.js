@@ -4,7 +4,8 @@ import { HistoryManager } from '../js/core/history-manager.js';
 import { FormatManager } from '../js/ui/format-manager.js';
 import { ClipboardManager } from '../js/core/clipboard-manager.js';
 import { LLMManager } from '../js/cascade-prompt-llm.js';
-import { DropdownManager } from '../js/ui/dropdown-manager.js'; // <--- Updated Import Path
+import { DropdownManager } from '../js/ui/dropdown-manager.js';
+import { PropertyPanelManager } from '../js/ui/property-panel.js';
 import { ImageManager } from '../js/ui/image-manager.js';
 import { initKeypressListeners } from '../js/core/input-manager.js';
 import { SelectionManager } from '../js/core/selection-manager.js';
@@ -19,6 +20,7 @@ import { openProjectModal, performSave, initProjectHandlers } from '../js/ui/pro
 Object.assign(window, {
 	SheetDataManager, HistoryManager, FormatManager, ClipboardManager,
 	LLMManager, DropdownManager, SheetPropertiesManager, ImageManager,
+	PropertyPanelManager,
 	setTheme, setUiFontSize, scrollToViewWithOffsets, makeCellEditable,
 	stopEditing, mergeCells, unmergeCells, attachResizeHandlers, initMenuHandlers,
 	openProjectModal, performSave,
@@ -72,7 +74,7 @@ window.showToast = (msg) => { const t = document.getElementById('toast-notificat
 document.addEventListener('DOMContentLoaded', function () {
 	initTheme(); initUiSize(); initMenuHandlers();
 	document.addEventListener('sheetRendered', attachResizeHandlers);
-	SheetDataManager.init(); HistoryManager.init(); LLMManager.init();
+	SheetDataManager.init(); HistoryManager.init(); LLMManager.init(); PropertyPanelManager.init();
 	initKeypressListeners(); initProjectHandlers(); attachResizeHandlers();
 
 	document.querySelector('.add-sheet-btn')?.addEventListener('click', () => {
@@ -99,8 +101,12 @@ document.addEventListener('DOMContentLoaded', function () {
 		}
 	});
 	formulaInput.addEventListener('click', function () {
-		if (this.textContent.startsWith('=LLM(')) LLMManager.openFormulaBuilder();
-		else if (this.textContent.toLowerCase().startsWith('=dropdown(')) DropdownManager.openDropdownBuilder();
+		if (this.textContent.startsWith('=LLM(')) {
+			LLMManager.openFormulaBuilder();
+		}
+		else if (this.textContent.toLowerCase().startsWith('=dropdown(')) {
+			DropdownManager.openDropdownBuilder();
+		}
 	});
 
 	const selectionHelper = document.getElementById('selection-helper');
@@ -129,6 +135,9 @@ document.addEventListener('DOMContentLoaded', function () {
 	spreadsheet.addEventListener('mousedown', (e) => {
 		const cell = e.target.closest('.text-cell');
 		if (!cell || (window.isEditing && cell.classList.contains('edit-cell'))) return;
+		if (document.activeElement && document.activeElement !== document.body) {
+			document.activeElement.blur();
+		}
 		stopEditing();
 		if (!cell.classList.contains('selected-cell')) window.highlightCell(cell);
 		window.startCell = null; window.endCell = null; window.isSelecting = false; window.updateSelection();
