@@ -11,6 +11,15 @@ export const DropdownManager = {
 			return;
 		}
 
+		// Save the selected cell coordinates to the state
+		const r = selected.parentElement.rowIndex - 1;
+		const c = parseInt(selected.getAttribute('data-col'));
+
+		if (!SheetDataManager.propertyPanel) {
+			SheetDataManager.propertyPanel = { targetedCell: { r: null, c: null } };
+		}
+		SheetDataManager.propertyPanel.targetedCell = { r: r, c: c };
+
 		PropertyPanelManager.open('dropdown');
 	},
 

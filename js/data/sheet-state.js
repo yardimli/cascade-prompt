@@ -6,6 +6,9 @@ export const SheetState = {
 	},
 	currentFileName: null,
 	isModified: false,
+	propertyPanel: {
+		targetedCell: { r: null, c: null }
+	},
 	defaults: {
 		rows: 100,
 		cols: 26,
