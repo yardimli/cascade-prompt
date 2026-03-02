@@ -16,7 +16,7 @@
 		<img src="/images/android-chrome-192x192.png" style="height: 20px; margin-right:5px;" alt="Logo">
 		Cascade
 	</div>
-	
+
 	<div class="flex-none">
 		<ul class="menu menu-horizontal px-1 p-0 text-sm">
 			<!-- File Menu -->
@@ -36,7 +36,7 @@
 					</ul>
 				</details>
 			</li>
-			
+
 			<!-- Edit Menu -->
 			<li>
 				<details>
@@ -65,7 +65,7 @@
 					</ul>
 				</details>
 			</li>
-			
+
 			<!-- View Menu -->
 			<li>
 				<details>
@@ -86,7 +86,7 @@
 					</ul>
 				</details>
 			</li>
-			
+
 			<!-- Help Menu -->
 			<li>
 				<details>
@@ -104,18 +104,18 @@
 <div class="flex items-center gap-1 px-4 py-1 bg-base-200 border-b border-base-300 overflow-x-auto">
 	<button class="btn btn-ghost btn-sm btn-square" onclick="HistoryManager.undo()" title="Undo"><i class="bi bi-arrow-counterclockwise"></i></button>
 	<button class="btn btn-ghost btn-sm btn-square" onclick="HistoryManager.redo()" title="Redo"><i class="bi bi-arrow-clockwise"></i></button>
-	
+
 	<div class="w-px h-4 bg-base-content/20 mx-1"></div>
-	
+
 	<button class="btn btn-ghost btn-sm btn-square" onclick="ClipboardManager.cut()" title="Cut"><i class="bi bi-scissors"></i></button>
 	<button class="btn btn-ghost btn-sm btn-square" onclick="ClipboardManager.copy(false)" title="Copy"><i class="bi bi-files"></i></button>
 	<button class="btn btn-ghost btn-sm btn-square" onclick="ClipboardManager.paste()" title="Paste"><i class="bi bi-clipboard"></i></button>
-	
+
 	<div class="w-px h-4 bg-base-content/20 mx-1"></div>
-	
+
 	<button class="btn btn-ghost btn-sm btn-square" onclick="FormatManager.toggleStyle('bold')" title="Bold"><i class="bi bi-type-bold"></i></button>
 	<button class="btn btn-ghost btn-sm btn-square" onclick="FormatManager.toggleStyle('italic')" title="Italic"><i class="bi bi-type-italic"></i></button>
-	
+
 	<!-- Font Size Dropdown -->
 	<div class="dropdown">
 		<div tabindex="0" role="button" class="btn btn-ghost btn-sm btn-square" title="Font Size"><i class="bi bi-type"></i></div>
@@ -126,12 +126,12 @@
 			<li><a onclick="FormatManager.setFontSize('xl')">Extra Large</a></li>
 		</ul>
 	</div>
-	
+
 	<div class="w-px h-4 bg-base-content/20 mx-1"></div>
-	
+
 	<button class="btn btn-ghost btn-sm btn-square" onclick="FormatManager.openColorDialog('text')" title="Text Color"><i class="bi bi-palette"></i></button>
 	<button class="btn btn-ghost btn-sm btn-square" onclick="FormatManager.openColorDialog('background')" title="Fill Color"><i class="bi bi-paint-bucket"></i></button>
-	
+
 	<!-- Borders Dropdown -->
 	<div class="dropdown">
 		<div tabindex="0" role="button" class="btn btn-ghost btn-sm btn-square" title="Borders"><i class="bi bi-border-all"></i></div>
@@ -148,20 +148,20 @@
 			</div>
 		</div>
 	</div>
-	
+
 	<div class="w-px h-4 bg-base-content/20 mx-1"></div>
-	
+
 	<button class="btn btn-ghost btn-sm btn-square" onclick="FormatManager.setAlignment('left')" title="Align Left"><i class="bi bi-justify-left"></i></button>
 	<button class="btn btn-ghost btn-sm btn-square" onclick="FormatManager.setAlignment('center')" title="Align Center"><i class="bi bi-text-center"></i></button>
 	<button class="btn btn-ghost btn-sm btn-square" onclick="FormatManager.setAlignment('right')" title="Align Right"><i class="bi bi-justify-right"></i></button>
-	
+
 	<div class="w-px h-4 bg-base-content/20 mx-1"></div>
-	
+
 	<button class="btn btn-ghost btn-sm btn-square" id="merge-btn" title="Merge Cells" disabled onclick="mergeCells()"><i class="bi bi-arrows-collapse"></i></button>
 	<button class="btn btn-ghost btn-sm btn-square" id="unmerge-btn" title="Unmerge Cells" disabled onclick="unmergeCells()"><i class="bi bi-arrows-expand"></i></button>
-	
+
 	<div class="w-px h-4 bg-base-content/20 mx-1"></div>
-	
+
 	<button class="btn btn-ghost btn-sm btn-square" onclick="DropdownManager.openDropdownBuilder()" title="Dropdown"><i class="bi bi-list-ul"></i></button>
 	<button class="btn btn-primary btn-sm" onclick="LLMManager.openFormulaBuilder()"><i class="bi bi-robot mr-1"></i> LLM</button>
 </div>
@@ -228,7 +228,41 @@
 
 		<!-- Panel Content -->
 		<div id="prop-panel-content" class="p-4 flex-grow overflow-y-auto">
-			<!-- Dynamic Content Injected Here -->
+
+			<!-- Default Empty State -->
+			<div id="panel-section-default" class="prop-section">
+				<div class="text-base-content/50 italic text-center mt-10">No properties available</div>
+			</div>
+
+			<!-- Static Dropdown Form -->
+			<div id="panel-section-dropdown" class="prop-section hidden flex flex-col gap-4">
+				<!-- Target Cell Display -->
+				<div id="prop-dropdown-target-display" class="text-xs font-bold text-base-content/70 uppercase tracking-wide border-b border-base-200 pb-2 mb-1">
+					Target: None
+				</div>
+
+				<!-- Options Input -->
+				<div class="form-control">
+					<label class="label"><span class="label-text font-semibold">Options</span></label>
+					<textarea class="textarea textarea-bordered h-32 text-sm font-mono" id="prop-dropdown-options" placeholder="Enter options separated by commas or new lines"></textarea>
+					<label class="label"><span class="label-text-alt">One option per line or comma-separated</span></label>
+				</div>
+
+				<!-- Default Selection Input -->
+				<div class="form-control">
+					<label class="label"><span class="label-text font-semibold">Default / Selected</span></label>
+					<select class="select select-bordered select-sm" id="prop-dropdown-selection">
+						<option value="">(None)</option>
+					</select>
+				</div>
+
+				<!-- Action Buttons -->
+				<div class="flex justify-between mt-4 pt-4 border-t border-base-200">
+					<button class="btn btn-error btn-sm btn-outline" id="prop-btn-remove">Remove</button>
+					<button class="btn btn-primary btn-sm" id="prop-btn-save">Apply</button>
+				</div>
+			</div>
+
 		</div>
 	</aside>
 
@@ -381,7 +415,7 @@
 }</textarea>
 				</div>
 			</div>
-			
+
 			<!-- New Options Section -->
 			<div class="form-control md:col-span-2 border-t border-base-200 pt-3 mt-1">
 				<div class="flex flex-col sm:flex-row gap-6">
@@ -391,7 +425,7 @@
 							<span class="label-text">Insert Header Row</span>
 						</label>
 					</div>
-					
+
 					<div class="flex flex-col gap-1">
 						<div class="flex gap-4">
 							<label class="label-text font-semibold mb-1">Data Placement:</label>

@@ -11,6 +11,7 @@ export const DropdownManager = {
 			return;
 		}
 
+		// Save the selected cell coordinates to the state
 		const r = selected.parentElement.rowIndex - 1;
 		const c = parseInt(selected.getAttribute('data-col'));
 
@@ -22,33 +23,78 @@ export const DropdownManager = {
 		PropertyPanelManager.open('dropdown');
 	},
 
-	populatePanelData: function() {
-		const selected = document.querySelector('.selected-cell');
-		if (!selected) return;
+	initPanel: function() {
+		this.populatePanelData();
+		this.registerEvents();
+	},
 
+	populatePanelData: function() {
 		const optionsInput = document.getElementById('prop-dropdown-options');
 		const selectionInput = document.getElementById('prop-dropdown-selection');
+		const targetDisplay = document.getElementById('prop-dropdown-target-display');
 
 		if(!optionsInput || !selectionInput) return;
 
+		// Update Target Label
+		let cellLabel = 'None';
+		if (SheetDataManager.propertyPanel && SheetDataManager.propertyPanel.targetedCell) {
+			const { r, c } = SheetDataManager.propertyPanel.targetedCell;
+			if (r !== null && c !== null) {
+				const letter = SheetDataManager.getColumnLetter(c);
+				cellLabel = `${letter}${r + 1}`;
+			}
+		}
+		if (targetDisplay) targetDisplay.textContent = `Target: ${cellLabel}`;
+
+		// Reset inputs
 		optionsInput.value = '';
 		selectionInput.innerHTML = '<option value="">(None)</option>';
 		selectionInput.value = '';
 
-		const r = selected.parentElement.rowIndex - 1;
-		const c = parseInt(selected.getAttribute('data-col'));
-		const sheet = SheetDataManager.data.sheets[SheetDataManager.data.activeSheetIndex];
-		const key = r + '-' + c;
-		const cellData = sheet.cells[key];
+		// Fetch existing data
+		if (SheetDataManager.propertyPanel && SheetDataManager.propertyPanel.targetedCell) {
+			const { r, c } = SheetDataManager.propertyPanel.targetedCell;
+			if (r !== null && c !== null) {
+				const sheet = SheetDataManager.data.sheets[SheetDataManager.data.activeSheetIndex];
+				const key = r + '-' + c;
+				const cellData = sheet.cells[key];
 
-		if (cellData && cellData.type && cellData.type.name === 'dropdown') {
-			const details = cellData.type.details;
-			const options = details.options || [];
-			const currentSelection = details.selected || '';
+				if (cellData && cellData.type && cellData.type.name === 'dropdown') {
+					const details = cellData.type.details;
+					const options = details.options || [];
+					const currentSelection = details.selected || '';
 
-			optionsInput.value = options.join('\n');
-			this.updateSelectionPreview(options, currentSelection);
+					optionsInput.value = options.join('\n');
+					this.updateSelectionPreview(options, currentSelection);
+				}
+			}
 		}
+	},
+
+	registerEvents: function() {
+		// Clone elements to remove existing event listeners to prevent stacking
+		const replaceElement = (id) => {
+			const el = document.getElementById(id);
+			if (el) {
+				const newEl = el.cloneNode(true);
+				el.parentNode.replaceChild(newEl, el);
+				return newEl;
+			}
+			return null;
+		};
+
+		const optionsInput = document.getElementById('prop-dropdown-options');
+		const btnSave = replaceElement('prop-btn-save');
+		const btnRemove = replaceElement('prop-btn-remove');
+
+		// Re-bind events
+		if (optionsInput) {
+			// Remove old listener if possible, or just add (input is safe to stack usually, but let's be clean)
+			optionsInput.oninput = () => this.updateSelectionPreview();
+		}
+
+		if (btnSave) btnSave.addEventListener('click', () => this.saveDropdown());
+		if (btnRemove) btnRemove.addEventListener('click', () => this.removeDropdown());
 	},
 
 	updateSelectionPreview: function (optionsArray = null, selectedValue = '') {
@@ -93,11 +139,8 @@ export const DropdownManager = {
 
 		if (typeof window.HistoryManager !== 'undefined') window.HistoryManager.addState();
 
-		const selectedCell = document.querySelector('.selected-cell');
-		if (selectedCell) {
-			const r = selectedCell.parentElement.rowIndex - 1;
-			const c = parseInt(selectedCell.getAttribute('data-col'));
-
+		const { r, c } = SheetDataManager.propertyPanel.targetedCell;
+		if (r !== null && c !== null) {
 			const sheet = SheetDataManager.data.sheets[SheetDataManager.data.activeSheetIndex];
 			const key = r + '-' + c;
 
@@ -132,13 +175,10 @@ export const DropdownManager = {
 	},
 
 	removeDropdown: function () {
-		const selectedCell = document.querySelector('.selected-cell');
-		if (!selectedCell) return;
+		const { r, c } = SheetDataManager.propertyPanel.targetedCell;
+		if (r === null || c === null) return;
 
 		if (typeof window.HistoryManager !== 'undefined') window.HistoryManager.addState();
-
-		const r = selectedCell.parentElement.rowIndex - 1;
-		const c = parseInt(selectedCell.getAttribute('data-col'));
 
 		const sheet = SheetDataManager.data.sheets[SheetDataManager.data.activeSheetIndex];
 		const key = r + '-' + c;
