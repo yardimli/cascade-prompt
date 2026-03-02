@@ -39,13 +39,12 @@ export function initKeypressListeners() {
 	});
 
 	document.addEventListener('keydown', function (e) {
-		// Check if any dialog is open
+
 		const openDialog = document.querySelector('dialog[open]');
 		if (openDialog) {
 			return;
 		}
 
-		// --- FIX: Ignore global shortcuts/navigation if interacting with the Property Panel ---
 		if (e.target.closest('#property-panel')) {
 			return;
 		}

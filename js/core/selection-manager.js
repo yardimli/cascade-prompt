@@ -91,11 +91,10 @@ export const SelectionManager = {
 		document.getElementById('formula-input').textContent = '';
 		document.getElementById('formula-input').setAttribute('contenteditable', 'false');
 
-		// Helper Box Logic
 		const container = document.querySelector('.spreadsheet-container');
 		const containerRect = container.getBoundingClientRect();
 		let firstSelectedCell = tableRows[startRow].querySelector('td[data-col="' + startCol + '"]');
-		// Fallback if top-left is hidden by merge
+
 		if (!firstSelectedCell) {
 			const cells = Array.from(tableRows[startRow].querySelectorAll('td'));
 			for(let i=cells.length-1; i>=0; i--) { if(parseInt(cells[i].getAttribute('data-col')) <= startCol) { firstSelectedCell = cells[i]; break; } }

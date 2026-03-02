@@ -32,11 +32,9 @@ export const PropertyPanelManager = {
 	},
 
 	renderDropdownForm: function() {
-		// Create the form elements dynamically
 		const container = document.createElement('div');
 		container.className = 'flex flex-col gap-4';
 
-		// Options Textarea
 		const formControl1 = document.createElement('div');
 		formControl1.className = 'form-control';
 		formControl1.innerHTML = `
@@ -46,7 +44,6 @@ export const PropertyPanelManager = {
         `;
 		container.appendChild(formControl1);
 
-		// Current Selection
 		const formControl2 = document.createElement('div');
 		formControl2.className = 'form-control';
 		formControl2.innerHTML = `
@@ -57,7 +54,6 @@ export const PropertyPanelManager = {
         `;
 		container.appendChild(formControl2);
 
-		// Action Buttons
 		const actions = document.createElement('div');
 		actions.className = 'flex justify-between mt-4 pt-4 border-t border-base-200';
 		actions.innerHTML = `
@@ -68,12 +64,10 @@ export const PropertyPanelManager = {
 
 		this.content.appendChild(container);
 
-		// Bind Events
 		document.getElementById('prop-dropdown-options').addEventListener('input', () => DropdownManager.updateSelectionPreview());
 		document.getElementById('prop-btn-save').addEventListener('click', () => DropdownManager.saveDropdown());
 		document.getElementById('prop-btn-remove').addEventListener('click', () => DropdownManager.removeDropdown());
 
-		// Populate Data
 		DropdownManager.populatePanelData();
 	}
 };

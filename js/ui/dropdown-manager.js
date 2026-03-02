@@ -2,7 +2,6 @@ import { SheetDataManager } from '../cascade-prompt-data.js';
 import { PropertyPanelManager } from './property-panel.js';
 
 export const DropdownManager = {
-	// Called when clicking the button or formula bar
 	openDropdownBuilder: function () {
 		const selected = document.querySelector('.selected-cell');
 		if (!selected) {
@@ -12,11 +11,9 @@ export const DropdownManager = {
 			return;
 		}
 
-		// Open the panel
 		PropertyPanelManager.open('dropdown');
 	},
 
-	// Called by PropertyPanelManager after rendering HTML
 	populatePanelData: function() {
 		const selected = document.querySelector('.selected-cell');
 		if (!selected) return;
@@ -124,7 +121,6 @@ export const DropdownManager = {
 		}
 
 		window.showToast('Dropdown Applied');
-		// We do NOT close the panel automatically on save, allowing quick edits.
 	},
 
 	removeDropdown: function () {

@@ -40,7 +40,6 @@ export const LLMBuilder = {
 		const selected = document.querySelector('.selected-cell');
 		this.populateModelSelect();
 
-		// 1. Initialize Editor Content First
 		let promptText = '', modelToSelect = '', isUpdate = false;
 		const targetInput = document.getElementById('llm-target-cell');
 		const schemaInput = document.getElementById('llm-json-schema');
@@ -74,15 +73,12 @@ export const LLMBuilder = {
 		document.getElementById('llm-save-btn').textContent = isUpdate ? 'Update' : 'Insert Formula';
 		document.getElementById('llm-model-input').value = modelToSelect;
 
-		// 2. Set content and parse existing tags (for loading saved formulas)
 		const editor = document.getElementById('llm-prompt-editor');
-		// FIX: Use textContent instead of innerText because the modal is hidden (display:none)
-		// innerText returns "" on hidden elements, causing data loss.
+
 		editor.textContent = promptText;
 
-		this.highlightPromptVariables(editor); // Initial highlight pass
+		this.highlightPromptVariables(editor);
 
-		// 3. Attach listeners
 		this.attachEditorListeners();
 
 		modal.showModal();
@@ -90,18 +86,16 @@ export const LLMBuilder = {
 
 	attachEditorListeners: function() {
 		const editor = document.getElementById('llm-prompt-editor');
-		// Cloning to remove old listeners
+
 		const newEditor = editor.cloneNode(true);
 		editor.parentNode.replaceChild(newEditor, editor);
 
-		// --- NEW: Keydown Logic for Space/Enter ---
 		newEditor.addEventListener('keydown', (e) => {
 			if (e.key === ' ' || e.key === 'Enter') {
 				this.handleTagInsertion(e);
 			}
 		});
 
-		// --- NEW: Click Logic to force cursor before tag ---
 		newEditor.addEventListener('click', (e) => {
 			if (e.target.classList.contains('llm-var-tag')) {
 				const range = document.createRange();
@@ -113,19 +107,17 @@ export const LLMBuilder = {
 			}
 		});
 
-		// Paste: Parse full text
 		newEditor.addEventListener('paste', (e) => {
 			e.preventDefault();
 			const text = (e.originalEvent || e).clipboardData.getData('text/plain');
 			document.execCommand('insertText', false, text);
-			// Run a full highlight pass after paste
+
 			setTimeout(() => this.highlightPromptVariables(newEditor), 0);
 		});
 
-		// Tooltips
 		newEditor.addEventListener('mouseover', (e) => {
 			if (e.target.classList.contains('llm-var-tag')) {
-				// MODIFICATION: Only show tooltip if data-preview is not empty
+
 				const previewText = e.target.getAttribute('data-preview');
 				if (previewText && previewText.trim() !== '') {
 					this.showTooltip(e.target, previewText);
@@ -141,45 +133,38 @@ export const LLMBuilder = {
 		const range = selection.getRangeAt(0);
 		const node = range.startContainer;
 
-		// Only process if we are inside a text node
 		if (node.nodeType === Node.TEXT_NODE) {
 			const textBefore = node.textContent.slice(0, range.startOffset);
-			// Regex to match #A1 or #A1:B2 at the end of the string
+
 			const regex = /(#([A-Z]+)([0-9]+)(?::([A-Z]+)([0-9]+))?)$/i;
 			const match = textBefore.match(regex);
 
 			if (match) {
-				e.preventDefault(); // Stop the actual space/enter insertion temporarily
+				e.preventDefault();
 
 				const fullMatch = match[0];
 				const c1 = match[2], r1 = match[3], c2 = match[4], r2 = match[5];
 
-				// 1. Remove the plain text pattern
 				const startOffset = range.startOffset - fullMatch.length;
 				node.deleteData(startOffset, fullMatch.length);
 
-				// 2. Create the atomic tag element
 				const tag = document.createElement('span');
 				tag.className = 'llm-var-tag';
-				tag.contentEditable = 'false'; // Makes it atomic (delete/arrow keys work correctly)
+				tag.contentEditable = 'false';
 				tag.innerText = fullMatch;
 				tag.setAttribute('data-preview', this.getRangePreview(c1, r1, c2, r2).replace(/"/g, '&quot;'));
 
-				// 3. Insert the tag
 				const insertRange = document.createRange();
 				insertRange.setStart(node, startOffset);
 				insertRange.collapse(true);
 				insertRange.insertNode(tag);
 
-				// 4. Insert the trigger character (Space or Newline) AFTER the tag
-				// We use a non-breaking space if it's a space key to ensure caret visibility
 				const spacerChar = e.key === 'Enter' ? '\n' : '\u00A0';
 				const spacer = document.createTextNode(spacerChar);
 
 				insertRange.setStartAfter(tag);
 				insertRange.insertNode(spacer);
 
-				// 5. Move Cursor After the spacer
 				insertRange.setStartAfter(spacer);
 				insertRange.collapse(true);
 				selection.removeAllRanges();
@@ -188,20 +173,16 @@ export const LLMBuilder = {
 		}
 	},
 
-	// Modified to only run on initialization or paste, not every input
 	highlightPromptVariables: function(editor) {
 		if (!editor) return;
-		// FIX: Use textContent instead of innerText.
-		// innerText relies on layout and returns "" if the modal is hidden.
+
 		const text = editor.textContent;
 
-		// Simple HTML encoding
 		let html = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
-		// Replace patterns with the atomic span structure
 		html = html.replace(/#([A-Z]+)([0-9]+)(?::([A-Z]+)([0-9]+))?/gi, (match, c1, r1, c2, r2) => {
 			const preview = this.getRangePreview(c1, r1, c2, r2);
-			// contenteditable="false" is key here
+
 			return `<span class="llm-var-tag" contenteditable="false" data-preview="${preview.replace(/"/g, '&quot;')}">${match}</span>`;
 		});
 
@@ -215,7 +196,7 @@ export const LLMBuilder = {
 
 		const getVal = (r, c) => {
 			const cell = sheet.cells[`${r}-${c}`];
-			// MODIFICATION: Return empty string instead of 'Empty' if value is missing
+
 			return (cell && cell.type && (cell.type.name === 'text' || cell.type.name === 'number')) ? cell.type.details.value : (cell?.type?.name === 'dropdown' ? cell.type.details.selected : '');
 		};
 
@@ -234,7 +215,6 @@ export const LLMBuilder = {
 		return `${getVal(startR, startC)}`;
 	},
 
-	// ... [showTooltip, hideTooltip, insertFormula remain unchanged] ...
 	showTooltip: function(target, text) {
 		let tooltip = document.getElementById('llm-global-tooltip');
 		const modal = document.getElementById('llmFormulaModal');
@@ -270,7 +250,7 @@ export const LLMBuilder = {
 	},
 	hideTooltip: function() { document.getElementById('llm-global-tooltip').style.display = 'none'; },
 	insertFormula: function() {
-		// FIX: Use textContent to get the clean text without HTML tags
+
 		const prompt = document.getElementById('llm-prompt-editor').textContent;
 		const model = document.getElementById('llm-model-input').value;
 		const schema = document.getElementById('llm-json-schema').value;

@@ -180,7 +180,6 @@ document.addEventListener('DOMContentLoaded', function () {
 			const newTop = window.snapToCell(e.pageY - offset.top + container.scrollTop - h, window.getRowHeights()) + h;
 			const newLeft = window.snapToCell(e.pageX - offset.left + container.scrollLeft - w, window.getColumnWidths()) + w;
 
-			// Logic to calculate new Width/Height based on snapped positions (simplified for brevity)
 			selectionHelper.style.top = newTop + 'px'; selectionHelper.style.left = newLeft + 'px';
 		}
 	});

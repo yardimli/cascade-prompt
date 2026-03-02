@@ -6,7 +6,6 @@ export const SheetRender = {
 
 		if (typeof window.stopEditing === 'function') window.stopEditing();
 
-		// Clear existing selections
 		const classesToRemove = ['selected-cell', 'highlight', 'area-selected-cell'];
 		classesToRemove.forEach(cls => {
 			const els = document.getElementsByClassName(cls);
@@ -25,7 +24,6 @@ export const SheetRender = {
 		const thead = table.querySelector('thead');
 		const tbody = table.querySelector('tbody');
 
-		// Render Header
 		let headerHTML = '<th class="top-corner-cell"></th>';
 		let tableWidth = 0;
 		for (let c = 0; c < sheet.colCount; c++) {
@@ -37,7 +35,6 @@ export const SheetRender = {
 		thead.rows[0].innerHTML = headerHTML;
 		table.style.width = (tableWidth + 50) + 'px';
 
-		// Render Body
 		let bodyHTML = '';
 		for (let r = 0; r < sheet.rowCount; r++) {
 			const height = sheet.rowHeights[r] || manager.defaults.defaultRowHeight;
@@ -96,14 +93,12 @@ export const SheetRender = {
 							let src = '';
 
 							if (details.url) {
-								// External URL: Use as is
+
 								src = details.url;
 							} else if (details.path) {
-								// Local Path: Prepend the Vite Base URL
-								// import.meta.env.BASE_URL is '/cascade-prompt/' (from vite.config.js)
+
 								const baseUrl = import.meta.env.BASE_URL;
 
-								// Remove leading slash from path to prevent double slashes (e.g., /cascade-prompt//projects...)
 								const cleanPath = details.path.startsWith('/') ? details.path.slice(1) : details.path;
 
 								src = baseUrl + cleanPath;

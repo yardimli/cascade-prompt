@@ -14,7 +14,6 @@ export const ImageManager = {
 			return;
 		}
 
-		// Reset UI - Link Tab
 		const input = document.getElementById('img-url-input');
 		const previewImg = document.getElementById('img-preview-element');
 		const previewText = document.querySelector('#img-url-preview span:not(#img-loading)');
@@ -32,7 +31,6 @@ export const ImageManager = {
 		if (insertBtn) insertBtn.disabled = true;
 		if (loading) loading.style.display = 'none';
 
-		// Reset UI - Upload Tab
 		const fileInput = document.getElementById('img-upload-input');
 		const progressContainer = document.getElementById('img-upload-progress-container');
 		const uploadError = document.getElementById('img-upload-error');
@@ -45,9 +43,8 @@ export const ImageManager = {
 		}
 
 		this.validImageUrl = null;
-		this.switchTab('link'); // Default to link tab
+		this.switchTab('link');
 
-		// Reset Tabs UI
 		const tabs = document.getElementsByName('image_insert_tabs');
 		if(tabs.length > 0) tabs[0].checked = true;
 
@@ -60,7 +57,7 @@ export const ImageManager = {
 	switchTab: function (tabName) {
 		this.activeTab = tabName;
 		const insertBtn = document.getElementById('btn-insert-image');
-		// Hide insert button on upload tab because upload happens automatically/immediately
+
 		if (insertBtn) {
 			insertBtn.style.display = tabName === 'upload' ? 'none' : 'inline-flex';
 		}
@@ -84,12 +81,10 @@ export const ImageManager = {
 			return;
 		}
 
-		// Show loading state
 		loading.style.display = 'block';
 		previewText.style.display = 'none';
 		previewImg.style.display = 'none';
 
-		// Create a temp image to validate URL
 		const tempImg = new Image();
 		tempImg.onload = () => {
 			loading.style.display = 'none';
@@ -117,7 +112,6 @@ export const ImageManager = {
 		const progressText = document.getElementById('img-upload-pct');
 		const uploadError = document.getElementById('img-upload-error');
 
-		// Client-side validation
 		if (file.size > 10 * 1024 * 1024) {
 			uploadError.textContent = 'File too large. Max 10MB.';
 			uploadError.style.display = 'block';
@@ -194,7 +188,6 @@ export const ImageManager = {
 				sheet.cells[key] = { rowspan: 1, colspan: 1, style: {}, cellStyle: {} };
 			}
 
-			// Structure for uploaded image
 			sheet.cells[key].type = {
 				name: 'image',
 				details: {
@@ -209,7 +202,6 @@ export const ImageManager = {
 			SheetDataManager.renderSheet(SheetDataManager.data.activeSheetIndex);
 			SheetDataManager.setModified(true);
 
-			// Re-highlight
 			setTimeout(() => {
 				const newCell = document.querySelector(`.spreadsheet tbody tr:nth-child(${r + 1}) td[data-col="${c}"]`);
 				if (newCell && typeof window.highlightCell === 'function') {
@@ -222,7 +214,6 @@ export const ImageManager = {
 	},
 
 	insertImage: function () {
-		// This is for the URL tab
 		if (this.activeTab === 'link' && this.validImageUrl) {
 			if (typeof window.HistoryManager !== 'undefined') window.HistoryManager.addState();
 
@@ -237,7 +228,6 @@ export const ImageManager = {
 					sheet.cells[key] = { rowspan: 1, colspan: 1, style: {}, cellStyle: {} };
 				}
 
-				// Structure for URL image
 				sheet.cells[key].type = {
 					name: 'image',
 					details: {
