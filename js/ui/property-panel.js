@@ -16,7 +16,7 @@ export const PropertyPanelManager = {
 		if (!this.panel) this.init();
 
 		this.panel.classList.remove('hidden');
-		this.content.innerHTML = ''; // Clear previous content
+		this.content.innerHTML = '';
 
 		if (type === 'dropdown') {
 			this.title.textContent = 'Formula Editor';
@@ -36,7 +36,6 @@ export const PropertyPanelManager = {
 		const container = document.createElement('div');
 		container.className = 'flex flex-col gap-4';
 
-		// Calculate friendly cell label (e.g., "A3")
 		let cellLabel = 'None';
 		if (SheetDataManager.propertyPanel && SheetDataManager.propertyPanel.targetedCell) {
 			const { r, c } = SheetDataManager.propertyPanel.targetedCell;
@@ -46,13 +45,11 @@ export const PropertyPanelManager = {
 			}
 		}
 
-		// Target Cell Display
 		const targetDisplay = document.createElement('div');
 		targetDisplay.className = 'text-xs font-bold text-base-content/70 uppercase tracking-wide border-b border-base-200 pb-2 mb-1';
 		targetDisplay.textContent = `Target: ${cellLabel}`;
 		container.appendChild(targetDisplay);
 
-		// Options Input
 		const formControl1 = document.createElement('div');
 		formControl1.className = 'form-control';
 		formControl1.innerHTML = `
@@ -62,7 +59,6 @@ export const PropertyPanelManager = {
         `;
 		container.appendChild(formControl1);
 
-		// Default Selection Input
 		const formControl2 = document.createElement('div');
 		formControl2.className = 'form-control';
 		formControl2.innerHTML = `
@@ -73,7 +69,6 @@ export const PropertyPanelManager = {
         `;
 		container.appendChild(formControl2);
 
-		// Action Buttons
 		const actions = document.createElement('div');
 		actions.className = 'flex justify-between mt-4 pt-4 border-t border-base-200';
 		actions.innerHTML = `
@@ -84,7 +79,6 @@ export const PropertyPanelManager = {
 
 		this.content.appendChild(container);
 
-		// Event Listeners
 		document.getElementById('prop-dropdown-options').addEventListener('input', () => DropdownManager.updateSelectionPreview());
 		document.getElementById('prop-btn-save').addEventListener('click', () => DropdownManager.saveDropdown());
 		document.getElementById('prop-btn-remove').addEventListener('click', () => DropdownManager.removeDropdown());

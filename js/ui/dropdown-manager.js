@@ -11,7 +11,6 @@ export const DropdownManager = {
 			return;
 		}
 
-		// Save the selected cell coordinates to the state
 		const r = selected.parentElement.rowIndex - 1;
 		const c = parseInt(selected.getAttribute('data-col'));
 
