@@ -45,8 +45,9 @@ export const DropdownManager = {
 		if (targetDisplay) targetDisplay.textContent = `Target: ${cellLabel}`;
 
 		optionsInput.value = '';
-		selectionInput.innerHTML = '<option value="">(None)</option>';
-		selectionInput.value = '';
+
+		let initialOptions = [];
+		let initialSelection = '';
 
 		if (SheetDataManager.propertyPanel && SheetDataManager.propertyPanel.targetedCell) {
 			const { r, c } = SheetDataManager.propertyPanel.targetedCell;
@@ -57,14 +58,14 @@ export const DropdownManager = {
 
 				if (cellData && cellData.type && cellData.type.name === 'dropdown') {
 					const details = cellData.type.details;
-					const options = details.options || [];
-					const currentSelection = details.selected || '';
-
-					optionsInput.value = options.join('\n');
-					this.updateSelectionPreview(options, currentSelection);
+					initialOptions = details.options || [];
+					initialSelection = details.selected || '';
+					optionsInput.value = initialOptions.join('\n');
 				}
 			}
 		}
+
+		this.updateSelectionPreview(initialOptions, initialSelection);
 	},
 
 	registerEvents: function() {
@@ -102,17 +103,34 @@ export const DropdownManager = {
 			options = text.split(/[\n,]/).map(s => s.trim()).filter(s => s !== '');
 		}
 
-		if (!selectedValue) selectedValue = selectionInput.value;
+		if (!selectedValue && selectionInput.value) {
+			selectedValue = selectionInput.value;
+		}
 
-		selectionInput.innerHTML = '<option value="">(None)</option>';
+		selectionInput.innerHTML = '';
+
+		if (options.length === 0) {
+			selectionInput.disabled = true;
+			const placeholder = document.createElement('option');
+			placeholder.text = "(No options)";
+			selectionInput.add(placeholder);
+			return;
+		}
+
+		selectionInput.disabled = false;
 
 		options.forEach(opt => {
 			const optionEl = document.createElement('option');
 			optionEl.value = opt;
 			optionEl.textContent = opt;
-			if (opt === selectedValue) optionEl.selected = true;
 			selectionInput.appendChild(optionEl);
 		});
+
+		if (selectedValue && options.includes(selectedValue)) {
+			selectionInput.value = selectedValue;
+		} else {
+			selectionInput.value = options[0];
+		}
 	},
 
 	saveDropdown: function () {
@@ -121,6 +139,7 @@ export const DropdownManager = {
 
 		const text = optionsInput.value;
 		const options = text.split(/[\n,]/).map(s => s.trim()).filter(s => s !== '');
+
 		const selected = selectionInput.value;
 
 		if (options.length === 0) {
