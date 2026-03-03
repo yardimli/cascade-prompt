@@ -13,7 +13,6 @@ export const PropertyPanelManager = {
 	open: function(type) {
 		if (!this.panel) this.init();
 
-		// Hide all sections first
 		document.querySelectorAll('.prop-section').forEach(el => el.classList.add('hidden'));
 
 		if (type === 'dropdown') {
@@ -21,7 +20,6 @@ export const PropertyPanelManager = {
 			const dropdownSection = document.getElementById('panel-section-dropdown');
 			if (dropdownSection) {
 				dropdownSection.classList.remove('hidden');
-				// Call manager to populate data and register events
 				DropdownManager.initPanel();
 			}
 		} else {

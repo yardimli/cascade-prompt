@@ -11,7 +11,6 @@ export const DropdownManager = {
 			return;
 		}
 
-		// Save the selected cell coordinates to the state
 		const r = selected.parentElement.rowIndex - 1;
 		const c = parseInt(selected.getAttribute('data-col'));
 
@@ -35,7 +34,6 @@ export const DropdownManager = {
 
 		if(!optionsInput || !selectionInput) return;
 
-		// Update Target Label
 		let cellLabel = 'None';
 		if (SheetDataManager.propertyPanel && SheetDataManager.propertyPanel.targetedCell) {
 			const { r, c } = SheetDataManager.propertyPanel.targetedCell;
@@ -46,12 +44,10 @@ export const DropdownManager = {
 		}
 		if (targetDisplay) targetDisplay.textContent = `Target: ${cellLabel}`;
 
-		// Reset inputs
 		optionsInput.value = '';
 		selectionInput.innerHTML = '<option value="">(None)</option>';
 		selectionInput.value = '';
 
-		// Fetch existing data
 		if (SheetDataManager.propertyPanel && SheetDataManager.propertyPanel.targetedCell) {
 			const { r, c } = SheetDataManager.propertyPanel.targetedCell;
 			if (r !== null && c !== null) {
@@ -72,7 +68,6 @@ export const DropdownManager = {
 	},
 
 	registerEvents: function() {
-		// Clone elements to remove existing event listeners to prevent stacking
 		const replaceElement = (id) => {
 			const el = document.getElementById(id);
 			if (el) {
@@ -87,9 +82,7 @@ export const DropdownManager = {
 		const btnSave = replaceElement('prop-btn-save');
 		const btnRemove = replaceElement('prop-btn-remove');
 
-		// Re-bind events
 		if (optionsInput) {
-			// Remove old listener if possible, or just add (input is safe to stack usually, but let's be clean)
 			optionsInput.oninput = () => this.updateSelectionPreview();
 		}
 

@@ -1,4 +1,5 @@
 import { SheetDataManager } from '../cascade-prompt-data.js';
+import { DropdownManager } from './dropdown-manager.js';
 
 export const CellEditor = {
 	makeCellEditable: function(cell) {
@@ -117,6 +118,15 @@ export const CellEditor = {
 			window.isEditing = false;
 			SheetDataManager.setModified(true);
 			SheetDataManager.renderSheet(SheetDataManager.data.activeSheetIndex);
+
+			const propPanel = document.getElementById('property-panel');
+			if (propPanel && !propPanel.classList.contains('hidden')) {
+				const target = SheetDataManager.propertyPanel?.targetedCell;
+				if (target && target.r === r && target.c === c) {
+					DropdownManager.populatePanelData();
+				}
+			}
+
 			if (typeof window.highlightCell === 'function') window.highlightCell(editingCell);
 		}
 	}
