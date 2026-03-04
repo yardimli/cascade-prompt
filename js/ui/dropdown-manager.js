@@ -11,18 +11,21 @@ export const DropdownManager = {
 			return;
 		}
 
-		const r = selected.parentElement.rowIndex - 1;
-		const c = parseInt(selected.getAttribute('data-col'));
+		PropertyPanelManager.checkAndProceed(() => {
+			const r = selected.parentElement.rowIndex - 1;
+			const c = parseInt(selected.getAttribute('data-col'));
 
-		if (!SheetDataManager.propertyPanel) {
-			SheetDataManager.propertyPanel = { targetedCell: { r: null, c: null } };
-		}
-		SheetDataManager.propertyPanel.targetedCell = { r: r, c: c };
+			if (!SheetDataManager.propertyPanel) {
+				SheetDataManager.propertyPanel = { targetedCell: { r: null, c: null }, isModified: false };
+			}
 
-		PropertyPanelManager.open('dropdown');
+			SheetDataManager.propertyPanel.targetedCell = { r: r, c: c };
+			PropertyPanelManager.open('dropdown');
+		});
 	},
 
 	initPanel: function() {
+		SheetDataManager.propertyPanel.isModified = false;
 		this.populatePanelData();
 		this.registerEvents();
 	},
@@ -80,11 +83,25 @@ export const DropdownManager = {
 		};
 
 		const optionsInput = document.getElementById('prop-dropdown-options');
+		const selectionInput = document.getElementById('prop-dropdown-selection');
 		const btnSave = replaceElement('prop-btn-save');
 		const btnRemove = replaceElement('prop-btn-remove');
 
+		const markModified = () => {
+			SheetDataManager.propertyPanel.isModified = true;
+		};
+
 		if (optionsInput) {
-			optionsInput.oninput = () => this.updateSelectionPreview();
+			optionsInput.oninput = () => {
+				this.updateSelectionPreview();
+				markModified();
+			};
+		}
+
+		if (selectionInput) {
+			selectionInput.onchange = () => {
+				markModified();
+			};
 		}
 
 		if (btnSave) btnSave.addEventListener('click', () => this.saveDropdown());
@@ -175,10 +192,22 @@ export const DropdownManager = {
 			SheetDataManager.renderSheet(SheetDataManager.data.activeSheetIndex);
 			SheetDataManager.setModified(true);
 
+			SheetDataManager.propertyPanel.isModified = false;
+
 			setTimeout(() => {
-				const newCell = document.querySelector(`.spreadsheet tbody tr:nth-child(${r + 1}) td[data-col="${c}"]`);
-				if (newCell && typeof window.highlightCell === 'function') {
-					window.highlightCell(newCell);
+				const targetCellDom = document.querySelector(`.spreadsheet tbody tr:nth-child(${r + 1}) td[data-col="${c}"]`);
+				const currentSelected = document.querySelector('.selected-cell');
+
+				let isSelected = false;
+				if (currentSelected) {
+					const curR = currentSelected.parentElement.rowIndex - 1;
+					const curC = parseInt(currentSelected.getAttribute('data-col'));
+					if (curR === r && curC === c) isSelected = true;
+				}
+
+				if (targetCellDom && !isSelected) {
+					targetCellDom.classList.add('blink-border');
+					setTimeout(() => targetCellDom.classList.remove('blink-border'), 1200);
 				}
 			}, 0);
 		}
@@ -209,6 +238,7 @@ export const DropdownManager = {
 
 		SheetDataManager.renderSheet(SheetDataManager.data.activeSheetIndex);
 		SheetDataManager.setModified(true);
+		SheetDataManager.propertyPanel.isModified = false;
 
 		PropertyPanelManager.close();
 	}

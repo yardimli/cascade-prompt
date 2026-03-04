@@ -7,7 +7,8 @@ export const SheetState = {
 	currentFileName: null,
 	isModified: false,
 	propertyPanel: {
-		targetedCell: { r: null, c: null }
+		targetedCell: { r: null, c: null },
+		isModified: false
 	},
 	defaults: {
 		rows: 100,

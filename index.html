@@ -221,7 +221,8 @@
 		<!-- Panel Header -->
 		<div class="p-3 border-b border-base-300 flex justify-between items-center bg-base-200">
 			<span class="font-bold text-sm uppercase tracking-wide" id="prop-panel-title">Properties</span>
-			<button class="btn btn-ghost btn-xs btn-square" onclick="PropertyPanelManager.close()">
+			<!-- Updated close button to check for unsaved changes -->
+			<button class="btn btn-ghost btn-xs btn-square" onclick="PropertyPanelManager.attemptClose()">
 				<i class="bi bi-x-lg"></i>
 			</button>
 		</div>
@@ -293,6 +294,18 @@
 <div id="toast-notification" class="custom-toast">Saved</div>
 
 <!-- Modals (Native <dialog>) -->
+
+<!-- Unsaved Changes Modal -->
+<dialog id="unsavedChangesModal" class="modal">
+	<div class="modal-box">
+		<h3 class="font-bold text-lg">Unsaved Changes</h3>
+		<p class="py-4">You have unsaved changes in the property panel. Do you want to apply them?</p>
+		<div class="modal-action">
+			<button class="btn btn-ghost" onclick="PropertyPanelManager.confirmDiscard()">No (Discard)</button>
+			<button class="btn btn-primary" onclick="PropertyPanelManager.confirmApply()">Yes (Apply)</button>
+		</div>
+	</div>
+</dialog>
 
 <!-- Project Modal -->
 <dialog id="projectModal" class="modal">

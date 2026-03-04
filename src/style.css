@@ -270,3 +270,15 @@ html[data-ui-size="large"] {
     max-width: 300px;
     display: none;
 }
+
+@keyframes blink-animation {
+    0%, 100% { outline-color: transparent; }
+    50% { outline-color: var(--color-primary); }
+}
+
+.blink-border {
+    outline: 3px solid var(--color-primary);
+    outline-offset: -3px;
+    z-index: 100 !important;
+    animation: blink-animation 0.4s ease-in-out 3;
+}
