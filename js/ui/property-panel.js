@@ -71,8 +71,8 @@ export const PropertyPanelManager = {
 
 		this.currentSaveHandler = null;
 
+		this.title.textContent = 'Formula Editor';
 		if (type === 'dropdown') {
-			this.title.textContent = 'Dropdown Settings';
 			const dropdownSection = document.getElementById('panel-section-dropdown');
 			if (dropdownSection) {
 				dropdownSection.classList.remove('hidden');
@@ -81,7 +81,6 @@ export const PropertyPanelManager = {
 				this.currentSaveHandler = () => DropdownManager.saveDropdown();
 			}
 		} else {
-			this.title.textContent = 'Properties';
 			const defaultSection = document.getElementById('panel-section-default');
 			if (defaultSection) defaultSection.classList.remove('hidden');
 		}
