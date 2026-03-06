@@ -11,15 +11,15 @@ export const DropdownManager = {
 			return;
 		}
 
-		PropertyPanelManager.checkAndProceed(() => {
-			const r = selected.parentElement.rowIndex - 1;
-			const c = parseInt(selected.getAttribute('data-col'));
+		const targetR = selected.parentElement.rowIndex - 1;
+		const targetC = parseInt(selected.getAttribute('data-col'));
 
+		PropertyPanelManager.checkAndProceed(() => {
 			if (!SheetDataManager.propertyPanel) {
 				SheetDataManager.propertyPanel = { targetedCell: { r: null, c: null }, isModified: false };
 			}
 
-			SheetDataManager.propertyPanel.targetedCell = { r: r, c: c };
+			SheetDataManager.propertyPanel.targetedCell = { r: targetR, c: targetC };
 			PropertyPanelManager.open('dropdown');
 		});
 	},

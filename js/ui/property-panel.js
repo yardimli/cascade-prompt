@@ -4,8 +4,8 @@ import { DropdownManager } from './dropdown-manager.js';
 export const PropertyPanelManager = {
 	panel: null,
 	title: null,
-	currentSaveHandler: null, // Function to call when "Yes" is clicked
-	pendingAction: null,      // Function to call after the dialog closes (e.g., close panel or switch cell)
+	currentSaveHandler: null,
+	pendingAction: null,
 
 	init: function() {
 		this.panel = document.getElementById('property-panel');
@@ -42,10 +42,8 @@ export const PropertyPanelManager = {
 	 */
 	confirmApply: function() {
 		if (this.currentSaveHandler) {
-			this.currentSaveHandler(); // Save the data
+			this.currentSaveHandler();
 		}
-		// Reset modified flag is handled by the specific manager (e.g., DropdownManager)
-		// but we ensure it here just in case, though usually saveHandler does it.
 
 		if (this.pendingAction) {
 			this.pendingAction();
@@ -58,7 +56,7 @@ export const PropertyPanelManager = {
 	 * Called by the "No" (Discard) button in the dialog.
 	 */
 	confirmDiscard: function() {
-		SheetDataManager.propertyPanel.isModified = false; // Discard changes
+		SheetDataManager.propertyPanel.isModified = false;
 		if (this.pendingAction) {
 			this.pendingAction();
 			this.pendingAction = null;
@@ -71,7 +69,6 @@ export const PropertyPanelManager = {
 
 		document.querySelectorAll('.prop-section').forEach(el => el.classList.add('hidden'));
 
-		// Reset save handler
 		this.currentSaveHandler = null;
 
 		if (type === 'dropdown') {
@@ -80,7 +77,7 @@ export const PropertyPanelManager = {
 			if (dropdownSection) {
 				dropdownSection.classList.remove('hidden');
 				DropdownManager.initPanel();
-				// Register the save handler for the generic Apply button in the modal
+
 				this.currentSaveHandler = () => DropdownManager.saveDropdown();
 			}
 		} else {
