@@ -124,9 +124,7 @@ export const SheetDataManager = {
 
 		this.renderSheet(this.data.activeSheetIndex);
 		this.setModified(true);
-		// Selection update logic omitted for brevity, handled by UI refresh usually
 		setTimeout(() => {
-			// Basic re-selection logic if needed, similar to original
 			if (typeof window.updateSelection === 'function') window.updateSelection();
 		}, 0);
 	},
@@ -143,7 +141,7 @@ export const SheetDataManager = {
 			localStorage.removeItem('lastOpenedFile');
 			document.title = 'Cascade Prompt';
 			document.querySelector('.spreadsheet tbody').innerHTML = '';
-			this.createSheet('Sheet1', true); // Use createSheet to populate initial state
+			this.createSheet('Sheet1', true);
 			this.setModified(false);
 		}
 	},

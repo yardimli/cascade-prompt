@@ -139,6 +139,8 @@ example of button with llm formula->
 - allow user to add image to a cell from url. images should resize to fit the cell but keep aspect ratio.
 - refactor javascript files based on their tasks and purpose
 - allow user to add image to a cell from local file. images should resize to fit the cell but keep aspect ratio.(Only for node now)
+- improve the cell reference tag's editing part in the prompt input of the Insert LLM formula dialog.
+- create a generic property panel area. First step: moved the dropdown form to the property panel. The panel title is Formula Editor.
 
 TODO:
 
@@ -165,3 +167,4 @@ when merging cells row height resize acts weirdly for the rows that intersect wi
 when unmerging cells the new cells are not editable until page refresh
 new sheets row heights are different than the first sheet, should have some default height
 border tool is not working correctly with cells merged and unmerged.
+the editing from formula bar input for text cell and number cell is buggy.

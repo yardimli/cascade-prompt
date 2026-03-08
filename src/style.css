@@ -289,8 +289,6 @@ html[data-ui-size="large"] {
 
 .formula-btn {
     @apply btn btn-sm btn-primary justify-start font-medium normal-case px-3 h-[24px] min-h-0 rounded m-[2px] shadow-sm transition-all;
-
-    /* Force button to fit content and sit to the left */
     display: inline-flex;
     align-items: center;
     gap: 8px;
