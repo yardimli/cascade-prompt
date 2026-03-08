@@ -282,3 +282,18 @@ html[data-ui-size="large"] {
     z-index: 100 !important;
     animation: blink-animation 0.4s ease-in-out 3;
 }
+
+.formula-input {
+    @apply grow border-none outline-none px-2 h-full text-sm rounded-r bg-base-100 text-base-content whitespace-nowrap overflow-hidden flex items-center;
+}
+
+.formula-btn {
+    @apply btn btn-sm w-auto justify-start font-medium normal-case px-3 h-[24px] min-h-0 rounded m-[2px] bg-primary text-primary-content border-none hover:bg-primary-focus shadow-sm transition-all;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.formula-btn i {
+    @apply text-lg;
+}

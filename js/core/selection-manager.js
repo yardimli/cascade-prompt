@@ -38,15 +38,22 @@ export const SelectionManager = {
 
 		formulaInput.classList.remove('pointer-cursor');
 		formulaInput.setAttribute('contenteditable', 'true');
+		// Reset HTML to ensure clean state
+		formulaInput.innerHTML = '';
 
 		if (cellData && cellData.type) {
 			const { name, details } = cellData.type;
+
 			if (name === 'llm_formula') {
-				formulaInput.textContent = `=LLM("${details.funcName || 'Run LLM'}")`;
+				const text = `=LLM("${details.funcName || 'Run LLM'}")`;
+				// Render as a button
+				formulaInput.innerHTML = `<div class="formula-btn"><i class="bi bi-pencil-square"></i><span>${text}</span></div>`;
 				formulaInput.setAttribute('contenteditable', 'false');
 				formulaInput.classList.add('pointer-cursor');
 			} else if (name === 'dropdown') {
-				formulaInput.textContent = `=dropdown("${(details.options || []).join(',')}", "${details.selected || ''}")`;
+				const text = `=dropdown("${(details.options || []).join(',')}", "${details.selected || ''}")`;
+				// Render as a button
+				formulaInput.innerHTML = `<div class="formula-btn"><i class="bi bi-pencil-square"></i><span>${text}</span></div>`;
 				formulaInput.setAttribute('contenteditable', 'false');
 				formulaInput.classList.add('pointer-cursor');
 			} else if (name === 'image') {

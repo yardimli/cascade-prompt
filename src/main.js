@@ -101,10 +101,11 @@ document.addEventListener('DOMContentLoaded', function () {
 		}
 	});
 	formulaInput.addEventListener('click', function () {
-		if (this.textContent.startsWith('=LLM(')) {
+		const text = this.textContent.trim();
+		if (text.startsWith('=LLM(')) {
 			LLMManager.openFormulaBuilder();
 		}
-		else if (this.textContent.toLowerCase().startsWith('=dropdown(')) {
+		else if (text.toLowerCase().startsWith('=dropdown(')) {
 			DropdownManager.openDropdownBuilder();
 		}
 	});
