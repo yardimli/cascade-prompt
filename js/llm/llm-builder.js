@@ -1,8 +1,9 @@
 import { SheetDataManager } from '../cascade-prompt-data.js';
 import { getApiEndpoint } from '../api-config.js';
+import { PropertyPanelManager } from '../ui/property-panel.js';
 
 export const LLMBuilder = {
-	models: [],
+	models:[],
 	init: function() {
 		const cached = localStorage.getItem('openrouter_models');
 		if (cached) this.models = JSON.parse(cached);
@@ -27,6 +28,7 @@ export const LLMBuilder = {
 
 	populateModelSelect: function() {
 		const datalist = document.getElementById('llm-models-datalist');
+		if (!datalist) return;
 		datalist.innerHTML = '';
 		this.models.forEach(m => {
 			const opt = document.createElement('option');
@@ -36,52 +38,119 @@ export const LLMBuilder = {
 	},
 
 	openFormulaBuilder: function() {
-		const modal = document.getElementById('llmFormulaModal');
 		const selected = document.querySelector('.selected-cell');
-		this.populateModelSelect();
+		if (!selected) {
+			if (typeof window.showCustomAlert === 'function') {
+				window.showCustomAlert('Please select a cell first.');
+			}
+			return;
+		}
 
-		let promptText = '', modelToSelect = '', isUpdate = false;
+		const targetR = selected.parentElement.rowIndex - 1;
+		const targetC = parseInt(selected.getAttribute('data-col'));
+
+		PropertyPanelManager.checkAndProceed(() => {
+			if (!SheetDataManager.propertyPanel) {
+				SheetDataManager.propertyPanel = { targetedCell: { r: null, c: null }, isModified: false };
+			}
+
+			SheetDataManager.propertyPanel.targetedCell = { r: targetR, c: targetC };
+			PropertyPanelManager.open('llm');
+		});
+	},
+
+	initPanel: function() {
+		SheetDataManager.propertyPanel.isModified = false;
+		this.populateModelSelect();
+		this.populatePanelData();
+		this.registerEvents();
+	},
+
+	populatePanelData: function() {
 		const targetInput = document.getElementById('llm-target-cell');
 		const schemaInput = document.getElementById('llm-json-schema');
 		const funcNameInput = document.getElementById('llm-func-name');
 		const headersCheckbox = document.getElementById('llm-include-headers');
+		const targetDisplay = document.getElementById('prop-llm-target-display');
 
-		if (selected) {
-			const r = selected.parentElement.rowIndex - 1, c = parseInt(selected.getAttribute('data-col'));
-			const cell = SheetDataManager.data.sheets[SheetDataManager.data.activeSheetIndex].cells[`${r}-${c}`];
-			if (cell && cell.type && cell.type.name === 'llm_formula') {
-				isUpdate = true;
-				const config = cell.type.details;
-				promptText = config.prompt || '';
-				schemaInput.value = config.jsonSchema || '';
-				funcNameInput.value = config.funcName || 'Run LLM';
-				targetInput.value = SheetDataManager.getColumnLetter(config.targetCol) + (config.targetRow + 1);
-				modelToSelect = config.model || '';
-				headersCheckbox.checked = !!config.includeHeaders;
-				const radios = document.getElementsByName('llm-insert-mode');
-				for (const r of radios) if (r.value === (config.insertMode || 'overwrite')) r.checked = true;
-			} else {
-				targetInput.value = SheetDataManager.getColumnLetter(c) + (r + 1);
-				schemaInput.value = '{\n  "Key": "Value"\n}';
-				funcNameInput.value = 'Run LLM';
-				headersCheckbox.checked = false;
-				document.getElementsByName('llm-insert-mode')[0].checked = true;
+		let cellLabel = 'None';
+		let promptText = '', modelToSelect = '', isUpdate = false;
+
+		if (SheetDataManager.propertyPanel && SheetDataManager.propertyPanel.targetedCell) {
+			const { r, c } = SheetDataManager.propertyPanel.targetedCell;
+			if (r !== null && c !== null) {
+				cellLabel = `${SheetDataManager.getColumnLetter(c)}${r + 1}`;
+				const sheet = SheetDataManager.data.sheets[SheetDataManager.data.activeSheetIndex];
+				const cell = sheet.cells[`${r}-${c}`];
+
+				if (cell && cell.type && cell.type.name === 'llm_formula') {
+					isUpdate = true;
+					const config = cell.type.details;
+					promptText = config.prompt || '';
+					schemaInput.value = config.jsonSchema || '';
+					funcNameInput.value = config.funcName || 'Run LLM';
+					targetInput.value = SheetDataManager.getColumnLetter(config.targetCol) + (config.targetRow + 1);
+					modelToSelect = config.model || '';
+					headersCheckbox.checked = !!config.includeHeaders;
+					const radios = document.getElementsByName('llm-insert-mode');
+					for (const radio of radios) if (radio.value === (config.insertMode || 'overwrite')) radio.checked = true;
+				} else {
+					targetInput.value = SheetDataManager.getColumnLetter(c) + (r + 1);
+					schemaInput.value = '{\n  "Key": "Value"\n}';
+					funcNameInput.value = 'Run LLM';
+					headersCheckbox.checked = false;
+					document.getElementsByName('llm-insert-mode')[0].checked = true;
+				}
 			}
 		}
 
-		document.getElementById('llm-modal-title').textContent = isUpdate ? 'Update LLM Formula' : 'Insert LLM Formula';
-		document.getElementById('llm-save-btn').textContent = isUpdate ? 'Update' : 'Insert Formula';
+		if (targetDisplay) targetDisplay.textContent = `Target: ${cellLabel}`;
 		document.getElementById('llm-model-input').value = modelToSelect;
 
 		const editor = document.getElementById('llm-prompt-editor');
-
 		editor.textContent = promptText;
 
 		this.highlightPromptVariables(editor);
-
 		this.attachEditorListeners();
+	},
 
-		modal.showModal();
+	registerEvents: function() {
+		const markModified = () => {
+			SheetDataManager.propertyPanel.isModified = true;
+		};
+
+		const inputs =['llm-model-input', 'llm-target-cell', 'llm-func-name', 'llm-json-schema'];
+		inputs.forEach(id => {
+			const el = document.getElementById(id);
+			if (el) {
+				el.oninput = markModified;
+				el.onchange = markModified;
+			}
+		});
+
+		const headersCheckbox = document.getElementById('llm-include-headers');
+		if (headersCheckbox) headersCheckbox.onchange = markModified;
+
+		document.getElementsByName('llm-insert-mode').forEach(el => el.onchange = markModified);
+
+		const editor = document.getElementById('llm-prompt-editor');
+		if (editor) editor.addEventListener('input', markModified);
+
+		const replaceElement = (id) => {
+			const el = document.getElementById(id);
+			if (el) {
+				const newEl = el.cloneNode(true);
+				el.parentNode.replaceChild(newEl, el);
+				return newEl;
+			}
+			return null;
+		};
+
+		const btnSave = replaceElement('prop-btn-save-llm');
+		const btnRemove = replaceElement('prop-btn-remove-llm');
+
+		if (btnSave) btnSave.addEventListener('click', () => this.insertFormula());
+		if (btnRemove) btnRemove.addEventListener('click', () => this.removeFormula());
 	},
 
 	attachEditorListeners: function() {
@@ -217,14 +286,14 @@ export const LLMBuilder = {
 
 	showTooltip: function(target, text) {
 		let tooltip = document.getElementById('llm-global-tooltip');
-		const modal = document.getElementById('llmFormulaModal');
+		const panel = document.getElementById('property-panel');
 
 		if (!tooltip) {
 			tooltip = document.createElement('div');
 			tooltip.id = 'llm-global-tooltip';
 			tooltip.className = 'llm-var-tooltip-global';
-			if (modal) {
-				modal.appendChild(tooltip);
+			if (panel) {
+				panel.appendChild(tooltip);
 			} else {
 				document.body.appendChild(tooltip);
 			}
@@ -248,9 +317,10 @@ export const LLMBuilder = {
 		tooltip.style.top = top + 'px';
 		tooltip.style.left = left + 'px';
 	},
-	hideTooltip: function() { document.getElementById('llm-global-tooltip').style.display = 'none'; },
-	insertFormula: function() {
 
+	hideTooltip: function() { document.getElementById('llm-global-tooltip').style.display = 'none'; },
+
+	insertFormula: function() {
 		const prompt = document.getElementById('llm-prompt-editor').textContent;
 		const model = document.getElementById('llm-model-input').value;
 		const schema = document.getElementById('llm-json-schema').value;
@@ -262,9 +332,6 @@ export const LLMBuilder = {
 		if (!prompt || !model || !targetStr) return window.showCustomAlert('Please fill in all required fields.');
 		try { JSON.parse(schema); } catch (e) { return window.showCustomAlert('Invalid JSON Schema.'); }
 
-		const selected = document.querySelector('.selected-cell');
-		if (!selected) return window.showCustomAlert('No cell selected.');
-
 		const match = targetStr.match(/^([A-Z]+)([0-9]+)$/i);
 		if (!match) return window.showCustomAlert('Invalid target cell format.');
 
@@ -275,7 +342,10 @@ export const LLMBuilder = {
 		const targetRow = parseInt(match[2]) - 1;
 
 		if (typeof window.HistoryManager !== 'undefined') window.HistoryManager.addState();
-		const r = selected.parentElement.rowIndex - 1, c = parseInt(selected.getAttribute('data-col'));
+
+		const { r, c } = SheetDataManager.propertyPanel.targetedCell;
+		if (r === null || c === null) return;
+
 		const key = `${r}-${c}`;
 		const sheet = SheetDataManager.data.sheets[SheetDataManager.data.activeSheetIndex];
 
@@ -288,7 +358,54 @@ export const LLMBuilder = {
 
 		SheetDataManager.renderSheet(SheetDataManager.data.activeSheetIndex);
 		SheetDataManager.setModified(true);
-		document.getElementById('llmFormulaModal').close();
-		window.showToast('Formula Inserted');
+		SheetDataManager.propertyPanel.isModified = false;
+
+		setTimeout(() => {
+			const targetCellDom = document.querySelector(`.spreadsheet tbody tr:nth-child(${r + 1}) td[data-col="${c}"]`);
+			const currentSelected = document.querySelector('.selected-cell');
+
+			let isSelected = false;
+			if (currentSelected) {
+				const curR = currentSelected.parentElement.rowIndex - 1;
+				const curC = parseInt(currentSelected.getAttribute('data-col'));
+				if (curR === r && curC === c) isSelected = true;
+			}
+
+			if (targetCellDom && !isSelected) {
+				targetCellDom.classList.add('blink-border');
+				setTimeout(() => targetCellDom.classList.remove('blink-border'), 1200);
+			}
+		}, 0);
+
+		window.showToast('Formula Applied');
+	},
+
+	removeFormula: function() {
+		const { r, c } = SheetDataManager.propertyPanel.targetedCell;
+		if (r === null || c === null) return;
+
+		if (typeof window.HistoryManager !== 'undefined') window.HistoryManager.addState();
+
+		const sheet = SheetDataManager.data.sheets[SheetDataManager.data.activeSheetIndex];
+		const key = r + '-' + c;
+
+		if (sheet.cells[key]) {
+			let currentVal = '';
+			if (sheet.cells[key].type && sheet.cells[key].type.name === 'llm_formula') {
+				currentVal = sheet.cells[key].type.details.funcName || 'Run LLM';
+			}
+
+			sheet.cells[key].type = {
+				name: 'text',
+				details: { value: currentVal }
+			};
+		}
+
+		SheetDataManager.renderSheet(SheetDataManager.data.activeSheetIndex);
+		SheetDataManager.setModified(true);
+		SheetDataManager.propertyPanel.isModified = false;
+
+		PropertyPanelManager.close();
+		window.showToast('Formula Removed');
 	}
 };

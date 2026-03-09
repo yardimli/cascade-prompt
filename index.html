@@ -217,7 +217,7 @@
 	</div>
 
 	<!-- Right Side: Property Panel -->
-	<aside id="property-panel" class="w-80 bg-base-100 border-l border-base-300 flex flex-col hidden transition-all duration-300 ease-in-out z-40 shadow-lg">
+	<aside id="property-panel" class="w-96 bg-base-100 border-l border-base-300 flex flex-col hidden transition-all duration-300 ease-in-out z-40 shadow-lg">
 		<!-- Panel Header -->
 		<div class="p-3 border-b border-base-300 flex justify-between items-center bg-base-200">
 			<span class="font-bold text-sm uppercase tracking-wide" id="prop-panel-title">Properties</span>
@@ -261,6 +261,67 @@
 				<div class="flex justify-between mt-4 pt-4 border-t border-base-200">
 					<button class="btn btn-error btn-sm btn-outline" id="prop-btn-remove">Remove</button>
 					<button class="btn btn-primary btn-sm" id="prop-btn-save">Apply</button>
+				</div>
+			</div>
+
+			<!-- LLM Formula Form -->
+			<div id="panel-section-llm" class="prop-section hidden flex flex-col gap-4">
+				<!-- Target Cell Display -->
+				<div id="prop-llm-target-display" class="bg-base-200 text-base-content p-3 rounded-lg text-center font-extrabold text-lg shadow-md mb-2 select-none">
+					Target: None
+				</div>
+
+				<div class="form-control">
+					<label class="label"><span class="label-text font-semibold">Model</span></label>
+					<div class="join w-full">
+						<input class="input input-bordered input-sm join-item w-full" list="llm-models-datalist" id="llm-model-input" placeholder="Select model...">
+						<datalist id="llm-models-datalist"></datalist>
+						<button class="btn btn-sm join-item" id="refresh-models-btn" onclick="LLMManager.fetchModels()" title="Refresh"><i class="bi bi-arrow-clockwise"></i></button>
+					</div>
+				</div>
+
+				<div class="form-control">
+					<label class="label"><span class="label-text font-semibold">Target Cell</span></label>
+					<input type="text" class="input input-bordered input-sm" id="llm-target-cell" placeholder="e.g. A1">
+				</div>
+
+				<div class="form-control">
+					<label class="label"><span class="label-text font-semibold">Button Text</span></label>
+					<input type="text" class="input input-bordered input-sm" id="llm-func-name" placeholder="Run LLM">
+				</div>
+
+				<div class="form-control">
+					<label class="label"><span class="label-text font-semibold">Prompt</span></label>
+					<div id="llm-prompt-editor" class="llm-prompt-editor border border-base-300 rounded p-2 bg-base-100" contenteditable="true"></div>
+					<label class="label"><span class="label-text-alt text-xs leading-tight">Use #A1 or #A1:B5 to reference cells. Hover over tags to preview.</span></label>
+				</div>
+
+				<div class="form-control">
+					<label class="label"><span class="label-text font-semibold">Expected JSON Structure</span></label>
+					<textarea class="textarea textarea-bordered font-mono text-xs h-32 w-full" id="llm-json-schema"></textarea>
+				</div>
+
+				<div class="form-control border-t border-base-200 pt-3 mt-1">
+					<label class="label cursor-pointer justify-start gap-2">
+						<input type="checkbox" class="checkbox checkbox-sm checkbox-primary" id="llm-include-headers">
+						<span class="label-text">Insert Header Row</span>
+					</label>
+
+					<label class="label-text font-semibold mt-3 mb-1">Data Placement:</label>
+					<label class="label cursor-pointer justify-start gap-2 p-0 mb-1">
+						<input type="radio" name="llm-insert-mode" value="overwrite" class="radio radio-sm radio-primary" checked>
+						<span class="label-text">Overwrite Target</span>
+					</label>
+					<label class="label cursor-pointer justify-start gap-2 p-0">
+						<input type="radio" name="llm-insert-mode" value="append" class="radio radio-sm radio-primary">
+						<span class="label-text">Append (Find empty row)</span>
+					</label>
+				</div>
+
+				<!-- Action Buttons -->
+				<div class="flex justify-between mt-4 pt-4 border-t border-base-200">
+					<button class="btn btn-error btn-sm btn-outline" id="prop-btn-remove-llm">Remove</button>
+					<button class="btn btn-primary btn-sm" id="prop-btn-save-llm">Apply</button>
 				</div>
 			</div>
 
@@ -386,80 +447,6 @@
 				<button class="btn">Cancel</button>
 			</form>
 			<button class="btn btn-primary" onclick="SheetPropertiesManager.save()">Apply</button>
-		</div>
-	</div>
-</dialog>
-
-<!-- LLM Formula Modal -->
-<dialog id="llmFormulaModal" class="modal">
-	<!-- Increased width to max-w-6xl -->
-	<div class="modal-box w-11/12 max-w-6xl">
-		<h3 class="font-bold text-lg" id="llm-modal-title">Insert LLM Formula</h3>
-		<div class="py-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-			<div class="form-control">
-				<!-- Combined Input and Datalist for filtering -->
-				<div class="join w-full">
-					<label class="label"><span class="label-text">Model:</span></label>
-					<input class="input input-bordered join-item w-full" list="llm-models-datalist" id="llm-model-input" placeholder="Type to search or select model...">
-					<datalist id="llm-models-datalist">
-						<!-- Populated by JS -->
-					</datalist>
-					<button class="btn join-item" id="refresh-models-btn" onclick="LLMManager.fetchModels()" title="Refresh"><i class="bi bi-arrow-clockwise"></i></button>
-				</div>
-			</div>
-			<div class="form-control">
-				<label class="label"><span class="label-text">Target:</span></label>
-				<input type="text" class="input input-bordered" id="llm-target-cell" placeholder="e.g. A1">
-			</div>
-			<div class="form-control">
-				<label class="label"><span class="label-text">Button Text:</span></label>
-				<input type="text" class="input input-bordered" id="llm-func-name" placeholder="Run LLM">
-			</div>
-			<div class="form-control md:col-span-2">
-				<label class="label"><span class="label-text">Prompt:</span></label>
-				<div id="llm-prompt-editor" class="llm-prompt-editor border border-base-300 rounded p-2" contenteditable="true"></div>
-				<label class="label"><span class="label-text-alt">Use #A1 or #A1:B5 to reference cells. Hover over tags to preview content.</span></label>
-			</div>
-			<div class="form-control md:col-span-2">
-				<label class="label"><span class="label-text">Expected JSON Structure:</span></label>
-				<div>
-				<textarea class="textarea textarea-bordered font-mono text-xs h-24 w-12/12" id="llm-json-schema">{
-  "Key": "Value"
-}</textarea>
-				</div>
-			</div>
-
-			<!-- New Options Section -->
-			<div class="form-control md:col-span-2 border-t border-base-200 pt-3 mt-1">
-				<div class="flex flex-col sm:flex-row gap-6">
-					<div class="form-control">
-						<label class="label cursor-pointer justify-start gap-2">
-							<input type="checkbox" class="checkbox checkbox-sm checkbox-primary" id="llm-include-headers">
-							<span class="label-text">Insert Header Row</span>
-						</label>
-					</div>
-
-					<div class="flex flex-col gap-1">
-						<div class="flex gap-4">
-							<label class="label-text font-semibold mb-1">Data Placement:</label>
-							<label class="label cursor-pointer justify-start gap-2 p-0">
-								<input type="radio" name="llm-insert-mode" value="overwrite" class="radio radio-sm radio-primary" checked>
-								<span class="label-text">Overwrite Target</span>
-							</label>
-							<label class="label cursor-pointer justify-start gap-2 p-0">
-								<input type="radio" name="llm-insert-mode" value="append" class="radio radio-sm radio-primary">
-								<span class="label-text">Append (Find empty row)</span>
-							</label>
-						</div>
-					</div>
-				</div>
-			</div>
-		</div>
-		<div class="modal-action">
-			<form method="dialog">
-				<button class="btn">Cancel</button>
-			</form>
-			<button class="btn btn-primary" id="llm-save-btn" onclick="LLMManager.insertFormula()">Insert Formula</button>
 		</div>
 	</div>
 </dialog>

@@ -1,5 +1,6 @@
 import { SheetDataManager } from '../cascade-prompt-data.js';
 import { DropdownManager } from './dropdown-manager.js';
+import { LLMBuilder } from '../llm/llm-builder.js';
 
 export const PropertyPanelManager = {
 	panel: null,
@@ -79,6 +80,14 @@ export const PropertyPanelManager = {
 				DropdownManager.initPanel();
 
 				this.currentSaveHandler = () => DropdownManager.saveDropdown();
+			}
+		} else if (type === 'llm') {
+			const llmSection = document.getElementById('panel-section-llm');
+			if (llmSection) {
+				llmSection.classList.remove('hidden');
+				LLMBuilder.initPanel();
+
+				this.currentSaveHandler = () => LLMBuilder.insertFormula();
 			}
 		} else {
 			const defaultSection = document.getElementById('panel-section-default');
