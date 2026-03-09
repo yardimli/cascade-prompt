@@ -241,5 +241,6 @@ export const DropdownManager = {
 		SheetDataManager.propertyPanel.isModified = false;
 
 		PropertyPanelManager.close();
+		window.showToast('Dropdown Removed');
 	}
 };
