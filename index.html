@@ -58,7 +58,7 @@
 				<details>
 					<summary>Insert</summary>
 					<ul class="bg-base-100 rounded-t-none p-2 w-52 shadow-lg border border-base-200 z-[1001]">
-						<li><a onclick="LLMManager.openFormulaBuilder()">LLM Formula</a></li>
+						<li><a onclick="LLMManager.openFormulaBuilder()">LLM Trigger</a></li>
 						<li><a onclick="DropdownManager.openDropdownBuilder()">Dropdown</a></li>
 						<div class="divider my-0"></div>
 						<li><a onclick="ImageManager.openImageModal()">Image</a></li>
@@ -163,7 +163,7 @@
 	<div class="w-px h-4 bg-base-content/20 mx-1"></div>
 
 	<button class="btn btn-ghost btn-sm btn-square" onclick="DropdownManager.openDropdownBuilder()" title="Dropdown"><i class="bi bi-list-ul"></i></button>
-	<button class="btn btn-primary btn-sm" onclick="LLMManager.openFormulaBuilder()"><i class="bi bi-robot mr-1"></i> LLM</button>
+	<button class="btn btn-primary btn-sm" onclick="LLMManager.openFormulaBuilder()"><i class="bi bi-robot mr-1"></i> LLM Trigger</button>
 </div>
 
 <!-- Main Workspace Layout -->
@@ -281,13 +281,13 @@
 				</div>
 
 				<div class="form-control">
-					<label class="label"><span class="label-text font-semibold">Output Target Cell</span></label>
-					<input type="text" class="input input-bordered input-sm" id="llm-target-cell" placeholder="e.g. A1">
+					<label class="label"><span class="label-text font-semibold">Button Text</span></label>
+					<input type="text" class="input input-bordered input-sm" id="llm-func-name" placeholder="Run LLM">
 				</div>
 
 				<div class="form-control">
-					<label class="label"><span class="label-text font-semibold">Button Text</span></label>
-					<input type="text" class="input input-bordered input-sm" id="llm-func-name" placeholder="Run LLM">
+					<label class="label"><span class="label-text font-semibold">Output Target Cell</span></label>
+					<input type="text" class="input input-bordered input-sm" id="llm-target-cell" placeholder="e.g. A1">
 				</div>
 
 				<div class="form-control">
@@ -307,7 +307,8 @@
 						<span class="label-text">Insert Header Row</span>
 					</label>
 
-					<label class="label-text font-semibold mt-3 mb-1">Data Placement:</label>
+					<!--<label class="label-text font-semibold mt-3 mb-1 block">Data Placement:</label>-->
+					<label class="label mt-3 mb-1 block"><span class="label-text font-semibold">Data Placement</span></label>
 					<label class="label cursor-pointer justify-start gap-2 p-0 mb-1">
 						<input type="radio" name="llm-insert-mode" value="overwrite" class="radio radio-sm radio-primary" checked>
 						<span class="label-text">Overwrite Target</span>

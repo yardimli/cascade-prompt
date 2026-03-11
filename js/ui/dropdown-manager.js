@@ -45,7 +45,7 @@ export const DropdownManager = {
 				cellLabel = `${letter}${r + 1}`;
 			}
 		}
-		if (targetDisplay) targetDisplay.textContent = `Target: ${cellLabel}`;
+		if (targetDisplay) targetDisplay.textContent = `Dropdown Target: ${cellLabel}`;
 
 		optionsInput.value = '';
 

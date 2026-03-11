@@ -104,7 +104,7 @@ export const LLMBuilder = {
 			}
 		}
 
-		if (targetDisplay) targetDisplay.textContent = `Target: ${cellLabel}`;
+		if (targetDisplay) targetDisplay.textContent = `LLM Trigger Target: ${cellLabel}`;
 		document.getElementById('llm-model-input').value = modelToSelect;
 
 		const editor = document.getElementById('llm-prompt-editor');
