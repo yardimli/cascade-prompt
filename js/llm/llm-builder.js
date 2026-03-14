@@ -258,7 +258,7 @@ export const LLMBuilder = {
 		if (editor.innerHTML !== html) editor.innerHTML = html;
 	},
 
-	getRangePreview: function(c1, r1, c2, r2) {
+	getRangePreview: function(c1, r1, c2, r2, isPreview = true) {
 		const sheet = SheetDataManager.data.sheets[SheetDataManager.data.activeSheetIndex];
 		const getColIdx = (l) => l.toUpperCase().split('').reduce((acc, char) => acc * 26 + char.charCodeAt(0) - 64, 0) - 1;
 		const startC = getColIdx(c1), startR = parseInt(r1) - 1;
@@ -266,20 +266,38 @@ export const LLMBuilder = {
 		const getVal = (r, c) => {
 			const cell = sheet.cells[`${r}-${c}`];
 
-			return (cell && cell.type && (cell.type.name === 'text' || cell.type.name === 'number')) ? cell.type.details.value : (cell?.type?.name === 'dropdown' ? cell.type.details.selected : '');
+			let val = (cell && cell.type && (cell.type.name === 'text' || cell.type.name === 'number')) ? cell.type.details.value : (cell?.type?.name === 'dropdown' ? cell.type.details.selected : '');
+			return val !== undefined && val !== null ? String(val) : '';
 		};
 
 		if (c2 && r2) {
 			const endC = getColIdx(c2), endR = parseInt(r2) - 1;
-			let count = 0, preview = "";
+			let count = 0;
+			let vals =[];
 			for (let r = Math.min(startR, endR); r <= Math.max(startR, endR); r++) {
 				for (let c = Math.min(startC, endC); c <= Math.max(startC, endC); c++) {
 					count++;
 					const val = getVal(r, c);
-					if (count <= 3 && val !== '') preview += `${val.substring(0, 20)}..., `;
+					if (val !== '') {
+						if (isPreview) {
+							if (vals.length < 3) {
+								vals.push(val.length > 20 ? val.substring(0, 20) + '...' : val);
+							}
+						} else {
+							vals.push(val);
+						}
+					}
 				}
 			}
-			return `Range: ${count} cells\n${preview}`;
+			if (isPreview) {
+				let previewText = vals.join(', ');
+				if (count > 3) {
+					previewText += previewText ? ', ...' : '...';
+				}
+				return `Range: ${count} cells\n${previewText}`;
+			} else {
+				return vals.join(', ');
+			}
 		}
 		return `${getVal(startR, startC)}`;
 	},

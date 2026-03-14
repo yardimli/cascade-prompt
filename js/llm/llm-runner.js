@@ -18,7 +18,7 @@ export const LLMRunner = {
 		document.getElementById('status-llm-busy').style.display = 'flex';
 
 		let finalPrompt = config.prompt.replace(/#([A-Z]+)([0-9]+)(?::([A-Z]+)([0-9]+))?/gi, (match, c1, r1, c2, r2) => {
-			return LLMBuilder.getRangePreview(c1, r1, c2, r2).replace(/^Range: \d+ cells\n/, '');
+			return LLMBuilder.getRangePreview(c1, r1, c2, r2, false);
 		});
 		finalPrompt += '\n\nIMPORTANT: Respond ONLY with valid JSON matching this structure:\n' + config.jsonSchema;
 
