@@ -186,10 +186,14 @@ export const LLMBuilder = {
 
 		newEditor.addEventListener('mouseover', (e) => {
 			if (e.target.classList.contains('llm-var-tag')) {
-
-				const previewText = e.target.getAttribute('data-preview');
-				if (previewText && previewText.trim() !== '') {
-					this.showTooltip(e.target, previewText);
+				const ref = e.target.textContent.trim();
+				const regex = /^#([A-Z]+)([0-9]+)(?::([A-Z]+)([0-9]+))?$/i;
+				const match = ref.match(regex);
+				if (match) {
+					const previewHTML = this.getRangePreview(match[1], match[2], match[3], match[4], true);
+					if (previewHTML && previewHTML.trim() !== '') {
+						this.showTooltip(e.target, previewHTML);
+					}
 				}
 			}
 		});
@@ -212,7 +216,6 @@ export const LLMBuilder = {
 				e.preventDefault();
 
 				const fullMatch = match[0];
-				const c1 = match[2], r1 = match[3], c2 = match[4], r2 = match[5];
 
 				const startOffset = range.startOffset - fullMatch.length;
 				node.deleteData(startOffset, fullMatch.length);
@@ -221,7 +224,6 @@ export const LLMBuilder = {
 				tag.className = 'llm-var-tag';
 				tag.contentEditable = 'false';
 				tag.innerText = fullMatch;
-				tag.setAttribute('data-preview', this.getRangePreview(c1, r1, c2, r2).replace(/"/g, '&quot;'));
 
 				const insertRange = document.createRange();
 				insertRange.setStart(node, startOffset);
@@ -249,10 +251,8 @@ export const LLMBuilder = {
 
 		let html = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
-		html = html.replace(/#([A-Z]+)([0-9]+)(?::([A-Z]+)([0-9]+))?/gi, (match, c1, r1, c2, r2) => {
-			const preview = this.getRangePreview(c1, r1, c2, r2);
-
-			return `<span class="llm-var-tag" contenteditable="false" data-preview="${preview.replace(/"/g, '&quot;')}">${match}</span>`;
+		html = html.replace(/#([A-Z]+)([0-9]+)(?::([A-Z]+)([0-9]+))?/gi, (match) => {
+			return `<span class="llm-var-tag" contenteditable="false">${match}</span>`;
 		});
 
 		if (editor.innerHTML !== html) editor.innerHTML = html;
@@ -263,43 +263,99 @@ export const LLMBuilder = {
 		const getColIdx = (l) => l.toUpperCase().split('').reduce((acc, char) => acc * 26 + char.charCodeAt(0) - 64, 0) - 1;
 		const startC = getColIdx(c1), startR = parseInt(r1) - 1;
 
-		const getVal = (r, c) => {
-			const cell = sheet.cells[`${r}-${c}`];
+		const escapeHTML = (str) => String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
 
-			let val = (cell && cell.type && (cell.type.name === 'text' || cell.type.name === 'number')) ? cell.type.details.value : (cell?.type?.name === 'dropdown' ? cell.type.details.selected : '');
-			return val !== undefined && val !== null ? String(val) : '';
+		const getCellInfo = (r, c) => {
+			const cell = sheet.cells[`${r}-${c}`];
+			if (!cell || !cell.type) return null;
+			if (cell.type.name === 'text' || cell.type.name === 'number') return { type: 'text', value: cell.type.details.value };
+			if (cell.type.name === 'dropdown') return { type: 'text', value: cell.type.details.selected };
+			if (cell.type.name === 'image') {
+				let src = cell.type.details.url || '';
+				if (!src && cell.type.details.path) {
+					const baseUrl = import.meta.env.BASE_URL;
+					const cleanPath = cell.type.details.path.startsWith('/') ? cell.type.details.path.slice(1) : cell.type.details.path;
+					src = baseUrl + cleanPath;
+				}
+				return { type: 'image', value: src };
+			}
+			return null;
 		};
 
 		if (c2 && r2) {
 			const endC = getColIdx(c2), endR = parseInt(r2) - 1;
 			let count = 0;
-			let vals =[];
+			let textVals =[];
+			let allVals =[];
+			let totalTextCount = 0;
+			let imageCount = 0;
+
 			for (let r = Math.min(startR, endR); r <= Math.max(startR, endR); r++) {
 				for (let c = Math.min(startC, endC); c <= Math.max(startC, endC); c++) {
 					count++;
-					const val = getVal(r, c);
-					if (val !== '') {
-						if (isPreview) {
-							if (vals.length < 3) {
-								vals.push(val.length > 20 ? val.substring(0, 20) + '...' : val);
+					const info = getCellInfo(r, c);
+					if (info) {
+						if (info.type === 'text' && info.value !== '') {
+							totalTextCount++;
+							if (isPreview) {
+								if (textVals.length < 3) {
+									let strVal = String(info.value);
+									strVal = strVal.length > 20 ? strVal.substring(0, 20) + '...' : strVal;
+									textVals.push(escapeHTML(strVal));
+								}
+							} else {
+								allVals.push(String(info.value));
 							}
-						} else {
-							vals.push(val);
+						} else if (info.type === 'image' && info.value !== '') {
+							imageCount++;
+							if (!isPreview) {
+								allVals.push(`[Image: ${info.value}]`);
+							}
 						}
 					}
 				}
 			}
+
 			if (isPreview) {
-				let previewText = vals.join(', ');
-				if (count > 3) {
-					previewText += previewText ? ', ...' : '...';
+				let lines =[`Range: ${count} cells`];
+				let textLine = textVals.join(', ');
+				if (totalTextCount > 3) {
+					textLine += ', ...';
 				}
-				return `Range: ${count} cells\n${previewText}`;
+
+				if (textLine) {
+					lines.push(textLine);
+					if (imageCount > 0) {
+						lines.push(`and ${imageCount} image${imageCount > 1 ? 's' : ''}`);
+					}
+				} else {
+					if (imageCount > 0) {
+						lines.push(`${imageCount} image${imageCount > 1 ? 's' : ''}`);
+					}
+				}
+				return lines.join('<br>');
 			} else {
-				return vals.join(', ');
+				return allVals.join(', ');
 			}
 		}
-		return `${getVal(startR, startC)}`;
+
+		const info = getCellInfo(startR, startC);
+		if (isPreview) {
+			if (info) {
+				if (info.type === 'image' && info.value) {
+					return `<img src="${escapeHTML(info.value)}" style="max-width: 200px; max-height: 200px; object-fit: contain; border-radius: 4px; display: block;">`;
+				} else if (info.type === 'text') {
+					return escapeHTML(info.value);
+				}
+			}
+			return '';
+		} else {
+			if (info) {
+				if (info.type === 'image' && info.value) return `[Image: ${info.value}]`;
+				if (info.type === 'text') return String(info.value);
+			}
+			return '';
+		}
 	},
 
 	showTooltip: function(target, text) {
@@ -317,7 +373,7 @@ export const LLMBuilder = {
 			}
 		}
 
-		tooltip.textContent = text;
+		tooltip.innerHTML = text;
 		tooltip.style.display = 'block';
 
 		const rect = target.getBoundingClientRect();

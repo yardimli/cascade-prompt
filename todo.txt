@@ -142,6 +142,7 @@ example of button with llm formula->
 - improve the cell reference tag's editing part in the prompt input of the Insert LLM formula dialog.
 - create a generic property panel area. First step: moved the dropdown form to the property panel. The panel title is Formula Editor.
 - move LLM formula form dialog to the property panel(Formula Editor) like the doprdown form.
+- bug fixed:In llm insert form, the content of reference cell in the tooltip is not read live.
 
 TODO:
 
@@ -171,5 +172,4 @@ border tool is not working correctly with cells merged and unmerged.
 the editing from formula bar input for text cell and number cell is buggy.
 
 Can’t change the cell texts or number from the formula input
-In llm insert form, the content of reference cell in the tooltip is not read live
 In llm insert form, the prompt input can’t handle texts pasted into it
