@@ -5,6 +5,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import multer from 'multer'; // Required for file uploads
 import crypto from 'crypto'; // Required for random filenames
+import sharp from 'sharp';   // Required for image resizing
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -158,16 +159,14 @@ app.post('/api/delete_project', (req, res) => {
 	}
 });
 
-// 5. Upload Image (NEW)
+// 5. Upload Image
 app.post('/api/upload_image', (req, res) => {
 	const uploader = upload.single('image');
 
 	uploader(req, res, function (err) {
 		if (err instanceof multer.MulterError) {
-			// A Multer error occurred when uploading (e.g. file too large)
 			return res.status(400).json({ success: false, message: err.message });
 		} else if (err) {
-			// An unknown error occurred when uploading
 			return res.status(400).json({ success: false, message: err.message });
 		}
 
@@ -175,8 +174,6 @@ app.post('/api/upload_image', (req, res) => {
 			return res.status(400).json({ success: false, message: 'No file uploaded' });
 		}
 
-		// Success: Return the web-accessible path
-		// Since we mapped '/projects' to PROJECTS_DIR, and images are in PROJECTS_DIR/images
 		res.json({
 			success: true,
 			path: `/projects/images/${req.file.filename}`
@@ -226,10 +223,97 @@ app.post('/api/llm_proxy', async (req, res) => {
 		if (action === 'models') {
 			const response = await fetch(`${baseUrl}/models`, { method: 'GET', headers });
 			const data = await response.json();
-			res.json({ success: true, data: data.data || [] });
+			res.json({ success: true, data: data.data ||[] });
 		} else if (action === 'chat') {
 			if (!model || !messages) {
 				return res.status(400).json({ success: false, message: 'Model and messages required' });
+			}
+
+			// Process messages for images
+			for (let i = 0; i < messages.length; i++) {
+				let msg = messages[i];
+				if (msg.role === 'user' && typeof msg.content === 'string') {
+					let textPart = msg.content;
+					// Find all[Image: /path/to/img] tags
+					const imageMatches = [...textPart.matchAll(/\[Image:\s*(.+?)\]/g)];
+
+					if (imageMatches.length > 0) {
+						let newContent =[];
+						let imageCounter = 1;
+
+						for (const match of imageMatches) {
+							const fullMatch = match[0];
+							const imgPathOrUrl = match[1];
+							let base64Data = null;
+
+							// Handle local uploaded images
+							if (imgPathOrUrl.includes('/projects/images/')) {
+								const imgFilename = imgPathOrUrl.split('/').pop();
+								const localFilePath = path.join(IMAGES_DIR, imgFilename);
+
+								if (fs.existsSync(localFilePath)) {
+									try {
+										const buffer = fs.readFileSync(localFilePath);
+										// Resize to max 500x500 and convert to base64
+										const resizedBuffer = await sharp(buffer)
+											.resize({ width: 500, height: 500, fit: 'inside' })
+											.toFormat('jpeg')
+											.toBuffer();
+										base64Data = `data:image/jpeg;base64,${resizedBuffer.toString('base64')}`;
+									} catch (err) {
+										console.error('Error processing local image:', err);
+									}
+								}
+							}
+							// Handle external URLs (fallback)
+							else if (imgPathOrUrl.startsWith('http')) {
+								try {
+									const response = await fetch(imgPathOrUrl);
+									const arrayBuffer = await response.arrayBuffer();
+									const buffer = Buffer.from(arrayBuffer);
+									const resizedBuffer = await sharp(buffer)
+										.resize({ width: 500, height: 500, fit: 'inside' })
+										.toFormat('jpeg')
+										.toBuffer();
+									base64Data = `data:image/jpeg;base64,${resizedBuffer.toString('base64')}`;
+								} catch (err) {
+									console.error('Error processing remote image:', err);
+								}
+							}
+
+							if (base64Data) {
+								// Replace the path tag with a generic identifier
+								textPart = textPart.replace(fullMatch, `[Image ${imageCounter}]`);
+								newContent.push({
+									type: "image_url",
+									image_url: { url: base64Data }
+								});
+								imageCounter++;
+							}
+						}
+
+						if (newContent.length > 0) {
+							// Add instructions to the text prompt to map the references
+							textPart += '\n\n(Note: The images referenced as [Image X] in the text above are attached to this message in the corresponding order.)';
+
+							// Prepend the text part to the content array
+							newContent.unshift({ type: "text", text: textPart });
+							msg.content = newContent;
+
+							console.log("\n=== DEBUG: LLM Prompt Text Part (With Images) ===");
+							console.log(textPart);
+							console.log("=================================================\n");
+						} else {
+							console.log("\n=== DEBUG: LLM Prompt Text Part ===");
+							console.log(msg.content);
+							console.log("===================================\n");
+						}
+					} else {
+						console.log("\n=== DEBUG: LLM Prompt Text Part ===");
+						console.log(msg.content);
+						console.log("===================================\n");
+					}
+				}
 			}
 
 			const payload = { model, messages };
@@ -250,13 +334,12 @@ app.post('/api/llm_proxy', async (req, res) => {
 				usage: jsonResponse.usage || null
 			};
 
-			// Simple append log logic
-			let currentLog = [];
+			let currentLog =[];
 			if (fs.existsSync(LOG_FILE)) {
 				try {
 					currentLog = JSON.parse(fs.readFileSync(LOG_FILE, 'utf8'));
 					if (!Array.isArray(currentLog)) currentLog = [];
-				} catch (e) { currentLog = []; }
+				} catch (e) { currentLog =[]; }
 			}
 			currentLog.push(logEntry);
 			if (currentLog.length > 100) currentLog = currentLog.slice(-100);
@@ -272,7 +355,7 @@ app.post('/api/llm_proxy', async (req, res) => {
 					res.json({
 						success: true,
 						data: innerJson,
-						usage: jsonResponse.usage || []
+						usage: jsonResponse.usage ||[]
 					});
 				} catch (e) {
 					res.json({
