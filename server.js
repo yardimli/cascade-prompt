@@ -36,7 +36,6 @@ process.on('exit', () => {
 	serverLogStream.end();
 });
 
-// Ensure directories exist
 if (!fs.existsSync(PROJECTS_DIR)) {
 	fs.mkdirSync(PROJECTS_DIR);
 }
@@ -54,9 +53,7 @@ const storage = multer.diskStorage({
 		cb(null, IMAGES_DIR);
 	},
 	filename: function (req, file, cb) {
-		// Get extension (.png or .jpg)
 		const ext = path.extname(file.originalname).toLowerCase();
-		// Generate 10 random hex characters (5 bytes)
 		const randomName = crypto.randomBytes(5).toString('hex');
 		cb(null, randomName + ext);
 	}
@@ -248,19 +245,20 @@ app.post('/api/llm_proxy', async (req, res) => {
 				let msg = messages[i];
 				if (msg.role === 'user' && typeof msg.content === 'string') {
 					let textPart = msg.content;
-					// Find all[Image: /path/to/img] tags
-					const imageMatches = [...textPart.matchAll(/\[Image:\s*(.+?)\]/g)];
+					// Find all [Image ID: /path/to/img] tags
+					const imageMatches =[...textPart.matchAll(/\[Image ([A-Z0-9]+):\s*(.+?)\]/g)];
 
 					if (imageMatches.length > 0) {
-						let newContent =[];
-						let imageCounter = 1;
+						let newContent = [];
+						let imageRefs =[];
+						let attachments =[];
 
 						for (const match of imageMatches) {
 							const fullMatch = match[0];
-							const imgPathOrUrl = match[1];
+							const cellId = match[1];
+							const imgPathOrUrl = match[2];
 							let base64Data = null;
 
-							// Handle local uploaded images
 							if (imgPathOrUrl.includes('/projects/images/')) {
 								const imgFilename = imgPathOrUrl.split('/').pop();
 								const localFilePath = path.join(IMAGES_DIR, imgFilename);
@@ -268,7 +266,6 @@ app.post('/api/llm_proxy', async (req, res) => {
 								if (fs.existsSync(localFilePath)) {
 									try {
 										const buffer = fs.readFileSync(localFilePath);
-										// Resize to max 500x500 and convert to base64
 										const resizedBuffer = await sharp(buffer)
 											.resize({ width: 500, height: 500, fit: 'inside' })
 											.toFormat('jpeg')
@@ -279,7 +276,6 @@ app.post('/api/llm_proxy', async (req, res) => {
 									}
 								}
 							}
-							// Handle external URLs (fallback)
 							else if (imgPathOrUrl.startsWith('http')) {
 								try {
 									const response = await fetch(imgPathOrUrl);
@@ -296,22 +292,22 @@ app.post('/api/llm_proxy', async (req, res) => {
 							}
 
 							if (base64Data) {
-								// Replace the path tag with a generic identifier
-								textPart = textPart.replace(fullMatch, `[Image ${imageCounter}]`);
-								newContent.push({
-									type: "image_url",
-									image_url: { url: base64Data }
-								});
-								imageCounter++;
+								textPart = textPart.replace(fullMatch, `[Image ${cellId}]`);
+
+								imageRefs.push({ id: cellId, source: imgPathOrUrl });
+
+								attachments.push({ type: "text", text: `Attachment for[Image ${cellId}]:` });
+								attachments.push({ type: "image_url", image_url: { url: base64Data } });
 							}
 						}
 
-						if (newContent.length > 0) {
-							// Add instructions to the text prompt to map the references
-							textPart += '\n\n(Note: The images referenced as [Image X] in the text above are attached to this message in the corresponding order.)';
+						if (imageRefs.length > 0) {
+							textPart += '\n\nImage References:\n' + JSON.stringify(imageRefs, null, 2);
 
-							// Prepend the text part to the content array
-							newContent.unshift({ type: "text", text: textPart });
+							newContent.push({ type: "text", text: textPart });
+
+							newContent = newContent.concat(attachments);
+
 							msg.content = newContent;
 
 							console.log("\n=== DEBUG: LLM Prompt Text Part (With Images) ===");

@@ -282,6 +282,8 @@ export const LLMBuilder = {
 			return null;
 		};
 
+		const getCellId = (r, c) => `${SheetDataManager.getColumnLetter(c)}${r + 1}`;
+
 		if (c2 && r2) {
 			const endC = getColIdx(c2), endR = parseInt(r2) - 1;
 			let count = 0;
@@ -309,7 +311,7 @@ export const LLMBuilder = {
 						} else if (info.type === 'image' && info.value !== '') {
 							imageCount++;
 							if (!isPreview) {
-								allVals.push(`[Image: ${info.value}]`);
+								allVals.push(`[Image ${getCellId(r, c)}: ${info.value}]`);
 							}
 						}
 					}
@@ -351,7 +353,7 @@ export const LLMBuilder = {
 			return '';
 		} else {
 			if (info) {
-				if (info.type === 'image' && info.value) return `[Image: ${info.value}]`;
+				if (info.type === 'image' && info.value) return `[Image ${getCellId(startR, startC)}: ${info.value}]`;
 				if (info.type === 'text') return String(info.value);
 			}
 			return '';
