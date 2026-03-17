@@ -208,11 +208,27 @@ if ($action === 'models') {
 	// Process Response
 	$jsonResponse = json_decode($response, true);
 
+	$logPayload = $payload;
+	if (isset($logPayload['messages']) && is_array($logPayload['messages'])) {
+		foreach ($logPayload['messages'] as &$msg) {
+			if (isset($msg['content']) && is_array($msg['content'])) {
+				foreach ($msg['content'] as &$part) {
+					if (isset($part['type']) && $part['type'] === 'image_url' && isset($part['image_url']['url'])) {
+						if (strpos($part['image_url']['url'], 'data:image') === 0) {
+							$part['image_url']['url'] = substr($part['image_url']['url'], 0, 50) . '... [TRUNCATED]';
+						}
+					}
+				}
+			}
+		}
+		unset($msg, $part); // Break references
+	}
+
 	// Logging Logic
 	$logFile = __DIR__ . '/llm-log.json';
 	$logEntry =[
 		'timestamp' => date('Y-m-d H:i:s'),
-		'request' => $payload,
+		'request' => $logPayload,
 		'response_raw' => $jsonResponse,
 		'model' => $input['model'],
 		'usage' => $jsonResponse['usage'] ?? null

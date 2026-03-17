@@ -335,10 +335,25 @@ app.post('/api/llm_proxy', async (req, res) => {
 
 			const jsonResponse = await response.json();
 
+			const logPayload = JSON.parse(JSON.stringify(payload));
+			if (Array.isArray(logPayload.messages)) {
+				logPayload.messages.forEach(msg => {
+					if (Array.isArray(msg.content)) {
+						msg.content.forEach(part => {
+							if (part.type === 'image_url' && part.image_url && typeof part.image_url.url === 'string') {
+								if (part.image_url.url.startsWith('data:image')) {
+									part.image_url.url = part.image_url.url.substring(0, 50) + '... [TRUNCATED]';
+								}
+							}
+						});
+					}
+				});
+			}
+
 			// Logging
 			const logEntry = {
 				timestamp: new Date().toISOString(),
-				request: payload,
+				request: logPayload,
 				response_raw: jsonResponse,
 				model,
 				usage: jsonResponse.usage || null
