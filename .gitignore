@@ -6,3 +6,4 @@ api/llm-log.json
 /node_modules
 package-lock.json
 projects/images
+server.log

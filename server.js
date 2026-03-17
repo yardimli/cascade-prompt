@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import fs from 'fs';
 import path from 'path';
+import util from 'util';
 import { fileURLToPath } from 'url';
 import multer from 'multer'; // Required for file uploads
 import crypto from 'crypto'; // Required for random filenames
@@ -21,6 +22,19 @@ app.use(express.json({ limit: '50mb' })); // Increased limit for large JSON proj
 const PROJECTS_DIR = path.join(__dirname, 'projects');
 const IMAGES_DIR = path.join(PROJECTS_DIR, 'images'); // Path for images
 const LOG_FILE = path.join(__dirname, 'api', 'llm-log.json');
+const SERVER_LOG_FILE = path.join(__dirname, 'server.log');
+
+// Console Log Redirection
+const serverLogStream = fs.createWriteStream(SERVER_LOG_FILE, { flags: 'a' });
+
+console.log = (...args) => {
+	const message = util.format(...args);
+	serverLogStream.write(`[${new Date().toISOString()}] ${message}\n`);
+};
+
+process.on('exit', () => {
+	serverLogStream.end();
+});
 
 // Ensure directories exist
 if (!fs.existsSync(PROJECTS_DIR)) {
