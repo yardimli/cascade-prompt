@@ -20,6 +20,16 @@ export const LLMRunner = {
 		let finalPrompt = config.prompt.replace(/#([A-Z]+)([0-9]+)(?::([A-Z]+)([0-9]+))?/gi, (match, c1, r1, c2, r2) => {
 			return LLMBuilder.getRangePreview(c1, r1, c2, r2, false);
 		});
+
+		// Resolve image attachments and append them to the prompt text
+		// The backend will intercept these [Image ...] tags and convert them to base64 payload
+		if (config.imageAttachments && config.imageAttachments.trim() !== '') {
+			let resolvedImages = config.imageAttachments.replace(/#([A-Z]+)([0-9]+)(?::([A-Z]+)([0-9]+))?/gi, (match, c1, r1, c2, r2) => {
+				return LLMBuilder.getRangePreview(c1, r1, c2, r2, false);
+			});
+			finalPrompt += '\n\n' + resolvedImages;
+		}
+
 		finalPrompt += '\n\nIMPORTANT: Respond ONLY with valid JSON matching this structure:\n' + config.jsonSchema;
 
 		fetch(getApiEndpoint('llm_proxy'), {
@@ -42,7 +52,7 @@ export const LLMRunner = {
 	validateStructure: function(data, schemaStr) {
 		try {
 			const schema = JSON.parse(schemaStr);
-			const getKeys = o => (Array.isArray(o) && o[0] ? Object.keys(o[0]) : (o ? Object.keys(o) : [])).sort();
+			const getKeys = o => (Array.isArray(o) && o[0] ? Object.keys(o[0]) : (o ? Object.keys(o) :[])).sort();
 			return JSON.stringify(getKeys(schema)) === JSON.stringify(getKeys(data)) || (Array.isArray(data) && !Array.isArray(schema) && JSON.stringify(getKeys(data)) === JSON.stringify(Object.keys(schema).sort()));
 		} catch (e) { return true; }
 	},
@@ -59,7 +69,7 @@ export const LLMRunner = {
 			if (r >= sheet.rowCount) r = sheet.rowCount;
 		}
 
-		let keys = [];
+		let keys =[];
 		try { const s = JSON.parse(schemaStr); keys = Array.isArray(s) && s[0] ? Object.keys(s[0]) : Object.keys(s); } catch (e) {}
 
 		if (headers && keys.length) { keys.forEach((k, i) => this.setCellValue(sheet, r, startC + i, k)); r++; }

@@ -74,7 +74,7 @@ export const LLMBuilder = {
 		const targetDisplay = document.getElementById('prop-llm-target-display');
 
 		let cellLabel = 'None';
-		let promptText = '', modelToSelect = '', isUpdate = false;
+		let promptText = '', imageAttachmentsText = '', modelToSelect = '', isUpdate = false;
 
 		if (SheetDataManager.propertyPanel && SheetDataManager.propertyPanel.targetedCell) {
 			const { r, c } = SheetDataManager.propertyPanel.targetedCell;
@@ -87,6 +87,7 @@ export const LLMBuilder = {
 					isUpdate = true;
 					const config = cell.type.details;
 					promptText = config.prompt || '';
+					imageAttachmentsText = config.imageAttachments || '';
 					schemaInput.value = config.jsonSchema || '';
 					funcNameInput.value = config.funcName || 'Run LLM';
 					targetInput.value = SheetDataManager.getColumnLetter(config.targetCol) + (config.targetRow + 1);
@@ -109,8 +110,14 @@ export const LLMBuilder = {
 
 		const editor = document.getElementById('llm-prompt-editor');
 		editor.textContent = promptText;
-
 		this.highlightPromptVariables(editor);
+
+		const imgEditor = document.getElementById('llm-image-attachment');
+		if (imgEditor) {
+			imgEditor.textContent = imageAttachmentsText;
+			this.highlightPromptVariables(imgEditor);
+		}
+
 		this.attachEditorListeners();
 	},
 
@@ -136,6 +143,9 @@ export const LLMBuilder = {
 		const editor = document.getElementById('llm-prompt-editor');
 		if (editor) editor.addEventListener('input', markModified);
 
+		const imgEditor = document.getElementById('llm-image-attachment');
+		if (imgEditor) imgEditor.addEventListener('input', markModified);
+
 		const replaceElement = (id) => {
 			const el = document.getElementById(id);
 			if (el) {
@@ -154,50 +164,55 @@ export const LLMBuilder = {
 	},
 
 	attachEditorListeners: function() {
-		const editor = document.getElementById('llm-prompt-editor');
+		const editors =['llm-prompt-editor', 'llm-image-attachment'];
 
-		const newEditor = editor.cloneNode(true);
-		editor.parentNode.replaceChild(newEditor, editor);
+		editors.forEach(id => {
+			const editor = document.getElementById(id);
+			if (!editor) return;
 
-		newEditor.addEventListener('keydown', (e) => {
-			if (e.key === ' ' || e.key === 'Enter') {
-				this.handleTagInsertion(e);
-			}
-		});
+			const newEditor = editor.cloneNode(true);
+			editor.parentNode.replaceChild(newEditor, editor);
 
-		newEditor.addEventListener('click', (e) => {
-			if (e.target.classList.contains('llm-var-tag')) {
-				const range = document.createRange();
-				range.setStartBefore(e.target);
-				range.collapse(true);
-				const sel = window.getSelection();
-				sel.removeAllRanges();
-				sel.addRange(range);
-			}
-		});
+			newEditor.addEventListener('keydown', (e) => {
+				if (e.key === ' ' || e.key === 'Enter') {
+					this.handleTagInsertion(e);
+				}
+			});
 
-		newEditor.addEventListener('paste', (e) => {
-			e.preventDefault();
-			const text = (e.originalEvent || e).clipboardData.getData('text/plain');
-			document.execCommand('insertText', false, text);
+			newEditor.addEventListener('click', (e) => {
+				if (e.target.classList.contains('llm-var-tag')) {
+					const range = document.createRange();
+					range.setStartBefore(e.target);
+					range.collapse(true);
+					const sel = window.getSelection();
+					sel.removeAllRanges();
+					sel.addRange(range);
+				}
+			});
 
-			setTimeout(() => this.highlightPromptVariables(newEditor), 0);
-		});
+			newEditor.addEventListener('paste', (e) => {
+				e.preventDefault();
+				const text = (e.originalEvent || e).clipboardData.getData('text/plain');
+				document.execCommand('insertText', false, text);
 
-		newEditor.addEventListener('mouseover', (e) => {
-			if (e.target.classList.contains('llm-var-tag')) {
-				const ref = e.target.textContent.trim();
-				const regex = /^#([A-Z]+)([0-9]+)(?::([A-Z]+)([0-9]+))?$/i;
-				const match = ref.match(regex);
-				if (match) {
-					const previewHTML = this.getRangePreview(match[1], match[2], match[3], match[4], true);
-					if (previewHTML && previewHTML.trim() !== '') {
-						this.showTooltip(e.target, previewHTML);
+				setTimeout(() => this.highlightPromptVariables(newEditor), 0);
+			});
+
+			newEditor.addEventListener('mouseover', (e) => {
+				if (e.target.classList.contains('llm-var-tag')) {
+					const ref = e.target.textContent.trim();
+					const regex = /^#([A-Z]+)([0-9]+)(?::([A-Z]+)([0-9]+))?$/i;
+					const match = ref.match(regex);
+					if (match) {
+						const previewHTML = this.getRangePreview(match[1], match[2], match[3], match[4], true);
+						if (previewHTML && previewHTML.trim() !== '') {
+							this.showTooltip(e.target, previewHTML);
+						}
 					}
 				}
-			}
+			});
+			newEditor.addEventListener('mouseout', (e) => { if (e.target.classList.contains('llm-var-tag')) this.hideTooltip(); });
 		});
-		newEditor.addEventListener('mouseout', (e) => { if (e.target.classList.contains('llm-var-tag')) this.hideTooltip(); });
 	},
 
 	handleTagInsertion: function(e) {
@@ -398,6 +413,7 @@ export const LLMBuilder = {
 
 	insertFormula: function() {
 		const prompt = document.getElementById('llm-prompt-editor').textContent;
+		const imageAttachments = document.getElementById('llm-image-attachment').textContent;
 		const model = document.getElementById('llm-model-input').value;
 		const schema = document.getElementById('llm-json-schema').value;
 		const targetStr = document.getElementById('llm-target-cell').value;
@@ -428,7 +444,7 @@ export const LLMBuilder = {
 		if (!sheet.cells[key]) sheet.cells[key] = { rowspan: 1, colspan: 1, style: {}, cellStyle: {} };
 		sheet.cells[key].type = {
 			name: 'llm_formula',
-			details: { prompt, model, jsonSchema: schema, targetRow, targetCol, funcName, includeHeaders, insertMode, component: 'button' }
+			details: { prompt, imageAttachments, model, jsonSchema: schema, targetRow, targetCol, funcName, includeHeaders, insertMode, component: 'button' }
 		};
 		delete sheet.cells[key].text; delete sheet.cells[key].html; delete sheet.cells[key].llm;
 
