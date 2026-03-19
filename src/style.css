@@ -250,6 +250,10 @@ html[data-ui-size="large"] {
     @apply textarea  w-full min-h-[100px] font-mono text-sm; /*textarea-bordered*/
 }
 
+.llm-image-attachment {
+    @apply textarea  w-full min-h-[30px] font-mono text-sm; /*textarea-bordered*/
+}
+
 .llm-var-tag {
     @apply badge badge-info badge-outline font-mono text-xs cursor-help select-none align-middle mx-0.5;
 }
