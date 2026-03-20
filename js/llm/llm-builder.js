@@ -87,7 +87,9 @@ export const LLMBuilder = {
 					isUpdate = true;
 					const config = cell.type.details;
 					promptText = config.prompt || '';
-					imageAttachmentsText = config.imageAttachments || '';
+
+					imageAttachmentsText = (config.imageAttachments ||[]).join('\n');
+
 					schemaInput.value = config.jsonSchema || '';
 					funcNameInput.value = config.funcName || 'Run LLM';
 					targetInput.value = SheetDataManager.getColumnLetter(config.targetCol) + (config.targetRow + 1);
@@ -413,7 +415,10 @@ export const LLMBuilder = {
 
 	insertFormula: function() {
 		const prompt = document.getElementById('llm-prompt-editor').textContent;
-		const imageAttachments = document.getElementById('llm-image-attachment').textContent;
+		const imageAttachmentsRaw = document.getElementById('llm-image-attachment').textContent;
+
+		const imageAttachments = imageAttachmentsRaw.split(/\r?\n/).map(s => s.trim()).filter(s => s !== '');
+
 		const model = document.getElementById('llm-model-input').value;
 		const schema = document.getElementById('llm-json-schema').value;
 		const targetStr = document.getElementById('llm-target-cell').value;

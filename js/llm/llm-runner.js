@@ -21,8 +21,10 @@ export const LLMRunner = {
 			return LLMBuilder.getRangePreview(c1, r1, c2, r2, false);
 		});
 
-		if (config.imageAttachments && config.imageAttachments.trim() !== '') {
-			let resolvedImages = config.imageAttachments.replace(/#([A-Z]+)([0-9]+)(?::([A-Z]+)([0-9]+))?/gi, (match, c1, r1, c2, r2) => {
+		let imgAttachmentsStr = (config.imageAttachments ||[]).join('\n');
+
+		if (imgAttachmentsStr.trim() !== '') {
+			let resolvedImages = imgAttachmentsStr.replace(/#([A-Z]+)([0-9]+)(?::([A-Z]+)([0-9]+))?/gi, (match, c1, r1, c2, r2) => {
 				return LLMBuilder.getRangePreview(c1, r1, c2, r2, false);
 			});
 			finalPrompt += '\n\n' + resolvedImages;
@@ -32,7 +34,7 @@ export const LLMRunner = {
 
 		fetch(getApiEndpoint('llm_proxy'), {
 			method: 'POST', headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ action: 'chat', filename: SheetDataManager.currentFileName, model: config.model, messages: [{ role: 'user', content: finalPrompt }] })
+			body: JSON.stringify({ action: 'chat', filename: SheetDataManager.currentFileName, model: config.model, messages:[{ role: 'user', content: finalPrompt }] })
 		})
 			.then(r => r.json()).then(data => {
 			if (data.success && data.data) {
