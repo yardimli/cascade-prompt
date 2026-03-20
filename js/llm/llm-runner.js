@@ -21,8 +21,6 @@ export const LLMRunner = {
 			return LLMBuilder.getRangePreview(c1, r1, c2, r2, false);
 		});
 
-		// Resolve image attachments and append them to the prompt text
-		// The backend will intercept these [Image ...] tags and convert them to base64 payload
 		if (config.imageAttachments && config.imageAttachments.trim() !== '') {
 			let resolvedImages = config.imageAttachments.replace(/#([A-Z]+)([0-9]+)(?::([A-Z]+)([0-9]+))?/gi, (match, c1, r1, c2, r2) => {
 				return LLMBuilder.getRangePreview(c1, r1, c2, r2, false);

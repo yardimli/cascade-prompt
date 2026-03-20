@@ -94,12 +94,15 @@ if ($action === 'models') {
 
 	// --- Helper functions for image processing in PHP ---
 	if (!function_exists('processImageStringForLLM')) {
-		function processImageStringForLLM($imgData) {
+		function processImageStringForLLM($imgData)
+		{
 			if (!function_exists('imagecreatefromstring')) {
 				return 'data:image/jpeg;base64,' . base64_encode($imgData);
 			}
 			$img = @imagecreatefromstring($imgData);
-			if (!$img) return 'data:image/jpeg;base64,' . base64_encode($imgData);
+			if (!$img) {
+				return 'data:image/jpeg;base64,' . base64_encode($imgData);
+			}
 
 			$width = imagesx($img);
 			$height = imagesy($img);
@@ -121,9 +124,12 @@ if ($action === 'models') {
 	}
 
 	if (!function_exists('processImageForLLM')) {
-		function processImageForLLM($filePath) {
+		function processImageForLLM($filePath)
+		{
 			$imgData = @file_get_contents($filePath);
-			if ($imgData === false) return null;
+			if ($imgData === false) {
+				return null;
+			}
 			return processImageStringForLLM($imgData);
 		}
 	}
@@ -135,8 +141,7 @@ if ($action === 'models') {
 
 			// Find all [Image ID: /path/to/img] tags
 			if (preg_match_all('/\[Image ([A-Z0-9]+):\s*(.+?)\]/', $textPart, $matches, PREG_SET_ORDER)) {
-				$newContent =[];
-				$imageRefs = [];
+				$newContent = [];
 				$attachments =[];
 
 				foreach ($matches as $match) {
@@ -159,25 +164,19 @@ if ($action === 'models') {
 					}
 
 					if ($base64Data) {
-						// Replace the path tag with the exact cell identifier
-						$textPart = str_replace($fullMatch, "[Image {$cellId}]", $textPart);
+						// MODIFIED: Remove the image tag from the text part completely, do not leave cell coordinates
+						$textPart = str_replace($fullMatch, "", $textPart);
 
-						$imageRefs[] =['id' => $cellId, 'source' => $imgPathOrUrl];
-
-						// Prepare the interleaved attachments
-						$attachments[] =['type' => 'text', 'text' => "Attachment for [Image {$cellId}]:"];
+						// MODIFIED: Only add the image_url object, no interleaved text attachments
 						$attachments[] =['type' => 'image_url', 'image_url' => ['url' => $base64Data]];
 					}
 				}
 
-				if (!empty($imageRefs)) {
-					// Append the systematic reference map to the main text part
-					$textPart .= "\n\nImage References:\n" . json_encode($imageRefs, JSON_PRETTY_PRINT);
+				if (!empty($attachments)) {
+					// Prepend the cleaned text part to the content array
+					$newContent[] = ['type' => 'text', 'text' => trim($textPart)];
 
-					// Prepend the text part to the content array
-					$newContent[] = ['type' => 'text', 'text' => $textPart];
-
-					// Append all interleaved attachments
+					// Append all image attachments
 					$newContent = array_merge($newContent, $attachments);
 
 					$msg['content'] = $newContent;
@@ -187,7 +186,7 @@ if ($action === 'models') {
 	}
 	unset($msg); // Break reference
 
-	$payload =[
+	$payload = [
 		'model' => $input['model'],
 		'messages' => $input['messages']
 	];
@@ -239,7 +238,7 @@ if ($action === 'models') {
 	if (file_exists($logFile)) {
 		$currentLog = json_decode(file_get_contents($logFile), true);
 		if (!is_array($currentLog)) {
-			$currentLog = [];
+			$currentLog =[];
 		}
 	}
 	$currentLog[] = $logEntry;

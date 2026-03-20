@@ -245,13 +245,11 @@ app.post('/api/llm_proxy', async (req, res) => {
 				let msg = messages[i];
 				if (msg.role === 'user' && typeof msg.content === 'string') {
 					let textPart = msg.content;
-					// Find all [Image ID: /path/to/img] tags
-					const imageMatches =[...textPart.matchAll(/\[Image ([A-Z0-9]+):\s*(.+?)\]/g)];
+					const imageMatches = [...textPart.matchAll(/\[Image ([A-Z0-9]+):\s*(.+?)\]/g)];
 
 					if (imageMatches.length > 0) {
-						let newContent = [];
-						let imageRefs =[];
-						let attachments =[];
+						let newContent =[];
+						let attachments = [];
 
 						for (const match of imageMatches) {
 							const fullMatch = match[0];
@@ -292,26 +290,20 @@ app.post('/api/llm_proxy', async (req, res) => {
 							}
 
 							if (base64Data) {
-								textPart = textPart.replace(fullMatch, `[Image ${cellId}]`);
-
-								imageRefs.push({ id: cellId, source: imgPathOrUrl });
-
-								attachments.push({ type: "text", text: `Attachment for[Image ${cellId}]:` });
+								textPart = textPart.replace(fullMatch, "");
 								attachments.push({ type: "image_url", image_url: { url: base64Data } });
 							}
 						}
 
-						if (imageRefs.length > 0) {
-							textPart += '\n\nImage References:\n' + JSON.stringify(imageRefs, null, 2);
-
-							newContent.push({ type: "text", text: textPart });
+						if (attachments.length > 0) {
+							newContent.push({ type: "text", text: textPart.trim() });
 
 							newContent = newContent.concat(attachments);
 
 							msg.content = newContent;
 
 							console.log("\n=== DEBUG: LLM Prompt Text Part (With Images) ===");
-							console.log(textPart);
+							console.log(textPart.trim());
 							console.log("=================================================\n");
 						} else {
 							console.log("\n=== DEBUG: LLM Prompt Text Part ===");
@@ -350,7 +342,6 @@ app.post('/api/llm_proxy', async (req, res) => {
 				});
 			}
 
-			// Logging
 			const logEntry = {
 				timestamp: new Date().toISOString(),
 				request: logPayload,
@@ -370,7 +361,6 @@ app.post('/api/llm_proxy', async (req, res) => {
 			if (currentLog.length > 100) currentLog = currentLog.slice(-100);
 			fs.writeFileSync(LOG_FILE, JSON.stringify(currentLog, null, 2));
 
-			// Process Content
 			if (jsonResponse.choices && jsonResponse.choices[0] && jsonResponse.choices[0].message) {
 				const rawContent = jsonResponse.choices[0].message.content;
 				const cleanContent = rawContent.replace(/^```json\s*|\s*```$/gs, '').trim();
