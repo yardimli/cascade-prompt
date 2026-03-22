@@ -12,5 +12,7 @@ export const LLMManager = {
 	insertFormula: function() { LLMBuilder.insertFormula(); },
 	executeLLM: function(r, c, e) { LLMRunner.executeLLM(r, c, e); },
 	// Helper needed for UI
-	getRangePreview: function(c1, r1, c2, r2, isPreview = true) { return LLMBuilder.getRangePreview(c1, r1, c2, r2, isPreview); }
+	getRangePreview: function(c1, r1, c2, r2, isPreview = true, ignoreImages = false) {
+		return LLMBuilder.getRangePreview(c1, r1, c2, r2, isPreview, ignoreImages);
+	}
 };

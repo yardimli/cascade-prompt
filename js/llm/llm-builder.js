@@ -238,10 +238,10 @@ export const LLMBuilder = {
 				const c2 = match[4];
 				const r2 = match[5];
 
-				// Check if we are in the image attachment editor
 				const isImageEditor = node.parentElement && node.parentElement.closest('#llm-image-attachment');
+				const isPromptEditor = node.parentElement && node.parentElement.closest('#llm-prompt-editor');
 
-				if (isImageEditor) {
+				if (isImageEditor || isPromptEditor) {
 					const sheet = SheetDataManager.data.sheets[SheetDataManager.data.activeSheetIndex];
 					const getColIdx = (l) => l.toUpperCase().split('').reduce((acc, char) => acc * 26 + char.charCodeAt(0) - 64, 0) - 1;
 					const startC = getColIdx(c1);
@@ -268,16 +268,26 @@ export const LLMBuilder = {
 						}
 					}
 
-					if (!hasImage) {
+					if (isImageEditor && !hasImage) {
 						if (typeof window.showCustomAlert === 'function') {
 							window.showCustomAlert("the reference cell don't have image");
 						} else {
 							alert("the reference cell don't have image");
 						}
-						// Remove the typed text completely
 						const startOffset = range.startOffset - fullMatch.length;
 						node.deleteData(startOffset, fullMatch.length);
-						return; // Stop insertion
+						return;
+					}
+
+					if (isPromptEditor && hasImage) {
+						if (typeof window.showCustomAlert === 'function') {
+							window.showCustomAlert(`Please add ${fullMatch} tag in the Image Attachments instead.`);
+						} else {
+							alert(`Please add ${fullMatch} tag in the Image Attachments instead.`);
+						}
+						const startOffset = range.startOffset - fullMatch.length;
+						node.deleteData(startOffset, fullMatch.length);
+						return;
 					}
 				}
 
@@ -312,10 +322,11 @@ export const LLMBuilder = {
 		if (!editor) return;
 
 		const isImageEditor = editor.id === 'llm-image-attachment';
+		const isPromptEditor = editor.id === 'llm-prompt-editor';
 		let sheet = null;
 		let getColIdx = null;
 
-		if (isImageEditor) {
+		if (isImageEditor || isPromptEditor) {
 			sheet = SheetDataManager.data.sheets[SheetDataManager.data.activeSheetIndex];
 			getColIdx = (l) => l.toUpperCase().split('').reduce((acc, char) => acc * 26 + char.charCodeAt(0) - 64, 0) - 1;
 		}
@@ -325,7 +336,7 @@ export const LLMBuilder = {
 		let html = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
 		html = html.replace(/#([A-Z]+)([0-9]+)(?::([A-Z]+)([0-9]+))?/gi, (match, c1, r1, c2, r2) => {
-			if (isImageEditor) {
+			if (isImageEditor || isPromptEditor) {
 				const startC = getColIdx(c1);
 				const startR = parseInt(r1) - 1;
 				let hasImage = false;
@@ -350,8 +361,11 @@ export const LLMBuilder = {
 					}
 				}
 
-				if (!hasImage) {
+				if (isImageEditor && !hasImage) {
 					return ''; // Silently remove invalid tags on load/paste for image editor
+				}
+				if (isPromptEditor && hasImage) {
+					return ''; // Silently remove invalid tags on load/paste for prompt editor
 				}
 			}
 			return `<span class="llm-var-tag" contenteditable="false">${match}</span>`;
@@ -360,7 +374,7 @@ export const LLMBuilder = {
 		if (editor.innerHTML !== html) editor.innerHTML = html;
 	},
 
-	getRangePreview: function(c1, r1, c2, r2, isPreview = true) {
+	getRangePreview: function(c1, r1, c2, r2, isPreview = true, ignoreImages = false) {
 		const sheet = SheetDataManager.data.sheets[SheetDataManager.data.activeSheetIndex];
 		const getColIdx = (l) => l.toUpperCase().split('').reduce((acc, char) => acc * 26 + char.charCodeAt(0) - 64, 0) - 1;
 		const startC = getColIdx(c1), startR = parseInt(r1) - 1;
@@ -411,9 +425,11 @@ export const LLMBuilder = {
 								allVals.push(String(info.value));
 							}
 						} else if (info.type === 'image' && info.value !== '') {
-							imageCount++;
-							if (!isPreview) {
-								allVals.push(`[Image ${getCellId(r, c)}: ${info.value}]`);
+							if (!ignoreImages) {
+								imageCount++;
+								if (!isPreview) {
+									allVals.push(`[Image ${getCellId(r, c)}: ${info.value}]`);
+								}
 							}
 						}
 					}
@@ -447,6 +463,7 @@ export const LLMBuilder = {
 		if (isPreview) {
 			if (info) {
 				if (info.type === 'image' && info.value) {
+					if (ignoreImages) return '';
 					return `<img src="${escapeHTML(info.value)}" style="max-width: 200px; max-height: 200px; object-fit: contain; border-radius: 4px; display: block;">`;
 				} else if (info.type === 'text') {
 					return escapeHTML(info.value);
@@ -455,7 +472,10 @@ export const LLMBuilder = {
 			return '';
 		} else {
 			if (info) {
-				if (info.type === 'image' && info.value) return `[Image ${getCellId(startR, startC)}: ${info.value}]`;
+				if (info.type === 'image' && info.value) {
+					if (ignoreImages) return '';
+					return `[Image ${getCellId(startR, startC)}: ${info.value}]`;
+				}
 				if (info.type === 'text') return String(info.value);
 			}
 			return '';
