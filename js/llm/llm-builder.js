@@ -362,10 +362,10 @@ export const LLMBuilder = {
 				}
 
 				if (isImageEditor && !hasImage) {
-					return ''; // Silently remove invalid tags on load/paste for image editor
+					return '';
 				}
 				if (isPromptEditor && hasImage) {
-					return ''; // Silently remove invalid tags on load/paste for prompt editor
+					return '';
 				}
 			}
 			return `<span class="llm-var-tag" contenteditable="false">${match}</span>`;
@@ -522,7 +522,6 @@ export const LLMBuilder = {
 		const prompt = document.getElementById('llm-prompt-editor').textContent;
 		const imageAttachmentsRaw = document.getElementById('llm-image-attachment').textContent;
 
-		// Extract ONLY valid cell reference tags (e.g., #A1, #B2:C5) and ignore other text
 		const tagRegex = /#([A-Z]+)([0-9]+)(?::([A-Z]+)([0-9]+))?/gi;
 		const matches = imageAttachmentsRaw.match(tagRegex);
 		const imageAttachments = matches ? matches :[];

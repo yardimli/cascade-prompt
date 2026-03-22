@@ -18,14 +18,14 @@ export const LLMRunner = {
 		document.getElementById('status-llm-busy').style.display = 'flex';
 
 		let finalPrompt = config.prompt.replace(/#([A-Z]+)([0-9]+)(?::([A-Z]+)([0-9]+))?/gi, (match, c1, r1, c2, r2) => {
-			return LLMBuilder.getRangePreview(c1, r1, c2, r2, false, true); // ignoreImages = true
+			return LLMBuilder.getRangePreview(c1, r1, c2, r2, false, true);
 		});
 
 		let imgAttachmentsStr = (config.imageAttachments ||[]).join('\n');
 
 		if (imgAttachmentsStr.trim() !== '') {
 			let resolvedImages = imgAttachmentsStr.replace(/#([A-Z]+)([0-9]+)(?::([A-Z]+)([0-9]+))?/gi, (match, c1, r1, c2, r2) => {
-				return LLMBuilder.getRangePreview(c1, r1, c2, r2, false, false); // ignoreImages = false
+				return LLMBuilder.getRangePreview(c1, r1, c2, r2, false, false);
 			});
 			finalPrompt += '\n\n' + resolvedImages;
 		}
