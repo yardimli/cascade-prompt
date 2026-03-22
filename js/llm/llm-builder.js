@@ -502,8 +502,10 @@ export const LLMBuilder = {
 		const prompt = document.getElementById('llm-prompt-editor').textContent;
 		const imageAttachmentsRaw = document.getElementById('llm-image-attachment').textContent;
 
-		// Split by any whitespace (spaces, tabs, newlines, non-breaking spaces) to ensure clean tags
-		const imageAttachments = imageAttachmentsRaw.split(/[\s\u00A0]+/).map(s => s.trim()).filter(s => s !== '');
+		// Extract ONLY valid cell reference tags (e.g., #A1, #B2:C5) and ignore other text
+		const tagRegex = /#([A-Z]+)([0-9]+)(?::([A-Z]+)([0-9]+))?/gi;
+		const matches = imageAttachmentsRaw.match(tagRegex);
+		const imageAttachments = matches ? matches :[];
 
 		const model = document.getElementById('llm-model-input').value;
 		const schema = document.getElementById('llm-json-schema').value;
