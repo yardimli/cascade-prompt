@@ -233,6 +233,53 @@ export const LLMBuilder = {
 				e.preventDefault();
 
 				const fullMatch = match[0];
+				const c1 = match[2];
+				const r1 = match[3];
+				const c2 = match[4];
+				const r2 = match[5];
+
+				// Check if we are in the image attachment editor
+				const isImageEditor = node.parentElement && node.parentElement.closest('#llm-image-attachment');
+
+				if (isImageEditor) {
+					const sheet = SheetDataManager.data.sheets[SheetDataManager.data.activeSheetIndex];
+					const getColIdx = (l) => l.toUpperCase().split('').reduce((acc, char) => acc * 26 + char.charCodeAt(0) - 64, 0) - 1;
+					const startC = getColIdx(c1);
+					const startR = parseInt(r1) - 1;
+					let hasImage = false;
+
+					if (c2 && r2) {
+						const endC = getColIdx(c2);
+						const endR = parseInt(r2) - 1;
+						for (let r = Math.min(startR, endR); r <= Math.max(startR, endR); r++) {
+							for (let c = Math.min(startC, endC); c <= Math.max(startC, endC); c++) {
+								const cell = sheet.cells[`${r}-${c}`];
+								if (cell && cell.type && cell.type.name === 'image') {
+									hasImage = true;
+									break;
+								}
+							}
+							if (hasImage) break;
+						}
+					} else {
+						const cell = sheet.cells[`${startR}-${startC}`];
+						if (cell && cell.type && cell.type.name === 'image') {
+							hasImage = true;
+						}
+					}
+
+					if (!hasImage) {
+						if (typeof window.showCustomAlert === 'function') {
+							window.showCustomAlert("the reference cell don't have image");
+						} else {
+							alert("the reference cell don't have image");
+						}
+						// Remove the typed text completely
+						const startOffset = range.startOffset - fullMatch.length;
+						node.deleteData(startOffset, fullMatch.length);
+						return; // Stop insertion
+					}
+				}
 
 				const startOffset = range.startOffset - fullMatch.length;
 				node.deleteData(startOffset, fullMatch.length);
@@ -264,11 +311,49 @@ export const LLMBuilder = {
 	highlightPromptVariables: function(editor) {
 		if (!editor) return;
 
+		const isImageEditor = editor.id === 'llm-image-attachment';
+		let sheet = null;
+		let getColIdx = null;
+
+		if (isImageEditor) {
+			sheet = SheetDataManager.data.sheets[SheetDataManager.data.activeSheetIndex];
+			getColIdx = (l) => l.toUpperCase().split('').reduce((acc, char) => acc * 26 + char.charCodeAt(0) - 64, 0) - 1;
+		}
+
 		const text = editor.textContent;
 
 		let html = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
-		html = html.replace(/#([A-Z]+)([0-9]+)(?::([A-Z]+)([0-9]+))?/gi, (match) => {
+		html = html.replace(/#([A-Z]+)([0-9]+)(?::([A-Z]+)([0-9]+))?/gi, (match, c1, r1, c2, r2) => {
+			if (isImageEditor) {
+				const startC = getColIdx(c1);
+				const startR = parseInt(r1) - 1;
+				let hasImage = false;
+
+				if (c2 && r2) {
+					const endC = getColIdx(c2);
+					const endR = parseInt(r2) - 1;
+					for (let r = Math.min(startR, endR); r <= Math.max(startR, endR); r++) {
+						for (let c = Math.min(startC, endC); c <= Math.max(startC, endC); c++) {
+							const cell = sheet.cells[`${r}-${c}`];
+							if (cell && cell.type && cell.type.name === 'image') {
+								hasImage = true;
+								break;
+							}
+						}
+						if (hasImage) break;
+					}
+				} else {
+					const cell = sheet.cells[`${startR}-${startC}`];
+					if (cell && cell.type && cell.type.name === 'image') {
+						hasImage = true;
+					}
+				}
+
+				if (!hasImage) {
+					return ''; // Silently remove invalid tags on load/paste for image editor
+				}
+			}
 			return `<span class="llm-var-tag" contenteditable="false">${match}</span>`;
 		});
 
@@ -417,7 +502,8 @@ export const LLMBuilder = {
 		const prompt = document.getElementById('llm-prompt-editor').textContent;
 		const imageAttachmentsRaw = document.getElementById('llm-image-attachment').textContent;
 
-		const imageAttachments = imageAttachmentsRaw.split(/\r?\n/).map(s => s.trim()).filter(s => s !== '');
+		// Split by any whitespace (spaces, tabs, newlines, non-breaking spaces) to ensure clean tags
+		const imageAttachments = imageAttachmentsRaw.split(/[\s\u00A0]+/).map(s => s.trim()).filter(s => s !== '');
 
 		const model = document.getElementById('llm-model-input').value;
 		const schema = document.getElementById('llm-json-schema').value;
