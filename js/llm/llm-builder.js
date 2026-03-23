@@ -374,7 +374,7 @@ export const LLMBuilder = {
 		if (editor.innerHTML !== html) editor.innerHTML = html;
 	},
 
-	getRangePreview: function(c1, r1, c2, r2, isPreview = true, ignoreImages = false) {
+	getRangePreview: function(c1, r1, c2, r2, isPreview = true, ignoreImages = false, ignoreText = false) {
 		const sheet = SheetDataManager.data.sheets[SheetDataManager.data.activeSheetIndex];
 		const getColIdx = (l) => l.toUpperCase().split('').reduce((acc, char) => acc * 26 + char.charCodeAt(0) - 64, 0) - 1;
 		const startC = getColIdx(c1), startR = parseInt(r1) - 1;
@@ -414,15 +414,17 @@ export const LLMBuilder = {
 					const info = getCellInfo(r, c);
 					if (info) {
 						if (info.type === 'text' && info.value !== '') {
-							totalTextCount++;
-							if (isPreview) {
-								if (textVals.length < 3) {
-									let strVal = String(info.value);
-									strVal = strVal.length > 20 ? strVal.substring(0, 20) + '...' : strVal;
-									textVals.push(escapeHTML(strVal));
+							if (!ignoreText) {
+								totalTextCount++;
+								if (isPreview) {
+									if (textVals.length < 3) {
+										let strVal = String(info.value);
+										strVal = strVal.length > 20 ? strVal.substring(0, 20) + '...' : strVal;
+										textVals.push(escapeHTML(strVal));
+									}
+								} else {
+									allVals.push(String(info.value));
 								}
-							} else {
-								allVals.push(String(info.value));
 							}
 						} else if (info.type === 'image' && info.value !== '') {
 							if (!ignoreImages) {
@@ -466,6 +468,7 @@ export const LLMBuilder = {
 					if (ignoreImages) return '';
 					return `<img src="${escapeHTML(info.value)}" style="max-width: 200px; max-height: 200px; object-fit: contain; border-radius: 4px; display: block;">`;
 				} else if (info.type === 'text') {
+					if (ignoreText) return '';
 					return escapeHTML(info.value);
 				}
 			}
@@ -476,7 +479,10 @@ export const LLMBuilder = {
 					if (ignoreImages) return '';
 					return `[Image ${getCellId(startR, startC)}: ${info.value}]`;
 				}
-				if (info.type === 'text') return String(info.value);
+				if (info.type === 'text') {
+					if (ignoreText) return '';
+					return String(info.value);
+				}
 			}
 			return '';
 		}
