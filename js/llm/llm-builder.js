@@ -270,9 +270,9 @@ export const LLMBuilder = {
 
 					if (isImageEditor && !hasImage) {
 						if (typeof window.showCustomAlert === 'function') {
-							window.showCustomAlert("the reference cell don't have image");
+							window.showCustomAlert("The reference cell(s) don't have image.");
 						} else {
-							alert("the reference cell don't have image");
+							alert("The reference cell(s) don't have image.");
 						}
 						const startOffset = range.startOffset - fullMatch.length;
 						node.deleteData(startOffset, fullMatch.length);
