@@ -280,10 +280,11 @@ export const LLMBuilder = {
 					}
 
 					if (isPromptEditor && hasImage) {
+						const alertMessage = `The reference '${fullMatch}' includes an image. Please add references to image cells into the 'Image Attachments' field instead.`;
 						if (typeof window.showCustomAlert === 'function') {
-							window.showCustomAlert(`Please add ${fullMatch} tag in the Image Attachments instead.`);
+							window.showCustomAlert(alertMessage);
 						} else {
-							alert(`Please add ${fullMatch} tag in the Image Attachments instead.`);
+							alert(alertMessage);
 						}
 						const startOffset = range.startOffset - fullMatch.length;
 						node.deleteData(startOffset, fullMatch.length);
