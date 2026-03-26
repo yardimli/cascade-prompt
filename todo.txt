@@ -143,6 +143,7 @@ example of button with llm formula->
 - create a generic property panel area. First step: moved the dropdown form to the property panel. The panel title is Formula Editor.
 - move LLM formula form dialog to the property panel(Formula Editor) like the doprdown form.
 - bug fixed:In llm insert form, the content of reference cell in the tooltip is not read live.
+- make the llm call support image inputs so user can reference images in the sheet when using llm formula. images should be added in a new input type(Image Attachments). User will add reference cell tag that contain images. The images are uploaded are added as base64 data urls to the llm request. Any reference cell tag doesn't contain image will be ignored. Image Attachments input accept maximum 5 images.
 
 TODO:
 
@@ -158,7 +159,7 @@ selecting single cell is not working, also after making a selection making it sm
 
 - allow user to create =imagegen() formula that uses fal.ai to generate images based on a prompt from the sheet cell content.
 
-- make the llm call support image inputs so user can reference images in the sheet when using llm formula. images should be added in a new input type where user enters comma seperated list of sheet cell coordinates that contain images. the images are uploaded are added as base64 data urls to the llm request.
+
 
 - update prompt dialog so cell references (#A17) is current sheet and allow user to select cell references from other sheets using sheetname!A17 format.
 
