@@ -279,6 +279,24 @@ export const LLMBuilder = {
 						return;
 					}
 
+					if (isImageEditor && hasImage) {
+						const editor = node.parentElement.closest('#llm-image-attachment');
+						const allText = editor.textContent;
+						const allTags = allText.match(/#([A-Z]+)([0-9]+)(?::([A-Z]+)([0-9]+))?/gi) ||[];
+						const totalImages = this.countImagesInTags(allTags);
+
+						if (totalImages > 5) {
+							if (typeof window.showCustomAlert === 'function') {
+								window.showCustomAlert("Can only add maximum 5 Image Attachments.");
+							} else {
+								alert("Can only add maximum 5 Image Attachments.");
+							}
+							const startOffset = range.startOffset - fullMatch.length;
+							node.deleteData(startOffset, fullMatch.length);
+							return;
+						}
+					}
+
 					if (isPromptEditor && hasImage) {
 						const alertMessage = `The reference '${fullMatch}' includes an image. Please add references to image cells into the 'Image Attachments' field instead.`;
 						if (typeof window.showCustomAlert === 'function') {
@@ -525,6 +543,36 @@ export const LLMBuilder = {
 
 	hideTooltip: function() { document.getElementById('llm-global-tooltip').style.display = 'none'; },
 
+	countImagesInTags: function(tagsArray) {
+		if (!tagsArray || tagsArray.length === 0) return 0;
+		const sheet = SheetDataManager.data.sheets[SheetDataManager.data.activeSheetIndex];
+		const getColIdx = (l) => l.toUpperCase().split('').reduce((acc, char) => acc * 26 + char.charCodeAt(0) - 64, 0) - 1;
+		let total = 0;
+
+		tagsArray.forEach(tag => {
+			const match = tag.match(/^#([A-Z]+)([0-9]+)(?::([A-Z]+)([0-9]+))?$/i);
+			if (!match) return;
+			const c1 = match[1], r1 = match[2], c2 = match[3], r2 = match[4];
+			const startC = getColIdx(c1);
+			const startR = parseInt(r1) - 1;
+
+			if (c2 && r2) {
+				const endC = getColIdx(c2);
+				const endR = parseInt(r2) - 1;
+				for (let r = Math.min(startR, endR); r <= Math.max(startR, endR); r++) {
+					for (let c = Math.min(startC, endC); c <= Math.max(startC, endC); c++) {
+						const cell = sheet.cells[`${r}-${c}`];
+						if (cell && cell.type && cell.type.name === 'image') total++;
+					}
+				}
+			} else {
+				const cell = sheet.cells[`${startR}-${startC}`];
+				if (cell && cell.type && cell.type.name === 'image') total++;
+			}
+		});
+		return total;
+	},
+
 	insertFormula: function() {
 		const prompt = document.getElementById('llm-prompt-editor').textContent;
 		const imageAttachmentsRaw = document.getElementById('llm-image-attachment').textContent;
@@ -532,6 +580,15 @@ export const LLMBuilder = {
 		const tagRegex = /#([A-Z]+)([0-9]+)(?::([A-Z]+)([0-9]+))?/gi;
 		const matches = imageAttachmentsRaw.match(tagRegex);
 		const imageAttachments = matches ? matches :[];
+
+		if (this.countImagesInTags(imageAttachments) > 5) {
+			if (typeof window.showCustomAlert === 'function') {
+				return window.showCustomAlert("Can only add maximum 5 Image Attachments.");
+			} else {
+				alert("Can only add maximum 5 Image Attachments.");
+				return;
+			}
+		}
 
 		const model = document.getElementById('llm-model-input').value;
 		const schema = document.getElementById('llm-json-schema').value;
