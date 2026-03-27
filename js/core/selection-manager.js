@@ -48,13 +48,10 @@ export const SelectionManager = {
 				let icon = 'bi-pencil-square';
 
 				if (name === 'llm_formula') {
-					icon = 'bi-robot';
 					text = `=LLM("${details.funcName || 'Run LLM'}")`;
 				} else if (name === 'dropdown') {
-					icon = 'bi-list-ul';
 					text = `=dropdown("${(details.options ||[]).join(',')}", "${details.selected || ''}")`;
 				} else if (name === 'checkbox') {
-					icon = 'bi-ui-checks';
 					text = `=checkbox("${details.label || ''}", ${details.value ? 'TRUE' : 'FALSE'})`;
 				}
 
