@@ -5,6 +5,7 @@ import { FormatManager } from '../js/ui/format-manager.js';
 import { ClipboardManager } from '../js/core/clipboard-manager.js';
 import { LLMManager } from '../js/cascade-prompt-llm.js';
 import { DropdownManager } from '../js/ui/dropdown-manager.js';
+import { CheckboxManager } from '../js/ui/checkbox-manager.js';
 import { PropertyPanelManager } from '../js/ui/property-panel.js';
 import { ImageManager } from '../js/ui/image-manager.js';
 import { initKeypressListeners } from '../js/core/input-manager.js';
@@ -19,7 +20,7 @@ import { openProjectModal, performSave, initProjectHandlers } from '../js/ui/pro
 // Expose globals
 Object.assign(window, {
 	SheetDataManager, HistoryManager, FormatManager, ClipboardManager,
-	LLMManager, DropdownManager, SheetPropertiesManager, ImageManager,
+	LLMManager, DropdownManager, CheckboxManager,SheetPropertiesManager, ImageManager,
 	PropertyPanelManager,
 	setTheme, setUiFontSize, scrollToViewWithOffsets, makeCellEditable,
 	stopEditing, mergeCells, unmergeCells, attachResizeHandlers, initMenuHandlers,
@@ -107,6 +108,9 @@ document.addEventListener('DOMContentLoaded', function () {
 		}
 		else if (text.toLowerCase().startsWith('=dropdown(')) {
 			DropdownManager.openDropdownBuilder();
+		}
+		else if (text.toLowerCase().startsWith('=checkbox(')) {
+			CheckboxManager.openCheckboxBuilder();
 		}
 	});
 

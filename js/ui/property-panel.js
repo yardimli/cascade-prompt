@@ -1,5 +1,6 @@
 import { SheetDataManager } from '../cascade-prompt-data.js';
 import { DropdownManager } from './dropdown-manager.js';
+import { CheckboxManager } from './checkbox-manager.js';
 import { LLMBuilder } from '../llm/llm-builder.js';
 
 export const PropertyPanelManager = {
@@ -80,6 +81,14 @@ export const PropertyPanelManager = {
 				DropdownManager.initPanel();
 
 				this.currentSaveHandler = () => DropdownManager.saveDropdown();
+			}
+		} else if (type === 'checkbox') {
+			const checkboxSection = document.getElementById('panel-section-checkbox');
+			if (checkboxSection) {
+				checkboxSection.classList.remove('hidden');
+				CheckboxManager.initPanel();
+
+				this.currentSaveHandler = () => CheckboxManager.saveCheckbox();
 			}
 		} else if (type === 'llm') {
 			const llmSection = document.getElementById('panel-section-llm');

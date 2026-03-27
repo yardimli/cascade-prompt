@@ -36,10 +36,13 @@ export const SheetDOM = {
 				const existingCell = oldCells[cellKey];
 
 				if (existingCell && existingCell.type) {
-					if (['llm_formula', 'dropdown'].includes(existingCell.type.name)) {
-						typeObj = existingCell.type.name === 'llm_formula'
-							? JSON.parse(JSON.stringify(existingCell.type))
-							: { name: 'dropdown', details: { options: existingCell.type.details.options || [], selected: innerText } };
+					if (['llm_formula', 'dropdown', 'checkbox'].includes(existingCell.type.name)) {
+						if (existingCell.type.name === 'dropdown') {
+							typeObj = { name: 'dropdown', details: { options: existingCell.type.details.options ||[], selected: innerText } };
+						} else {
+							// For llm_formula and checkbox, preserve the exact object
+							typeObj = JSON.parse(JSON.stringify(existingCell.type));
+						}
 					} else if (existingCell.type.name === 'image') {
 						typeObj = (innerText === '')
 							? JSON.parse(JSON.stringify(existingCell.type))
@@ -70,7 +73,7 @@ export const SheetDOM = {
 					if (cell.style[prop]) cellStyle[prop] = cell.style[prop];
 				});
 
-				if ((typeObj.name === 'text' && typeObj.details.value !== '') || ['dropdown', 'llm_formula', 'image'].includes(typeObj.name) || Object.keys(style).length > 0 || Object.keys(cellStyle).length > 0 || rowspan > 1 || colspan > 1) {
+				if ((typeObj.name === 'text' && typeObj.details.value !== '') || ['dropdown', 'llm_formula', 'image', 'checkbox'].includes(typeObj.name) || Object.keys(style).length > 0 || Object.keys(cellStyle).length > 0 || rowspan > 1 || colspan > 1) {
 					cells[cellKey] = { type: typeObj, rowspan, colspan, style, cellStyle };
 				}
 			}

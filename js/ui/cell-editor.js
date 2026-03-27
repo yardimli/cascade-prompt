@@ -4,10 +4,20 @@ import { DropdownManager } from './dropdown-manager.js';
 export const CellEditor = {
 	makeCellEditable: function(cell) {
 		if (!cell.classList.contains('selected-cell')) window.highlightCell(cell);
-		if (cell.querySelector('.llm-run-btn')) {
-			if (typeof window.showToast === 'function') window.showToast('LLM Button cells cannot be edited directly.');
+
+		const r = cell.parentElement.rowIndex - 1;
+		const c = parseInt(cell.getAttribute('data-col'));
+		const sheet = SheetDataManager.data.sheets[SheetDataManager.data.activeSheetIndex];
+		const cellData = sheet.cells[`${r}-${c}`];
+		const isCheckbox = cellData && cellData.type && cellData.type.name === 'checkbox';
+
+		if (cell.querySelector('.llm-run-btn') || isCheckbox) {
+			if (typeof window.showToast === 'function') {
+				window.showToast(isCheckbox ? 'Checkbox cells cannot be edited directly.' : 'LLM Button cells cannot be edited directly.');
+			}
 			return;
 		}
+
 		if (!cell.classList.contains('edit-cell')) cell.classList.add('edit-cell');
 		document.querySelectorAll('.spreadsheet .area-selected-cell').forEach(el => el.classList.remove('area-selected-cell'));
 
@@ -25,10 +35,6 @@ export const CellEditor = {
 			backgroundColor: window.getComputedStyle(cell).backgroundColor
 		});
 
-		const r = cell.parentElement.rowIndex - 1;
-		const c = parseInt(cell.getAttribute('data-col'));
-		const sheet = SheetDataManager.data.sheets[SheetDataManager.data.activeSheetIndex];
-		const cellData = sheet.cells[`${r}-${c}`];
 		const isDropdown = cellData && cellData.type && cellData.type.name === 'dropdown';
 		const isImage = cellData && cellData.type && cellData.type.name === 'image';
 

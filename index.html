@@ -60,6 +60,7 @@
 					<ul class="bg-base-100 rounded-t-none p-2 w-52 shadow-lg border border-base-200 z-[1001]">
 						<li><a onclick="LLMManager.openFormulaBuilder()">LLM Trigger</a></li>
 						<li><a onclick="DropdownManager.openDropdownBuilder()">Dropdown</a></li>
+						<li><a onclick="CheckboxManager.openCheckboxBuilder()">Checkbox</a></li>
 						<div class="divider my-0"></div>
 						<li><a onclick="ImageManager.openImageModal()">Image</a></li>
 					</ul>
@@ -329,6 +330,30 @@
 				<div class="flex justify-between mt-4 pt-4 border-t border-base-200">
 					<button class="btn btn-error btn-sm btn-outline" id="prop-btn-remove-llm">Remove</button>
 					<button class="btn btn-primary btn-sm" id="prop-btn-save-llm">Apply</button>
+				</div>
+			</div>
+
+			<!-- Checkbox Form -->
+			<div id="panel-section-checkbox" class="prop-section hidden flex flex-col gap-4">
+				<div id="prop-checkbox-target-display" class="bg-base-200 text-base-content p-3 rounded-lg text-center font-extrabold text-lg shadow-md mb-4 select-none">
+					Target: None
+				</div>
+
+				<div class="form-control">
+					<label class="label"><span class="label-text font-semibold">Label</span></label>
+					<input type="text" class="input input-bordered input-sm" id="prop-checkbox-label" placeholder="Checkbox Label">
+				</div>
+
+				<div class="form-control">
+					<label class="cursor-pointer label justify-start gap-4">
+						<span class="label-text font-semibold">Default Checked</span>
+						<input type="checkbox" class="checkbox checkbox-primary" id="prop-checkbox-value">
+					</label>
+				</div>
+
+				<div class="flex justify-between mt-4 pt-4 border-t border-base-200">
+					<button class="btn btn-error btn-sm btn-outline" id="prop-btn-remove-checkbox">Remove</button>
+					<button class="btn btn-primary btn-sm" id="prop-btn-save-checkbox">Apply</button>
 				</div>
 			</div>
 

@@ -89,6 +89,14 @@ export const SheetRender = {
 						} else if (typeName === 'dropdown') {
 							const selectedVal = details.selected || '';
 							cellHTML = `<div class="content-cut" style="${divStyle}${userStyle}">${selectedVal}</div>`;
+						} else if (typeName === 'checkbox') {
+							const isChecked = details.value ? 'checked' : '';
+							const label = details.label || '';
+							const content = `<label class="cursor-pointer label justify-start gap-2 p-0 h-full w-full" style="pointer-events: auto;">
+								<input type="checkbox" class="checkbox checkbox-sm checkbox-primary" ${isChecked} onchange="window.CheckboxManager.toggleCheckbox(${r}, ${c}, this.checked)" />
+								<span class="label-text truncate">${label}</span>
+							</label>`;
+							cellHTML = `<div class="content-cut flex items-center" style="${divStyle}${userStyle}">${content}</div>`;
 						} else if (typeName === 'image') {
 							let src = '';
 
