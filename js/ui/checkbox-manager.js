@@ -179,13 +179,22 @@ export const CheckboxManager = {
 			sheet.cells[key].type.details.value = isChecked ? 1 : 0;
 			SheetDataManager.setModified(true);
 
-			// Update formula bar if this cell is currently selected
 			const selected = document.querySelector('.selected-cell');
 			if (selected) {
 				const selR = selected.parentElement.rowIndex - 1;
 				const selC = parseInt(selected.getAttribute('data-col'));
 				if (selR === r && selC === c) {
 					SelectionManager.updateFormulaBar(r, c);
+				}
+			}
+
+			if (SheetDataManager.propertyPanel && SheetDataManager.propertyPanel.targetedCell) {
+				const target = SheetDataManager.propertyPanel.targetedCell;
+				if (target.r === r && target.c === c) {
+					const valueInput = document.getElementById('prop-checkbox-value');
+					if (valueInput) {
+						valueInput.checked = isChecked;
+					}
 				}
 			}
 		}
