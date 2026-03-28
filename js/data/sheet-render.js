@@ -92,7 +92,7 @@ export const SheetRender = {
 						} else if (typeName === 'checkbox') {
 							const isChecked = details.value ? 'checked' : '';
 							const label = details.label || '';
-							const content = `<label class="cursor-pointer label justify-start gap-2 p-0 h-full w-full" style="pointer-events: auto;">
+							const content = `<label class="cursor-pointer label justify-start gap-2 p-[5px] h-full" style="pointer-events: auto;">
 								<input type="checkbox" class="checkbox checkbox-sm checkbox-primary" ${isChecked} onchange="window.CheckboxManager.toggleCheckbox(${r}, ${c}, this.checked)" />
 								<span class="label-text truncate">${label}</span>
 							</label>`;

@@ -144,6 +144,7 @@ example of button with llm formula->
 - move LLM formula form dialog to the property panel(Formula Editor) like the doprdown form.
 - bug fixed:In llm insert form, the content of reference cell in the tooltip is not read live.
 - make the llm call support image inputs so user can reference images in the sheet when using llm formula. images should be added in a new input type(Image Attachments). User will add reference cell tag that contain images. The images are uploaded are added as base64 data urls to the llm request. Any reference cell tag doesn't contain image will be ignored. Image Attachments input accept maximum 5 images.
+- add checkbox (with true and false values configurable), Checkbox Label is optional.
 
 TODO:
 
@@ -163,6 +164,9 @@ selecting single cell is not working, also after making a selection making it sm
 
 - update prompt dialog so cell references (#A17) is current sheet and allow user to select cell references from other sheets using sheetname!A17 format.
 
+- delete to clear the content of the cell
+- in llm trigger form, change the Expected JSON Structure to key:value input
+
 
 --------- BUGS:
 
@@ -173,4 +177,8 @@ border tool is not working correctly with cells merged and unmerged.
 the editing from formula bar input for text cell and number cell is buggy.
 
 Can’t change the cell texts or number from the formula input
-In llm insert form, the prompt input can’t handle texts pasted into it
+In llm trigger form, the prompt input can’t handle texts pasted into it
+In llm trigger form, the output cell can be the same as the target cell, it causes problem.
+
+-------- FEATURE QUESTIONS:
+when using llm button, can I control the output to be dispalyed by rows or by columns?
