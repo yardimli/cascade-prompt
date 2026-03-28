@@ -56,6 +56,17 @@ export const LLMBuilder = {
 
 			SheetDataManager.propertyPanel.targetedCell = { r: targetR, c: targetC };
 			PropertyPanelManager.open('llm');
+			
+			const formulaInput = document.getElementById('formula-input');
+			if (formulaInput) {
+				const sheet = SheetDataManager.data.sheets[SheetDataManager.data.activeSheetIndex];
+				const cellData = sheet.cells[`${targetR}-${targetC}`];
+				if (!cellData || !cellData.type || cellData.type.name !== 'llm_formula') {
+					formulaInput.innerHTML = `<div class="formula-btn"><i class="bi bi-pencil-square"></i><span>=LLM("Run LLM")</span></div>`;
+					formulaInput.setAttribute('contenteditable', 'false');
+					formulaInput.classList.add('pointer-cursor');
+				}
+			}
 		});
 	},
 

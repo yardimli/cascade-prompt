@@ -22,6 +22,17 @@ export const CheckboxManager = {
 
 			SheetDataManager.propertyPanel.targetedCell = { r: targetR, c: targetC };
 			PropertyPanelManager.open('checkbox');
+
+			const formulaInput = document.getElementById('formula-input');
+			if (formulaInput) {
+				const sheet = SheetDataManager.data.sheets[SheetDataManager.data.activeSheetIndex];
+				const cellData = sheet.cells[`${targetR}-${targetC}`];
+				if (!cellData || !cellData.type || cellData.type.name !== 'checkbox') {
+					formulaInput.innerHTML = `<div class="formula-btn"><i class="bi bi-pencil-square"></i><span>=checkbox("",FALSE)</span></div>`;
+					formulaInput.setAttribute('contenteditable', 'false');
+					formulaInput.classList.add('pointer-cursor');
+				}
+			}
 		});
 	},
 

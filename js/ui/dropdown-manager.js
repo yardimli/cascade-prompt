@@ -21,6 +21,17 @@ export const DropdownManager = {
 
 			SheetDataManager.propertyPanel.targetedCell = { r: targetR, c: targetC };
 			PropertyPanelManager.open('dropdown');
+
+			const formulaInput = document.getElementById('formula-input');
+			if (formulaInput) {
+				const sheet = SheetDataManager.data.sheets[SheetDataManager.data.activeSheetIndex];
+				const cellData = sheet.cells[`${targetR}-${targetC}`];
+				if (!cellData || !cellData.type || cellData.type.name !== 'dropdown') {
+					formulaInput.innerHTML = `<div class="formula-btn"><i class="bi bi-pencil-square"></i><span>=dropdown("","")</span></div>`;
+					formulaInput.setAttribute('contenteditable', 'false');
+					formulaInput.classList.add('pointer-cursor');
+				}
+			}
 		});
 	},
 
