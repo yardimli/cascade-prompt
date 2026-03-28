@@ -58,7 +58,7 @@ export const CheckboxManager = {
 			}
 		}
 
-		if (targetDisplay) targetDisplay.textContent = `Checkbox Target: ${cellLabel}`;
+		if (targetDisplay) targetDisplay.textContent = `Target: ${cellLabel}`;
 		labelInput.value = initialLabel;
 		valueInput.checked = initialValue === 1;
 	},

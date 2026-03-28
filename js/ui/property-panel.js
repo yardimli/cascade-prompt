@@ -77,6 +77,7 @@ export const PropertyPanelManager = {
 		if (type === 'dropdown') {
 			const dropdownSection = document.getElementById('panel-section-dropdown');
 			if (dropdownSection) {
+				this.title.textContent = 'Dropdown';
 				dropdownSection.classList.remove('hidden');
 				DropdownManager.initPanel();
 
@@ -85,6 +86,7 @@ export const PropertyPanelManager = {
 		} else if (type === 'checkbox') {
 			const checkboxSection = document.getElementById('panel-section-checkbox');
 			if (checkboxSection) {
+				this.title.textContent = 'Checkbox';
 				checkboxSection.classList.remove('hidden');
 				CheckboxManager.initPanel();
 
@@ -93,6 +95,7 @@ export const PropertyPanelManager = {
 		} else if (type === 'llm') {
 			const llmSection = document.getElementById('panel-section-llm');
 			if (llmSection) {
+				this.title.textContent = 'LLM Trigger';
 				llmSection.classList.remove('hidden');
 				LLMBuilder.initPanel();
 
