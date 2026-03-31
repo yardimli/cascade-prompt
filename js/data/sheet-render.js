@@ -91,7 +91,10 @@ export const SheetRender = {
 							cellHTML = `<div class="content-cut" style="${divStyle}${userStyle}">${selectedVal}</div>`;
 						} else if (typeName === 'checkbox') {
 							const isChecked = details.value ? 'checked' : '';
-							const label = details.label || '';
+							let label = details.label || '';
+							if (details.displayValue) {
+								label += ` (${details.trueValue || ''}/${details.falseValue || ''})`;
+							}
 							const content = `<label class="cursor-pointer label justify-start gap-2 p-[5px] h-full" style="pointer-events: auto;">
 								<input type="checkbox" class="checkbox checkbox-sm checkbox-primary" ${isChecked} onchange="window.CheckboxManager.toggleCheckbox(${r}, ${c}, this.checked)" />
 								<span class="label-text truncate">${label}</span>

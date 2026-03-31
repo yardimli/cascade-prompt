@@ -7,9 +7,7 @@ export const SelectionManager = {
 		const row = cell.parentElement;
 		const tbody = row.parentElement;
 		if (!tbody) return;
-		const rowIndex = Array.from(tbody.children).indexOf(row);
-
-		['highlight', 'selected-cell', 'edit-cell'].forEach(cls => {
+		const rowIndex = Array.from(tbody.children).indexOf(row);['highlight', 'selected-cell', 'edit-cell'].forEach(cls => {
 			const els = document.getElementsByClassName(cls);
 			while (els.length > 0) els[0].classList.remove(cls);
 		});
@@ -52,7 +50,7 @@ export const SelectionManager = {
 				} else if (name === 'dropdown') {
 					text = `=dropdown("${(details.options ||[]).join(',')}", "${details.selected || ''}")`;
 				} else if (name === 'checkbox') {
-					text = `=checkbox("${details.label || ''}", ${details.value ? 'TRUE' : 'FALSE'})`;
+					text = `=checkbox("${details.label || ''}", "${details.trueValue || ''}", "${details.falseValue || ''}", ${details.value ? 'TRUE' : 'FALSE'})`;
 				}
 
 				formulaInput.innerHTML = `<div class="formula-btn"><i class="bi ${icon}"></i><span>${text}</span></div>`;
@@ -119,7 +117,7 @@ export const SelectionManager = {
 		Object.assign(helperDiv.style, { top: top + 'px', left: left + 'px', width: width + 'px', height: height + 'px', display: 'block' });
 		helperDiv.querySelectorAll('.selection-helper-edge').forEach(el => el.remove());
 
-		const edges = [
+		const edges =[
 			{ class: 'top', style: { top: '-3px', left: '0', width: '100%' } },
 			{ class: 'right', style: { top: '0', right: '-3px', height: '100%' } },
 			{ class: 'bottom', style: { bottom: '-3px', left: '0', width: '100%' } },

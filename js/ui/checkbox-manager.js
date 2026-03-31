@@ -28,7 +28,7 @@ export const CheckboxManager = {
 				const sheet = SheetDataManager.data.sheets[SheetDataManager.data.activeSheetIndex];
 				const cellData = sheet.cells[`${targetR}-${targetC}`];
 				if (!cellData || !cellData.type || cellData.type.name !== 'checkbox') {
-					formulaInput.innerHTML = `<div class="formula-btn"><i class="bi bi-pencil-square"></i><span>=checkbox("",FALSE)</span></div>`;
+					formulaInput.innerHTML = `<div class="formula-btn"><i class="bi bi-pencil-square"></i><span>=checkbox("","","",FALSE)</span></div>`;
 					formulaInput.setAttribute('contenteditable', 'false');
 					formulaInput.classList.add('pointer-cursor');
 				}
@@ -45,6 +45,9 @@ export const CheckboxManager = {
 	populatePanelData: function() {
 		const labelInput = document.getElementById('prop-checkbox-label');
 		const valueInput = document.getElementById('prop-checkbox-value');
+		const displayValueInput = document.getElementById('prop-checkbox-displayValue');
+		const trueValInput = document.getElementById('prop-checkbox-true-val');
+		const falseValInput = document.getElementById('prop-checkbox-false-val');
 		const targetDisplay = document.getElementById('prop-checkbox-target-display');
 
 		if(!labelInput || !valueInput) return;
@@ -52,6 +55,9 @@ export const CheckboxManager = {
 		let cellLabel = 'None';
 		let initialLabel = 'Checkbox';
 		let initialValue = 0;
+		let initialDisplayValue = false;
+		let initialTrueVal = '';
+		let initialFalseVal = '';
 
 		if (SheetDataManager.propertyPanel && SheetDataManager.propertyPanel.targetedCell) {
 			const { r, c } = SheetDataManager.propertyPanel.targetedCell;
@@ -65,13 +71,19 @@ export const CheckboxManager = {
 					const details = cellData.type.details;
 					initialLabel = details.label || '';
 					initialValue = details.value || 0;
+					initialDisplayValue = details.displayValue || false;
+					initialTrueVal = details.trueValue || '';
+					initialFalseVal = details.falseValue || '';
 				}
 			}
 		}
 
 		if (targetDisplay) targetDisplay.textContent = `Target: ${cellLabel}`;
-		labelInput.value = initialLabel;
-		valueInput.checked = initialValue === 1;
+		if (labelInput) labelInput.value = initialLabel;
+		if (valueInput) valueInput.checked = initialValue === 1;
+		if (displayValueInput) displayValueInput.checked = initialDisplayValue;
+		if (trueValInput) trueValInput.value = initialTrueVal;
+		if (falseValInput) falseValInput.value = initialFalseVal;
 	},
 
 	registerEvents: function() {
@@ -87,6 +99,10 @@ export const CheckboxManager = {
 
 		const labelInput = document.getElementById('prop-checkbox-label');
 		const valueInput = document.getElementById('prop-checkbox-value');
+		const displayValueInput = document.getElementById('prop-checkbox-displayValue');
+		const trueValInput = document.getElementById('prop-checkbox-true-val');
+		const falseValInput = document.getElementById('prop-checkbox-false-val');
+
 		const btnSave = replaceElement('prop-btn-save-checkbox');
 		const btnRemove = replaceElement('prop-btn-remove-checkbox');
 
@@ -96,6 +112,9 @@ export const CheckboxManager = {
 
 		if (labelInput) labelInput.oninput = markModified;
 		if (valueInput) valueInput.onchange = markModified;
+		if (displayValueInput) displayValueInput.onchange = markModified;
+		if (trueValInput) trueValInput.oninput = markModified;
+		if (falseValInput) falseValInput.oninput = markModified;
 
 		if (btnSave) btnSave.addEventListener('click', () => this.saveCheckbox());
 		if (btnRemove) btnRemove.addEventListener('click', () => this.removeCheckbox());
@@ -104,9 +123,15 @@ export const CheckboxManager = {
 	saveCheckbox: function () {
 		const labelInput = document.getElementById('prop-checkbox-label');
 		const valueInput = document.getElementById('prop-checkbox-value');
+		const displayValueInput = document.getElementById('prop-checkbox-displayValue');
+		const trueValInput = document.getElementById('prop-checkbox-true-val');
+		const falseValInput = document.getElementById('prop-checkbox-false-val');
 
-		const label = labelInput.value.trim();
-		const value = valueInput.checked ? 1 : 0;
+		const label = labelInput ? labelInput.value.trim() : '';
+		const value = valueInput && valueInput.checked ? 1 : 0;
+		const displayValue = displayValueInput ? displayValueInput.checked : false;
+		const trueValue = trueValInput ? trueValInput.value.trim() : '';
+		const falseValue = falseValInput ? falseValInput.value.trim() : '';
 
 		if (typeof window.HistoryManager !== 'undefined') window.HistoryManager.addState();
 
@@ -123,7 +148,10 @@ export const CheckboxManager = {
 				name: 'checkbox',
 				details: {
 					label: label,
-					value: value
+					value: value,
+					displayValue: displayValue,
+					trueValue: trueValue,
+					falseValue: falseValue
 				}
 			};
 

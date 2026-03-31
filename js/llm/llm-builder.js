@@ -56,7 +56,7 @@ export const LLMBuilder = {
 
 			SheetDataManager.propertyPanel.targetedCell = { r: targetR, c: targetC };
 			PropertyPanelManager.open('llm');
-			
+
 			const formulaInput = document.getElementById('formula-input');
 			if (formulaInput) {
 				const sheet = SheetDataManager.data.sheets[SheetDataManager.data.activeSheetIndex];
@@ -416,6 +416,10 @@ export const LLMBuilder = {
 			if (!cell || !cell.type) return null;
 			if (cell.type.name === 'text' || cell.type.name === 'number') return { type: 'text', value: cell.type.details.value };
 			if (cell.type.name === 'dropdown') return { type: 'text', value: cell.type.details.selected };
+			if (cell.type.name === 'checkbox') {
+				const val = cell.type.details.value ? (cell.type.details.trueValue || '') : (cell.type.details.falseValue || '');
+				return { type: 'text', value: val };
+			}
 			if (cell.type.name === 'image') {
 				let src = cell.type.details.url || '';
 				if (!src && cell.type.details.path) {

@@ -218,11 +218,10 @@
 	</div>
 
 	<!-- Right Side: Property Panel -->
-	<aside id="property-panel" class="w-96 bg-base-100 border-l border-base-300 flex flex-col hidden transition-all duration-300 ease-in-out z-40 shadow-lg">
+	<aside id="property-panel" class="w-[420px] bg-base-100 border-l border-base-300 flex flex-col hidden transition-all duration-300 ease-in-out z-40 shadow-lg">
 		<!-- Panel Header -->
 		<div class="p-3 border-b border-base-300 flex justify-between items-center bg-base-200">
 			<span class="font-bold text-sm uppercase tracking-wide" id="prop-panel-title">Properties</span>
-			<!-- Updated close button to check for unsaved changes -->
 			<button class="btn btn-ghost btn-xs btn-square" onclick="PropertyPanelManager.attemptClose()">
 				<i class="bi bi-x-lg"></i>
 			</button>
@@ -342,6 +341,28 @@
 				<div class="form-control">
 					<label class="label"><span class="label-text font-semibold">Label</span></label>
 					<input type="text" class="input input-bordered input-sm" id="prop-checkbox-label" placeholder="Checkbox Label">
+				</div>
+
+				<!-- NEW: Checked/Unchecked Values (Vertical with Border) -->
+				<div class="form-control">
+					<label class="label"><span class="label-text font-semibold">Values</span></label>
+					<div class="border border-base-300 rounded p-3 flex flex-col gap-3">
+						<div class="form-control w-full">
+							<label class="label py-0 pb-1"><span class="label-text text-xs text-base-content/70">Checked</span></label>
+							<input type="text" class="input input-bordered input-sm w-full" id="prop-checkbox-true-val">
+						</div>
+						<div class="form-control w-full">
+							<label class="label py-0 pb-1"><span class="label-text text-xs text-base-content/70">Unchecked</span></label>
+							<input type="text" class="input input-bordered input-sm w-full" id="prop-checkbox-false-val">
+						</div>
+					</div>
+				</div>
+
+				<div class="form-control">
+					<label class="cursor-pointer label justify-start gap-4">
+						<span class="label-text font-semibold">Display Values</span>
+						<input type="checkbox" class="checkbox checkbox-primary" id="prop-checkbox-displayValue">
+					</label>
 				</div>
 
 				<div class="form-control">
