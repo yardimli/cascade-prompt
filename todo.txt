@@ -144,12 +144,12 @@ example of button with llm formula->
 - move LLM formula form dialog to the property panel(Formula Editor) like the doprdown form.
 - bug fixed:In llm insert form, the content of reference cell in the tooltip is not read live.
 - make the llm call support image inputs so user can reference images in the sheet when using llm formula. images should be added in a new input type(Image Attachments). User will add reference cell tag that contain images. The images are uploaded are added as base64 data urls to the llm request. Any reference cell tag doesn't contain image will be ignored. Image Attachments input accept maximum 5 images.
+- add checkbox (with its values configurable), Checkbox Label is optional.
 
 TODO:
 
 selecting single cell is not working, also after making a selection making it smaller is not working correctly. moving cells is not working including moving single cell. once selection is made the mouse cursor should change to drag when over the selected area to indicate its draggable.
 
-- add checkbox (with its values configurable), Checkbox Label is optional.
 
 
 - add =folderreader("folderpath") formula that reads all files in a folder and can feed them to the llm one file at a time
