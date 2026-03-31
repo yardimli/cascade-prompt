@@ -6,7 +6,7 @@ export const SheetRender = {
 
 		if (typeof window.stopEditing === 'function') window.stopEditing();
 
-		const classesToRemove = ['selected-cell', 'highlight', 'area-selected-cell'];
+		const classesToRemove =['selected-cell', 'highlight', 'area-selected-cell'];
 		classesToRemove.forEach(cls => {
 			const els = document.getElementsByClassName(cls);
 			while (els.length > 0) els[0].classList.remove(cls);
@@ -93,7 +93,16 @@ export const SheetRender = {
 							const isChecked = details.value ? 'checked' : '';
 							let label = details.label || '';
 							if (details.displayValue === true) {
-								label += ` (${details.trueValue || ''}/${details.falseValue || ''})`;
+								const tVal = details.trueValue || '';
+								const fVal = details.falseValue || '';
+
+								if (tVal !== '' && fVal !== '') {
+									label += ` (${tVal}/${fVal})`;
+								} else if (tVal !== '') {
+									label += ` (${tVal})`;
+								} else if (fVal !== '') {
+									label += ` (${fVal})`;
+								}
 							}
 							const content = `<label class="cursor-pointer label justify-start gap-2 p-[5px] h-full" style="pointer-events: auto;">
 								<input type="checkbox" class="checkbox checkbox-sm checkbox-primary" ${isChecked} onchange="window.CheckboxManager.toggleCheckbox(${r}, ${c}, this.checked)" />
