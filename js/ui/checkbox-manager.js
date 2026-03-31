@@ -54,8 +54,8 @@ export const CheckboxManager = {
 
 		let cellLabel = 'None';
 		let initialLabel = 'Checkbox';
-		let initialValue = 0;
-		let initialDisplayValue = 0;
+		let initialValue = false;
+		let initialDisplayValue = false;
 		let initialTrueVal = '';
 		let initialFalseVal = '';
 
@@ -70,8 +70,8 @@ export const CheckboxManager = {
 				if (cellData && cellData.type && cellData.type.name === 'checkbox') {
 					const details = cellData.type.details;
 					initialLabel = details.label || '';
-					initialValue = details.value || 0;
-					initialDisplayValue = details.displayValue || 0;
+					initialValue = details.value === true;
+					initialDisplayValue = details.displayValue === true;
 					initialTrueVal = details.trueValue || '';
 					initialFalseVal = details.falseValue || '';
 				}
@@ -80,8 +80,8 @@ export const CheckboxManager = {
 
 		if (targetDisplay) targetDisplay.textContent = `Target: ${cellLabel}`;
 		if (labelInput) labelInput.value = initialLabel;
-		if (valueInput) valueInput.checked = initialValue === 1;
-		if (displayValueInput) displayValueInput.checked = initialDisplayValue === 1;
+		if (valueInput) valueInput.checked = initialValue;
+		if (displayValueInput) displayValueInput.checked = initialDisplayValue;
 		if (trueValInput) trueValInput.value = initialTrueVal;
 		if (falseValInput) falseValInput.value = initialFalseVal;
 	},
@@ -128,8 +128,8 @@ export const CheckboxManager = {
 		const falseValInput = document.getElementById('prop-checkbox-false-val');
 
 		const label = labelInput ? labelInput.value.trim() : '';
-		const value = valueInput && valueInput.checked ? 1 : 0;
-		const displayValue = displayValueInput && displayValueInput.checked ? 1 : 0;
+		const value = valueInput ? valueInput.checked : false;
+		const displayValue = displayValueInput ? displayValueInput.checked : false;
 		const trueValue = trueValInput ? trueValInput.value.trim() : '';
 		const falseValue = falseValInput ? falseValInput.value.trim() : '';
 
@@ -215,7 +215,7 @@ export const CheckboxManager = {
 		const key = `${r}-${c}`;
 
 		if (sheet.cells[key] && sheet.cells[key].type && sheet.cells[key].type.name === 'checkbox') {
-			sheet.cells[key].type.details.value = isChecked ? 1 : 0;
+			sheet.cells[key].type.details.value = isChecked;
 			SheetDataManager.setModified(true);
 
 			const selected = document.querySelector('.selected-cell');
