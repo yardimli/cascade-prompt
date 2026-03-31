@@ -92,7 +92,7 @@ export const SheetRender = {
 						} else if (typeName === 'checkbox') {
 							const isChecked = details.value ? 'checked' : '';
 							let label = details.label || '';
-							if (details.displayValue) {
+							if (details.displayValue === 1) {
 								label += ` (${details.trueValue || ''}/${details.falseValue || ''})`;
 							}
 							const content = `<label class="cursor-pointer label justify-start gap-2 p-[5px] h-full" style="pointer-events: auto;">

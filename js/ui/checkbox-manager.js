@@ -55,7 +55,7 @@ export const CheckboxManager = {
 		let cellLabel = 'None';
 		let initialLabel = 'Checkbox';
 		let initialValue = 0;
-		let initialDisplayValue = false;
+		let initialDisplayValue = 0;
 		let initialTrueVal = '';
 		let initialFalseVal = '';
 
@@ -71,7 +71,7 @@ export const CheckboxManager = {
 					const details = cellData.type.details;
 					initialLabel = details.label || '';
 					initialValue = details.value || 0;
-					initialDisplayValue = details.displayValue || false;
+					initialDisplayValue = details.displayValue || 0;
 					initialTrueVal = details.trueValue || '';
 					initialFalseVal = details.falseValue || '';
 				}
@@ -81,7 +81,7 @@ export const CheckboxManager = {
 		if (targetDisplay) targetDisplay.textContent = `Target: ${cellLabel}`;
 		if (labelInput) labelInput.value = initialLabel;
 		if (valueInput) valueInput.checked = initialValue === 1;
-		if (displayValueInput) displayValueInput.checked = initialDisplayValue;
+		if (displayValueInput) displayValueInput.checked = initialDisplayValue === 1;
 		if (trueValInput) trueValInput.value = initialTrueVal;
 		if (falseValInput) falseValInput.value = initialFalseVal;
 	},
@@ -129,7 +129,7 @@ export const CheckboxManager = {
 
 		const label = labelInput ? labelInput.value.trim() : '';
 		const value = valueInput && valueInput.checked ? 1 : 0;
-		const displayValue = displayValueInput ? displayValueInput.checked : false;
+		const displayValue = displayValueInput && displayValueInput.checked ? 1 : 0;
 		const trueValue = trueValInput ? trueValInput.value.trim() : '';
 		const falseValue = falseValInput ? falseValInput.value.trim() : '';
 
