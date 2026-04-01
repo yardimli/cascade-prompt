@@ -145,10 +145,12 @@ example of button with llm formula->
 - bug fixed:In llm insert form, the content of reference cell in the tooltip is not read live.
 - make the llm call support image inputs so user can reference images in the sheet when using llm formula. images should be added in a new input type(Image Attachments). User will add reference cell tag that contain images. The images are uploaded are added as base64 data urls to the llm request. Any reference cell tag doesn't contain image will be ignored. Image Attachments input accept maximum 5 images.
 - add checkbox (with its values configurable), Checkbox Label is optional.
+- bug fix: when resizing a selected area, the highlighted border is not following the border of the original cells.
 
 TODO:
 
-selecting single cell is not working, also after making a selection making it smaller is not working correctly. moving cells is not working including moving single cell. once selection is made the mouse cursor should change to drag when over the selected area to indicate its draggable.
+selecting single cell is not working, also after making a selection making it smaller is not working correctly.
+moving cells is not working including moving single cell. once selection is made the mouse cursor should change to drag when over the selected area to indicate its draggable.
 
 
 

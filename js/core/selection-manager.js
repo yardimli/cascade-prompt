@@ -128,6 +128,36 @@ export const SelectionManager = {
 		});
 	},
 
+	updateSelectionBounds: function () {
+		const helperDiv = document.getElementById('selection-helper');
+		if (!helperDiv || helperDiv.style.display === 'none') return;
+		if (!window.startCell || !window.endCell || window.startCell === window.endCell) return;
+
+		const startRowIdx = window.startCell.parentElement.rowIndex, endRowIdx = window.endCell.parentElement.rowIndex;
+		const startRow = Math.min(startRowIdx, endRowIdx), endRow = Math.max(startRowIdx, endRowIdx);
+		const startCol = Math.min(parseInt(window.startCell.getAttribute('data-col')), parseInt(window.endCell.getAttribute('data-col')));
+		const endCol = Math.max(parseInt(window.startCell.getAttribute('data-col')), parseInt(window.endCell.getAttribute('data-col')));
+
+		const tableRows = document.querySelectorAll('.spreadsheet tr');
+		const container = document.querySelector('.spreadsheet-container');
+		const containerRect = container.getBoundingClientRect();
+		let firstSelectedCell = tableRows[startRow].querySelector('td[data-col="' + startCol + '"]');
+
+		if (!firstSelectedCell) {
+			const cells = Array.from(tableRows[startRow].querySelectorAll('td'));
+			for(let i=cells.length-1; i>=0; i--) { if(parseInt(cells[i].getAttribute('data-col')) <= startCol) { firstSelectedCell = cells[i]; break; } }
+		}
+		if (!firstSelectedCell) return;
+
+		const firstRect = firstSelectedCell.getBoundingClientRect();
+		const top = firstRect.top - containerRect.top - 1 + container.scrollTop;
+		const left = firstRect.left - containerRect.left - 1 + container.scrollLeft;
+		const width = this.getColumnWidthRange(startCol, endCol);
+		const height = this.getRowHeightRange(startRow - 1, endRow - 1);
+
+		Object.assign(helperDiv.style, { top: top + 'px', left: left + 'px', width: width + 'px', height: height + 'px' });
+	},
+
 	updateStatusSelection: function (rowIdx, colIdx) {
 		const statusSel = document.getElementById('status-selection');
 		if (statusSel) statusSel.textContent = SheetDataManager.getColumnLetter(colIdx) + (rowIdx + 1);

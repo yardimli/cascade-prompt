@@ -1,3 +1,5 @@
+import { SheetDataManager } from '../cascade-prompt-data.js';
+
 export const GridResizer = {
 	attachResizeHandlers: function() {
 		console.log('Attaching resize handlers...');
@@ -27,12 +29,14 @@ export const GridResizer = {
 			const newHeight = Math.max(20, startHeight + (e.pageY - startY));
 			th.style.height = newHeight + 'px';
 			row.querySelectorAll('.content-cut').forEach(div => div.style.height = (newHeight - 3) + 'px');
+			if (typeof window.updateSelectionBounds === 'function') window.updateSelectionBounds();
 		};
 		const onMouseUp = () => {
 			document.removeEventListener('mousemove', onMouseMove);
 			document.removeEventListener('mouseup', onMouseUp);
 			window.updateRowHeight(Array.from(row.parentElement.children).indexOf(row), th.offsetHeight);
 			if (typeof window.saveState === 'function') window.saveState();
+			if (typeof window.updateSelectionBounds === 'function') window.updateSelectionBounds();
 		};
 		document.addEventListener('mousemove', onMouseMove);
 		document.addEventListener('mouseup', onMouseUp);
@@ -51,11 +55,13 @@ export const GridResizer = {
 			cell.style.width = newWidth + 'px';
 			table.style.width = (startTableWidth + diff) + 'px';
 			window.updateColumnWidth(colIndex, newWidth);
+			if (typeof window.updateSelectionBounds === 'function') window.updateSelectionBounds();
 		};
 		const onMouseUp = () => {
 			document.removeEventListener('mousemove', onMouseMove);
 			document.removeEventListener('mouseup', onMouseUp);
 			if (typeof window.saveState === 'function') window.saveState();
+			if (typeof window.updateSelectionBounds === 'function') window.updateSelectionBounds();
 		};
 		document.addEventListener('mousemove', onMouseMove);
 		document.addEventListener('mouseup', onMouseUp);

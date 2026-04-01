@@ -31,6 +31,7 @@ Object.assign(window, {
 // Bind Selection Manager functions to window
 window.highlightCell = (c) => SelectionManager.highlightCell(c);
 window.updateSelection = () => SelectionManager.updateSelection();
+window.updateSelectionBounds = () => SelectionManager.updateSelectionBounds();
 window.updateStatusSelection = (r, c) => SelectionManager.updateStatusSelection(r, c);
 window.getColumnWidthRange = (s, e) => SelectionManager.getColumnWidthRange(s, e);
 window.getRowHeightRange = (s, e) => SelectionManager.getRowHeightRange(s, e);
