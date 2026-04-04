@@ -73,25 +73,37 @@ export const SelectionManager = {
 		const helperDiv = document.getElementById('selection-helper');
 		const mergeBtn = document.getElementById('merge-btn');
 
-		if (!window.startCell || !window.endCell || window.startCell === window.endCell) {
-			helperDiv.querySelectorAll('.selection-helper-edge').forEach(el => el.remove());
-			helperDiv.style.display = 'none';
-			mergeBtn.disabled = true;
-			return;
-		}
-		mergeBtn.disabled = false;
+		let startRow, endRow, startCol, endCol;
 
-		const startRowIdx = window.startCell.parentElement.rowIndex, endRowIdx = window.endCell.parentElement.rowIndex;
-		const startRow = Math.min(startRowIdx, endRowIdx), endRow = Math.max(startRowIdx, endRowIdx);
-		const startCol = Math.min(parseInt(window.startCell.getAttribute('data-col')), parseInt(window.endCell.getAttribute('data-col')));
-		const endCol = Math.max(parseInt(window.startCell.getAttribute('data-col')), parseInt(window.endCell.getAttribute('data-col')));
+		if (window.startCell && window.endCell && window.startCell !== window.endCell) {
+			const startRowIdx = window.startCell.parentElement.rowIndex, endRowIdx = window.endCell.parentElement.rowIndex;
+			startRow = Math.min(startRowIdx, endRowIdx); endRow = Math.max(startRowIdx, endRowIdx);
+			startCol = Math.min(parseInt(window.startCell.getAttribute('data-col')), parseInt(window.endCell.getAttribute('data-col')));
+			endCol = Math.max(parseInt(window.startCell.getAttribute('data-col')), parseInt(window.endCell.getAttribute('data-col')));
+			mergeBtn.disabled = false;
+		} else {
+			const selected = document.querySelector('.selected-cell');
+			if (!selected) {
+				helperDiv.querySelectorAll('.selection-helper-edge').forEach(el => el.remove());
+				helperDiv.style.display = 'none';
+				mergeBtn.disabled = true;
+				return;
+			}
+			startRow = selected.parentElement.rowIndex;
+			endRow = startRow;
+			startCol = parseInt(selected.getAttribute('data-col'));
+			endCol = startCol;
+			mergeBtn.disabled = true;
+		}
 
 		const tableRows = document.querySelectorAll('.spreadsheet tr');
-		for (let i = startRow; i <= endRow; i++) {
-			if (!tableRows[i]) continue;
-			for (let j = startCol; j <= endCol; j++) {
-				const cell = tableRows[i].querySelector('td[data-col="' + j + '"]');
-				if (cell) cell.classList.add('area-selected-cell');
+		if (window.startCell && window.endCell && window.startCell !== window.endCell) {
+			for (let i = startRow; i <= endRow; i++) {
+				if (!tableRows[i]) continue;
+				for (let j = startCol; j <= endCol; j++) {
+					const cell = tableRows[i].querySelector('td[data-col="' + j + '"]');
+					if (cell) cell.classList.add('area-selected-cell');
+				}
 			}
 		}
 
@@ -114,7 +126,7 @@ export const SelectionManager = {
 		const width = this.getColumnWidthRange(startCol, endCol);
 		const height = this.getRowHeightRange(startRow - 1, endRow - 1);
 
-		Object.assign(helperDiv.style, { top: top + 'px', left: left + 'px', width: width + 'px', height: height + 'px', display: 'block' });
+		Object.assign(helperDiv.style, { top: top + 'px', left: left + 'px', width: width + 'px', height: height + 'px', display: window.isEditing ? 'none' : 'block' });
 		helperDiv.querySelectorAll('.selection-helper-edge').forEach(el => el.remove());
 
 		const edges =[
@@ -131,12 +143,22 @@ export const SelectionManager = {
 	updateSelectionBounds: function () {
 		const helperDiv = document.getElementById('selection-helper');
 		if (!helperDiv || helperDiv.style.display === 'none') return;
-		if (!window.startCell || !window.endCell || window.startCell === window.endCell) return;
 
-		const startRowIdx = window.startCell.parentElement.rowIndex, endRowIdx = window.endCell.parentElement.rowIndex;
-		const startRow = Math.min(startRowIdx, endRowIdx), endRow = Math.max(startRowIdx, endRowIdx);
-		const startCol = Math.min(parseInt(window.startCell.getAttribute('data-col')), parseInt(window.endCell.getAttribute('data-col')));
-		const endCol = Math.max(parseInt(window.startCell.getAttribute('data-col')), parseInt(window.endCell.getAttribute('data-col')));
+		let startRow, endRow, startCol, endCol;
+
+		if (window.startCell && window.endCell && window.startCell !== window.endCell) {
+			const startRowIdx = window.startCell.parentElement.rowIndex, endRowIdx = window.endCell.parentElement.rowIndex;
+			startRow = Math.min(startRowIdx, endRowIdx); endRow = Math.max(startRowIdx, endRowIdx);
+			startCol = Math.min(parseInt(window.startCell.getAttribute('data-col')), parseInt(window.endCell.getAttribute('data-col')));
+			endCol = Math.max(parseInt(window.startCell.getAttribute('data-col')), parseInt(window.endCell.getAttribute('data-col')));
+		} else {
+			const selected = document.querySelector('.selected-cell');
+			if (!selected) return;
+			startRow = selected.parentElement.rowIndex;
+			endRow = startRow;
+			startCol = parseInt(selected.getAttribute('data-col'));
+			endCol = startCol;
+		}
 
 		const tableRows = document.querySelectorAll('.spreadsheet tr');
 		const container = document.querySelector('.spreadsheet-container');

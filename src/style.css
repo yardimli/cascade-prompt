@@ -194,14 +194,32 @@ html[data-ui-size="large"] {
     pointer-events: none;
 }
 
+#drop-zone-helper {
+    display: none;
+    position: absolute;
+    z-index: 100;
+    border: 2px dashed var(--color-primary);
+    background-color: color-mix(in srgb, var(--color-primary) 15%, transparent);
+    pointer-events: none;
+}
+
+.dragging-selection {
+    user-select: none !important;
+    -webkit-user-select: none !important;
+    cursor: grabbing !important;
+}
+.dragging-selection * {
+    cursor: grabbing !important;
+}
+
 .selection-helper-edge {
     position: absolute;
     background: transparent;
     pointer-events: auto;
 }
 
-.selection-helper-edge.top, .selection-helper-edge.bottom { height: 5px; cursor: ns-resize; }
-.selection-helper-edge.left, .selection-helper-edge.right { width: 5px; cursor: ew-resize; }
+.selection-helper-edge.top, .selection-helper-edge.bottom { height: 5px; cursor: grab; }
+.selection-helper-edge.left, .selection-helper-edge.right { width: 5px; cursor: grab; }
 
 /* Tabs */
 .sheet-tabs-container {

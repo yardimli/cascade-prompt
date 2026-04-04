@@ -54,6 +54,7 @@ export const CellEditor = {
 			contentDiv.style.visibility = 'hidden';
 		}
 		window.isEditing = true;
+		if (typeof window.updateSelection === 'function') window.updateSelection();
 	},
 
 	setupDropdownEditor: function(editor, cellData, computedStyle, cell) {
@@ -68,7 +69,7 @@ export const CellEditor = {
 			border: 'none', outline: 'none', boxShadow: 'none', padding: '0 5px'
 		});
 
-		(cellData.type.details.options || []).forEach(opt => {
+		(cellData.type.details.options ||[]).forEach(opt => {
 			const option = document.createElement('option');
 			option.value = opt; option.textContent = opt;
 			if (opt === (cellData.type.details.selected || '')) option.selected = true;
@@ -108,7 +109,7 @@ export const CellEditor = {
 			if (!sheet.cells[key]) sheet.cells[key] = { rowspan: parseInt(editingCell.getAttribute('rowspan')) || 1, colspan: parseInt(editingCell.getAttribute('colspan')) || 1, style: {}, cellStyle: {} };
 
 			if (select) {
-				sheet.cells[key].type = { name: 'dropdown', details: { options: sheet.cells[key].type?.details?.options || [], selected: newText } };
+				sheet.cells[key].type = { name: 'dropdown', details: { options: sheet.cells[key].type?.details?.options ||[], selected: newText } };
 			} else if (!(wasImage && newText === '')) {
 				const isNum = typeof newText === "number" ? Number.isFinite(newText) : (typeof newText === "string" && newText.trim() !== "" && Number.isFinite(Number(newText)));
 				sheet.cells[key].type = { name: isNum ? 'number' : 'text', details: { value: newText } };

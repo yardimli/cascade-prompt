@@ -115,19 +115,6 @@ document.addEventListener('DOMContentLoaded', function () {
 		}
 	});
 
-	const selectionHelper = document.getElementById('selection-helper');
-	let isDraggingSelection = false, dragOffset = { top: 0, left: 0 }, draggingEdge = null;
-	let initialStart = { row: 0, col: 0 }, initialEnd = { row: 0, col: 0 };
-
-	selectionHelper.addEventListener('mousedown', (e) => {
-		if (e.target.classList.contains('selection-helper-edge')) return;
-		e.preventDefault(); e.stopPropagation();
-		isDraggingSelection = true;
-		const rect = selectionHelper.getBoundingClientRect();
-		dragOffset = { left: e.clientX - rect.left, top: e.clientY - rect.top };
-		initialStart = { row: window.startCell.parentElement.rowIndex, col: parseInt(window.startCell.getAttribute('data-col')) };
-	});
-
 	const spreadsheet = document.querySelector('.spreadsheet');
 	spreadsheet.addEventListener('dblclick', (e) => {
 		const cell = e.target.closest('.text-cell');
@@ -159,56 +146,169 @@ document.addEventListener('DOMContentLoaded', function () {
 
 	document.addEventListener('mouseup', () => { mouseDown = false; window.isSelecting = false; });
 
+	// --- Drag and Drop Logic ---
+	const selectionHelper = document.getElementById('selection-helper');
+	const dropZoneHelper = document.getElementById('drop-zone-helper');
+	let isDraggingSelection = false;
+	let dragSelectionData = null;
+
 	document.addEventListener('mousedown', (e) => {
 		if (e.target.classList.contains('selection-helper-edge')) {
-			draggingEdge = e.target;
-			initialStart = { row: window.startCell.parentElement.rowIndex, col: parseInt(window.startCell.getAttribute('data-col')) };
-			initialEnd = { row: window.endCell.parentElement.rowIndex, col: parseInt(window.endCell.getAttribute('data-col')) };
+			e.preventDefault();
+			e.stopPropagation();
+
+			if (window.isEditing) return;
+
+			let sR, eR, sC, eC;
+			if (window.startCell && window.endCell && window.startCell !== window.endCell) {
+				const r1 = window.startCell.parentElement.rowIndex - 1;
+				const c1 = parseInt(window.startCell.getAttribute('data-col'));
+				const r2 = window.endCell.parentElement.rowIndex - 1;
+				const c2 = parseInt(window.endCell.getAttribute('data-col'));
+				sR = Math.min(r1, r2); eR = Math.max(r1, r2);
+				sC = Math.min(c1, c2); eC = Math.max(c1, c2);
+			} else {
+				const selected = document.querySelector('.selected-cell');
+				if (!selected) return;
+				sR = selected.parentElement.rowIndex - 1;
+				eR = sR;
+				sC = parseInt(selected.getAttribute('data-col'));
+				eC = sC;
+			}
+
+			// Hide selection helper edges temporarily so we can find the cell under mouse
+			selectionHelper.style.pointerEvents = 'none';
+			selectionHelper.querySelectorAll('.selection-helper-edge').forEach(el => el.style.pointerEvents = 'none');
+
+			const elementUnderMouse = document.elementFromPoint(e.clientX, e.clientY);
+			const cellUnderMouse = elementUnderMouse ? elementUnderMouse.closest('.text-cell') : null;
+
+			let anchorR = sR;
+			let anchorC = sC;
+
+			if (cellUnderMouse) {
+				anchorR = cellUnderMouse.parentElement.rowIndex - 1;
+				anchorC = parseInt(cellUnderMouse.getAttribute('data-col'));
+				// Clamp anchor to be within selection
+				anchorR = Math.max(sR, Math.min(eR, anchorR));
+				anchorC = Math.max(sC, Math.min(eC, anchorC));
+			}
+
+			isDraggingSelection = true;
+			dragSelectionData = {
+				sR, eR, sC, eC,
+				rows: eR - sR + 1,
+				cols: eC - sC + 1,
+				anchorOffsetR: anchorR - sR,
+				anchorOffsetC: anchorC - sC,
+				lastDropTarget: null
+			};
+
+			document.body.classList.add('dragging-selection');
 		}
 	});
 
 	document.addEventListener('mousemove', (e) => {
-		if (isDraggingSelection) {
+		if (isDraggingSelection && dragSelectionData) {
 			e.preventDefault();
-			const container = document.querySelector('.spreadsheet-container'), offset = container.getBoundingClientRect();
-			const corner = document.querySelector('.top-corner-cell');
-			const h = corner ? corner.offsetHeight : 0, w = corner ? corner.offsetWidth : 0;
-			const top = window.snapToCell(e.clientY - offset.top + container.scrollTop - dragOffset.top - h, window.getRowHeights());
-			const left = window.snapToCell(e.clientX - offset.left + container.scrollLeft - dragOffset.left - w, window.getColumnWidths());
-			selectionHelper.style.top = (top + h) + 'px'; selectionHelper.style.left = (left + w) + 'px';
-			return;
-		}
-		if (draggingEdge) {
-			e.preventDefault(); e.stopPropagation();
-			const container = document.querySelector('.spreadsheet-container'), offset = container.getBoundingClientRect();
-			const corner = document.querySelector('.top-corner-cell');
-			const h = corner ? corner.offsetHeight : 0, w = corner ? corner.offsetWidth : 0;
-			const newTop = window.snapToCell(e.pageY - offset.top + container.scrollTop - h, window.getRowHeights()) + h;
-			const newLeft = window.snapToCell(e.pageX - offset.left + container.scrollLeft - w, window.getColumnWidths()) + w;
 
-			selectionHelper.style.top = newTop + 'px'; selectionHelper.style.left = newLeft + 'px';
+			const elementUnderMouse = document.elementFromPoint(e.clientX, e.clientY);
+			const cellUnderMouse = elementUnderMouse ? elementUnderMouse.closest('.text-cell') : null;
+
+			if (cellUnderMouse) {
+				const targetR = cellUnderMouse.parentElement.rowIndex - 1;
+				const targetC = parseInt(cellUnderMouse.getAttribute('data-col'));
+
+				const sheet = SheetDataManager.data.sheets[SheetDataManager.data.activeSheetIndex];
+
+				let dropStartR = targetR - dragSelectionData.anchorOffsetR;
+				let dropStartC = targetC - dragSelectionData.anchorOffsetC;
+
+				// Clamp to sheet boundaries
+				dropStartR = Math.max(0, Math.min(sheet.rowCount - dragSelectionData.rows, dropStartR));
+				dropStartC = Math.max(0, Math.min(sheet.colCount - dragSelectionData.cols, dropStartC));
+
+				const dropEndR = dropStartR + dragSelectionData.rows - 1;
+				const dropEndC = dropStartC + dragSelectionData.cols - 1;
+
+				dragSelectionData.lastDropTarget = { dropStartR, dropStartC, dropEndR, dropEndC };
+
+				// Position dropZoneHelper
+				const tbody = document.querySelector('.spreadsheet tbody');
+				const startCellEl = tbody.children[dropStartR]?.querySelector(`td[data-col="${dropStartC}"]`);
+				if (startCellEl) {
+					const container = document.querySelector('.spreadsheet-container');
+					const containerRect = container.getBoundingClientRect();
+					const cellRect = startCellEl.getBoundingClientRect();
+
+					const top = cellRect.top - containerRect.top - 1 + container.scrollTop;
+					const left = cellRect.left - containerRect.left - 1 + container.scrollLeft;
+					const width = window.getColumnWidthRange(dropStartC, dropEndC);
+					const height = window.getRowHeightRange(dropStartR, dropEndR);
+
+					Object.assign(dropZoneHelper.style, {
+						top: top + 'px',
+						left: left + 'px',
+						width: width + 'px',
+						height: height + 'px',
+						display: 'block'
+					});
+				}
+			} else {
+				dragSelectionData.lastDropTarget = null;
+				dropZoneHelper.style.display = 'none';
+			}
 		}
 	});
 
-	document.addEventListener('mouseup', () => {
-		if (draggingEdge) draggingEdge = null;
+	document.addEventListener('mouseup', (e) => {
 		if (isDraggingSelection) {
 			isDraggingSelection = false;
-			const top = parseInt(selectionHelper.style.top), left = parseInt(selectionHelper.style.left);
-			const corner = document.querySelector('.top-corner-cell');
-			const h = corner ? corner.offsetHeight : 0, w = corner ? corner.offsetWidth : 0;
-			const rowHeights = window.getRowHeights(), colWidths = window.getColumnWidths();
+			document.body.classList.remove('dragging-selection');
 
-			let tR = 0, tC = 0, cur = 0;
-			for(let i=0; i<rowHeights.length; i++) { if(cur >= top - h - 2) { tR = i; break; } cur += rowHeights[i]; tR = i+1; }
-			cur = 0;
-			for(let i=0; i<colWidths.length; i++) { if(cur >= left - w - 2) { tC = i; break; } cur += colWidths[i]; tC = i+1; }
+			// Restore pointer events
+			selectionHelper.style.pointerEvents = 'none';
+			selectionHelper.querySelectorAll('.selection-helper-edge').forEach(el => el.style.pointerEvents = 'auto');
 
-			if (window.startCell && window.endCell) {
-				const sR = window.startCell.parentElement.rowIndex - 1, eR = window.endCell.parentElement.rowIndex - 1;
-				const sC = parseInt(window.startCell.getAttribute('data-col')), eC = parseInt(window.endCell.getAttribute('data-col'));
-				SheetDataManager.moveRange({ startR: Math.min(sR, eR), endR: Math.max(sR, eR), startC: Math.min(sC, eC), endC: Math.max(sC, eC) }, tR, tC);
-			} else window.updateSelection();
+			dropZoneHelper.style.display = 'none';
+
+			if (dragSelectionData && dragSelectionData.lastDropTarget) {
+				const { dropStartR, dropStartC, dropEndR, dropEndC } = dragSelectionData.lastDropTarget;
+				const { sR, eR, sC, eC } = dragSelectionData;
+
+				// Only move if the position actually changed
+				if (dropStartR !== sR || dropStartC !== sC) {
+					const sheet = SheetDataManager.data.sheets[SheetDataManager.data.activeSheetIndex];
+
+					// 1. Update the sheet's selection state so the re-render restores the correct new location
+					sheet.selection = {
+						active: { r: dropStartR, c: dropStartC },
+						range: (dropStartR !== dropEndR || dropStartC !== dropEndC) ?
+							{ startR: dropStartR, startC: dropStartC, endR: dropEndR, endC: dropEndC } : null
+					};
+
+					// 2. Move the data (this triggers a synchronous renderSheet)
+					SheetDataManager.moveRange(
+						{ startR: sR, endR: eR, startC: sC, endC: eC },
+						dropStartR, dropStartC
+					);
+
+					// 3. Update selection to new location synchronously
+					const tbody = document.querySelector('.spreadsheet tbody');
+					const newStartCell = tbody.children[dropStartR]?.querySelector(`td[data-col="${dropStartC}"]`);
+					const newEndCell = tbody.children[dropEndR]?.querySelector(`td[data-col="${dropEndC}"]`);
+
+					if (newStartCell && newEndCell) {
+						window.startCell = newStartCell;
+						window.endCell = newEndCell;
+						window.isSelecting = false;
+						window.highlightCell(newStartCell);
+						window.updateSelection();
+						SelectionManager.updateFormulaBar(dropStartR, dropStartC);
+					}
+				}
+			}
+			dragSelectionData = null;
 		}
 	});
 });
