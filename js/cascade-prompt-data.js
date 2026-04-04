@@ -108,7 +108,7 @@ export const SheetDataManager = {
 		if (!sheet || (targetR === range.startR && targetC === range.startC)) return;
 		if (typeof window.HistoryManager !== 'undefined') window.HistoryManager.addState();
 
-		const movingCells = [];
+		const movingCells =[];
 		for (let r = range.startR; r <= range.endR; r++) {
 			for (let c = range.startC; c <= range.endC; c++) {
 				const key = r + '-' + c;
@@ -121,6 +121,12 @@ export const SheetDataManager = {
 			const newR = item.oldR + rOffset, newC = item.oldC + cOffset;
 			if (newR >= 0 && newC >= 0) sheet.cells[newR + '-' + newC] = item.data;
 		});
+
+		sheet.selection = {
+			active: { r: targetR, c: targetC },
+			range: (range.startR !== range.endR || range.startC !== range.endC) ?
+				{ startR: targetR, startC: targetC, endR: targetR + (range.endR - range.startR), endC: targetC + (range.endC - range.startC) } : null
+		};
 
 		this.renderSheet(this.data.activeSheetIndex);
 		this.setModified(true);
@@ -136,7 +142,7 @@ export const SheetDataManager = {
 
 	newProject: function () {
 		if (confirm('Create new project? Unsaved changes will be lost.')) {
-			this.data = { activeSheetIndex: 0, sheets: [], llmSettings: { apiKey: '', falAiKey: '' } };
+			this.data = { activeSheetIndex: 0, sheets:[], llmSettings: { apiKey: '', falAiKey: '' } };
 			this.currentFileName = null;
 			localStorage.removeItem('lastOpenedFile');
 			document.title = 'Cascade Prompt';

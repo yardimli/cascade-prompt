@@ -269,14 +269,6 @@ document.addEventListener('DOMContentLoaded', function () {
 				const { sR, eR, sC, eC } = dragSelectionData;
 
 				if (dropStartR !== sR || dropStartC !== sC) {
-					const sheet = SheetDataManager.data.sheets[SheetDataManager.data.activeSheetIndex];
-
-					sheet.selection = {
-						active: { r: dropStartR, c: dropStartC },
-						range: (dropStartR !== dropEndR || dropStartC !== dropEndC) ?
-							{ startR: dropStartR, startC: dropStartC, endR: dropEndR, endC: dropEndC } : null
-					};
-
 					SheetDataManager.moveRange(
 						{ startR: sR, endR: eR, startC: sC, endC: eC },
 						dropStartR, dropStartC
