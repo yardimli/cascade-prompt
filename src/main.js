@@ -28,7 +28,6 @@ Object.assign(window, {
 	isEditing: false, isSelecting: false, startCell: null, endCell: null
 });
 
-// Bind Selection Manager functions to window
 window.highlightCell = (c) => SelectionManager.highlightCell(c);
 window.updateSelection = () => SelectionManager.updateSelection();
 window.updateSelectionBounds = () => SelectionManager.updateSelectionBounds();
@@ -36,7 +35,6 @@ window.updateStatusSelection = (r, c) => SelectionManager.updateStatusSelection(
 window.getColumnWidthRange = (s, e) => SelectionManager.getColumnWidthRange(s, e);
 window.getRowHeightRange = (s, e) => SelectionManager.getRowHeightRange(s, e);
 
-// Helper for snapping
 window.getColumnWidths = () => Array.from(document.querySelectorAll('.spreadsheet .letter-cell')).map(c => c.offsetWidth);
 window.getRowHeights = () => Array.from(document.querySelectorAll('.spreadsheet .counter-cell')).map(c => c.offsetHeight);
 window.snapToCell = (pos, dims) => {
@@ -146,7 +144,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
 	document.addEventListener('mouseup', () => { mouseDown = false; window.isSelecting = false; });
 
-	// --- Drag and Drop Logic ---
 	const selectionHelper = document.getElementById('selection-helper');
 	const dropZoneHelper = document.getElementById('drop-zone-helper');
 	let isDraggingSelection = false;
@@ -176,7 +173,6 @@ document.addEventListener('DOMContentLoaded', function () {
 				eC = sC;
 			}
 
-			// Hide selection helper edges temporarily so we can find the cell under mouse
 			selectionHelper.style.pointerEvents = 'none';
 			selectionHelper.querySelectorAll('.selection-helper-edge').forEach(el => el.style.pointerEvents = 'none');
 
@@ -189,7 +185,6 @@ document.addEventListener('DOMContentLoaded', function () {
 			if (cellUnderMouse) {
 				anchorR = cellUnderMouse.parentElement.rowIndex - 1;
 				anchorC = parseInt(cellUnderMouse.getAttribute('data-col'));
-				// Clamp anchor to be within selection
 				anchorR = Math.max(sR, Math.min(eR, anchorR));
 				anchorC = Math.max(sC, Math.min(eC, anchorC));
 			}
@@ -224,7 +219,6 @@ document.addEventListener('DOMContentLoaded', function () {
 				let dropStartR = targetR - dragSelectionData.anchorOffsetR;
 				let dropStartC = targetC - dragSelectionData.anchorOffsetC;
 
-				// Clamp to sheet boundaries
 				dropStartR = Math.max(0, Math.min(sheet.rowCount - dragSelectionData.rows, dropStartR));
 				dropStartC = Math.max(0, Math.min(sheet.colCount - dragSelectionData.cols, dropStartC));
 
@@ -233,7 +227,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
 				dragSelectionData.lastDropTarget = { dropStartR, dropStartC, dropEndR, dropEndC };
 
-				// Position dropZoneHelper
 				const tbody = document.querySelector('.spreadsheet tbody');
 				const startCellEl = tbody.children[dropStartR]?.querySelector(`td[data-col="${dropStartC}"]`);
 				if (startCellEl) {
@@ -266,7 +259,6 @@ document.addEventListener('DOMContentLoaded', function () {
 			isDraggingSelection = false;
 			document.body.classList.remove('dragging-selection');
 
-			// Restore pointer events
 			selectionHelper.style.pointerEvents = 'none';
 			selectionHelper.querySelectorAll('.selection-helper-edge').forEach(el => el.style.pointerEvents = 'auto');
 
@@ -276,24 +268,20 @@ document.addEventListener('DOMContentLoaded', function () {
 				const { dropStartR, dropStartC, dropEndR, dropEndC } = dragSelectionData.lastDropTarget;
 				const { sR, eR, sC, eC } = dragSelectionData;
 
-				// Only move if the position actually changed
 				if (dropStartR !== sR || dropStartC !== sC) {
 					const sheet = SheetDataManager.data.sheets[SheetDataManager.data.activeSheetIndex];
 
-					// 1. Update the sheet's selection state so the re-render restores the correct new location
 					sheet.selection = {
 						active: { r: dropStartR, c: dropStartC },
 						range: (dropStartR !== dropEndR || dropStartC !== dropEndC) ?
 							{ startR: dropStartR, startC: dropStartC, endR: dropEndR, endC: dropEndC } : null
 					};
 
-					// 2. Move the data (this triggers a synchronous renderSheet)
 					SheetDataManager.moveRange(
 						{ startR: sR, endR: eR, startC: sC, endC: eC },
 						dropStartR, dropStartC
 					);
 
-					// 3. Update selection to new location synchronously
 					const tbody = document.querySelector('.spreadsheet tbody');
 					const newStartCell = tbody.children[dropStartR]?.querySelector(`td[data-col="${dropStartC}"]`);
 					const newEndCell = tbody.children[dropEndR]?.querySelector(`td[data-col="${dropEndC}"]`);
