@@ -146,18 +146,18 @@ example of button with llm formula->
 - add checkbox (with its values configurable), Checkbox Label is optional.
 
 TODO:
+- delete to clear the content of the cell.
+- apply the text style to the entire content of the cell instead.
+
+- update prompt dialog so cell references (#A17) is current sheet and allow user to select cell references from other sheets using sheetname!A17 format.
+- in llm trigger form, change the Expected JSON Structure to key:value input
+
 - add =folderreader("folderpath") formula that reads all files in a folder and can feed them to the llm one file at a time
 - add =filereader("filepath") formula that reads a file content and feeds it to the llm one line at a time
 - =folerreader and =filereader should also work with full output
 
 
 - allow user to create =imagegen() formula that uses fal.ai to generate images based on a prompt from the sheet cell content.
-
-
-- update prompt dialog so cell references (#A17) is current sheet and allow user to select cell references from other sheets using sheetname!A17 format.
-
-- delete to clear the content of the cell
-- in llm trigger form, change the Expected JSON Structure to key:value input
 
 
 --------- BUGS:
@@ -170,10 +170,10 @@ TODO:
 - [v] after mering cells, its highlihgted background is wrong(only at the size before it gets merged), and its border is still shown as the original size.
 
 
-- [] Create new file is not working correctly. It opened blank without grid at first, refresh it then the grid appears.
+- [v] Create new file is not working correctly. It opened blank without grid at first, refresh it then the grid appears.
 - [] Open project -> delete current project -> cancel -> still see the currect project open -> yes I can save it
 
-- [] new sheets row heights are different than the first sheet, should have some default height. However the new sheets' single row hgiht is better because the default Sheet 1 row height cut of the bottom of the text and the cell-editor hight sticks out.
+- [] new sheets row heights are different than the first sheet, should have some default height. However the new sheets' single row hgiht is better because the default Sheet 1 row height cut of the bottom of the text and the cell-editor height sticks out.
 
 - [] when merging cells row height resize acts weirdly for the rows that intersect with merged cells
 - [] When merging cells, only keep the top most left content.
@@ -181,6 +181,7 @@ TODO:
 
 - [] border tool is not working correctly with cells merged and unmerged.
 - [] the editing from formula bar input for text cell and number cell is buggy.
+- [] cell content missing when switching between sheets. start editing a cell A8 on sheet1->switch to sheet2->switch back to sheet1->either the Sheet1!A8 become empty or the content of sheet1A8 appear on sheet2!A8 instead
 
 - [] Can’t change the cell texts or number from the formula input
 - [] In llm trigger form, the prompt input can’t handle texts pasted into it

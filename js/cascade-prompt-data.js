@@ -142,12 +142,33 @@ export const SheetDataManager = {
 
 	newProject: function () {
 		if (confirm('Create new project? Unsaved changes will be lost.')) {
-			this.data = { activeSheetIndex: 0, sheets:[], llmSettings: { apiKey: '', falAiKey: '' } };
+			// 1. Reset all data
+			this.data = {
+				activeSheetIndex: 0,
+				sheets: [],
+				llmSettings: { apiKey: '', falAiKey: '' }
+			};
 			this.currentFileName = null;
 			localStorage.removeItem('lastOpenedFile');
 			document.title = 'Cascade Prompt';
-			document.querySelector('.spreadsheet tbody').innerHTML = '';
-			this.createSheet('Sheet1', true);
+
+			// 2. Manually create the first sheet object from defaults
+			const firstSheet = {
+				name: this.defaults.sheetNamePrefix + '1',
+				rowCount: this.defaults.rows,
+				colCount: this.defaults.cols,
+				cells: {},
+				colWidths: {},
+				rowHeights: {},
+				selection: { active: { r: 0, c: 0 }, range: null }
+			};
+			this.data.sheets.push(firstSheet);
+
+			// 3. Render the new sheet and its tab
+			this.renderSheet(0);
+			this.renderTabs();
+
+			// 4. Set the state to unmodified and update the status bar
 			this.setModified(false);
 		}
 	},
