@@ -76,10 +76,19 @@ export const SelectionManager = {
 		let startRow, endRow, startCol, endCol;
 
 		if (window.startCell && window.endCell && window.startCell !== window.endCell) {
-			const startRowIdx = window.startCell.parentElement.rowIndex, endRowIdx = window.endCell.parentElement.rowIndex;
-			startRow = Math.min(startRowIdx, endRowIdx); endRow = Math.max(startRowIdx, endRowIdx);
-			startCol = Math.min(parseInt(window.startCell.getAttribute('data-col')), parseInt(window.endCell.getAttribute('data-col')));
-			endCol = Math.max(parseInt(window.startCell.getAttribute('data-col')), parseInt(window.endCell.getAttribute('data-col')));
+			const startRowIdx = window.startCell.parentElement.rowIndex;
+			const endRowIdx = window.endCell.parentElement.rowIndex;
+			const rs1 = parseInt(window.startCell.getAttribute('rowspan')) || 1;
+			const rs2 = parseInt(window.endCell.getAttribute('rowspan')) || 1;
+			startRow = Math.min(startRowIdx, endRowIdx);
+			endRow = Math.max(startRowIdx + rs1 - 1, endRowIdx + rs2 - 1);
+
+			const startColIdx = parseInt(window.startCell.getAttribute('data-col'));
+			const endColIdx = parseInt(window.endCell.getAttribute('data-col'));
+			const cs1 = parseInt(window.startCell.getAttribute('colspan')) || 1;
+			const cs2 = parseInt(window.endCell.getAttribute('colspan')) || 1;
+			startCol = Math.min(startColIdx, endColIdx);
+			endCol = Math.max(startColIdx + cs1 - 1, endColIdx + cs2 - 1);
 			mergeBtn.disabled = false;
 		} else {
 			const selected = document.querySelector('.selected-cell');
@@ -87,12 +96,18 @@ export const SelectionManager = {
 				helperDiv.querySelectorAll('.selection-helper-edge').forEach(el => el.remove());
 				helperDiv.style.display = 'none';
 				mergeBtn.disabled = true;
+
+				// Clear formula bar when nothing is selected
+				document.getElementById('formula-input').textContent = '';
+				document.getElementById('formula-input').setAttribute('contenteditable', 'false');
 				return;
 			}
 			startRow = selected.parentElement.rowIndex;
-			endRow = startRow;
 			startCol = parseInt(selected.getAttribute('data-col'));
-			endCol = startCol;
+			const rowspan = parseInt(selected.getAttribute('rowspan')) || 1;
+			const colspan = parseInt(selected.getAttribute('colspan')) || 1;
+			endRow = startRow + rowspan - 1;
+			endCol = startCol + colspan - 1;
 			mergeBtn.disabled = true;
 		}
 
@@ -106,9 +121,6 @@ export const SelectionManager = {
 				}
 			}
 		}
-
-		document.getElementById('formula-input').textContent = '';
-		document.getElementById('formula-input').setAttribute('contenteditable', 'false');
 
 		const container = document.querySelector('.spreadsheet-container');
 		const containerRect = container.getBoundingClientRect();
@@ -147,17 +159,28 @@ export const SelectionManager = {
 		let startRow, endRow, startCol, endCol;
 
 		if (window.startCell && window.endCell && window.startCell !== window.endCell) {
-			const startRowIdx = window.startCell.parentElement.rowIndex, endRowIdx = window.endCell.parentElement.rowIndex;
-			startRow = Math.min(startRowIdx, endRowIdx); endRow = Math.max(startRowIdx, endRowIdx);
-			startCol = Math.min(parseInt(window.startCell.getAttribute('data-col')), parseInt(window.endCell.getAttribute('data-col')));
-			endCol = Math.max(parseInt(window.startCell.getAttribute('data-col')), parseInt(window.endCell.getAttribute('data-col')));
+			const startRowIdx = window.startCell.parentElement.rowIndex;
+			const endRowIdx = window.endCell.parentElement.rowIndex;
+			const rs1 = parseInt(window.startCell.getAttribute('rowspan')) || 1;
+			const rs2 = parseInt(window.endCell.getAttribute('rowspan')) || 1;
+			startRow = Math.min(startRowIdx, endRowIdx);
+			endRow = Math.max(startRowIdx + rs1 - 1, endRowIdx + rs2 - 1);
+
+			const startColIdx = parseInt(window.startCell.getAttribute('data-col'));
+			const endColIdx = parseInt(window.endCell.getAttribute('data-col'));
+			const cs1 = parseInt(window.startCell.getAttribute('colspan')) || 1;
+			const cs2 = parseInt(window.endCell.getAttribute('colspan')) || 1;
+			startCol = Math.min(startColIdx, endColIdx);
+			endCol = Math.max(startColIdx + cs1 - 1, endColIdx + cs2 - 1);
 		} else {
 			const selected = document.querySelector('.selected-cell');
 			if (!selected) return;
 			startRow = selected.parentElement.rowIndex;
-			endRow = startRow;
 			startCol = parseInt(selected.getAttribute('data-col'));
-			endCol = startCol;
+			const rowspan = parseInt(selected.getAttribute('rowspan')) || 1;
+			const colspan = parseInt(selected.getAttribute('colspan')) || 1;
+			endRow = startRow + rowspan - 1;
+			endCol = startCol + colspan - 1;
 		}
 
 		const tableRows = document.querySelectorAll('.spreadsheet tr');

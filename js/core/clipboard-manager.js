@@ -9,27 +9,35 @@ export const ClipboardManager = {
 		if (window.startCell && window.endCell) {
 			const r1 = window.startCell.parentElement.rowIndex - 1;
 			const c1 = parseInt(window.startCell.getAttribute('data-col'));
+			const rs1 = parseInt(window.startCell.getAttribute('rowspan')) || 1;
+			const cs1 = parseInt(window.startCell.getAttribute('colspan')) || 1;
+
 			const r2 = window.endCell.parentElement.rowIndex - 1;
 			const c2 = parseInt(window.endCell.getAttribute('data-col'));
+			const rs2 = parseInt(window.endCell.getAttribute('rowspan')) || 1;
+			const cs2 = parseInt(window.endCell.getAttribute('colspan')) || 1;
+
 			sR = Math.min(r1, r2);
-			eR = Math.max(r1, r2);
+			eR = Math.max(r1 + rs1 - 1, r2 + rs2 - 1);
 			sC = Math.min(c1, c2);
-			eC = Math.max(c1, c2);
+			eC = Math.max(c1 + cs1 - 1, c2 + cs2 - 1);
 		} else {
 			const selected = document.querySelector('.selected-cell');
 			if (!selected) return;
 			sR = selected.parentElement.rowIndex - 1;
-			eR = sR;
 			sC = parseInt(selected.getAttribute('data-col'));
-			eC = sC;
+			const rowspan = parseInt(selected.getAttribute('rowspan')) || 1;
+			const colspan = parseInt(selected.getAttribute('colspan')) || 1;
+			eR = sR + rowspan - 1;
+			eC = sC + colspan - 1;
 		}
 
 		const sheet = SheetDataManager.data.sheets[SheetDataManager.data.activeSheetIndex];
-		const copiedCells = [];
+		const copiedCells =[];
 		let plainTextBuffer = '';
 
 		for (let r = sR; r <= eR; r++) {
-			let rowText = [];
+			let rowText =[];
 			for (let c = sC; c <= eC; c++) {
 				const key = r + '-' + c;
 				const cellData = sheet.cells[key];
@@ -75,19 +83,27 @@ export const ClipboardManager = {
 		if (window.startCell && window.endCell) {
 			const r1 = window.startCell.parentElement.rowIndex - 1;
 			const c1 = parseInt(window.startCell.getAttribute('data-col'));
+			const rs1 = parseInt(window.startCell.getAttribute('rowspan')) || 1;
+			const cs1 = parseInt(window.startCell.getAttribute('colspan')) || 1;
+
 			const r2 = window.endCell.parentElement.rowIndex - 1;
 			const c2 = parseInt(window.endCell.getAttribute('data-col'));
+			const rs2 = parseInt(window.endCell.getAttribute('rowspan')) || 1;
+			const cs2 = parseInt(window.endCell.getAttribute('colspan')) || 1;
+
 			sR = Math.min(r1, r2);
-			eR = Math.max(r1, r2);
+			eR = Math.max(r1 + rs1 - 1, r2 + rs2 - 1);
 			sC = Math.min(c1, c2);
-			eC = Math.max(c1, c2);
+			eC = Math.max(c1 + cs1 - 1, c2 + cs2 - 1);
 		} else {
 			const selected = document.querySelector('.selected-cell');
 			if (!selected) return;
 			sR = selected.parentElement.rowIndex - 1;
 			sC = parseInt(selected.getAttribute('data-col'));
-			eR = sR;
-			eC = sC;
+			const rowspan = parseInt(selected.getAttribute('rowspan')) || 1;
+			const colspan = parseInt(selected.getAttribute('colspan')) || 1;
+			eR = sR + rowspan - 1;
+			eC = sC + colspan - 1;
 		}
 
 		const sheet = SheetDataManager.data.sheets[SheetDataManager.data.activeSheetIndex];

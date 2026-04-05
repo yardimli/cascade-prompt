@@ -205,19 +205,27 @@ export const FormatManager = {
 		} else if (window.startCell && window.endCell) {
 			const r1 = window.startCell.parentElement.rowIndex;
 			const c1 = parseInt(window.startCell.getAttribute('data-col'));
+			const rs1 = parseInt(window.startCell.getAttribute('rowspan')) || 1;
+			const cs1 = parseInt(window.startCell.getAttribute('colspan')) || 1;
+
 			const r2 = window.endCell.parentElement.rowIndex;
 			const c2 = parseInt(window.endCell.getAttribute('data-col'));
+			const rs2 = parseInt(window.endCell.getAttribute('rowspan')) || 1;
+			const cs2 = parseInt(window.endCell.getAttribute('colspan')) || 1;
+
 			sR = Math.min(r1, r2);
-			eR = Math.max(r1, r2);
+			eR = Math.max(r1 + rs1 - 1, r2 + rs2 - 1);
 			sC = Math.min(c1, c2);
-			eC = Math.max(c1, c2);
+			eC = Math.max(c1 + cs1 - 1, c2 + cs2 - 1);
 		} else {
 			const selected = document.querySelector('.selected-cell');
 			if (selected) {
 				sR = selected.parentElement.rowIndex;
-				eR = sR;
 				sC = parseInt(selected.getAttribute('data-col'));
-				eC = sC;
+				const rowspan = parseInt(selected.getAttribute('rowspan')) || 1;
+				const colspan = parseInt(selected.getAttribute('colspan')) || 1;
+				eR = sR + rowspan - 1;
+				eC = sC + colspan - 1;
 			}
 		}
 
@@ -291,19 +299,27 @@ export const FormatManager = {
 		if (window.startCell && window.endCell) {
 			const r1 = window.startCell.parentElement.rowIndex;
 			const c1 = parseInt(window.startCell.getAttribute('data-col'));
+			const rs1 = parseInt(window.startCell.getAttribute('rowspan')) || 1;
+			const cs1 = parseInt(window.startCell.getAttribute('colspan')) || 1;
+
 			const r2 = window.endCell.parentElement.rowIndex;
 			const c2 = parseInt(window.endCell.getAttribute('data-col'));
+			const rs2 = parseInt(window.endCell.getAttribute('rowspan')) || 1;
+			const cs2 = parseInt(window.endCell.getAttribute('colspan')) || 1;
+
 			sR = Math.min(r1, r2);
-			eR = Math.max(r1, r2);
+			eR = Math.max(r1 + rs1 - 1, r2 + rs2 - 1);
 			sC = Math.min(c1, c2);
-			eC = Math.max(c1, c2);
+			eC = Math.max(c1 + cs1 - 1, c2 + cs2 - 1);
 		} else {
 			const selected = document.querySelector('.selected-cell');
 			if (selected) {
 				sR = selected.parentElement.rowIndex;
-				eR = sR;
 				sC = parseInt(selected.getAttribute('data-col'));
-				eC = sC;
+				const rowspan = parseInt(selected.getAttribute('rowspan')) || 1;
+				const colspan = parseInt(selected.getAttribute('colspan')) || 1;
+				eR = sR + rowspan - 1;
+				eC = sC + colspan - 1;
 			} else {
 				this.savedRange = null;
 				return;

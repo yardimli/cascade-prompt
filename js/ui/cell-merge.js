@@ -5,13 +5,19 @@ export const CellMerge = {
 
 		const startRowIdx = window.startCell.parentElement.rowIndex;
 		const endRowIdx = window.endCell.parentElement.rowIndex;
-		const startRow = Math.min(startRowIdx, endRowIdx), endRow = Math.max(startRowIdx, endRowIdx);
-		const startCol = Math.min(parseInt(window.startCell.getAttribute('data-col')), parseInt(window.endCell.getAttribute('data-col')));
-		const endCol = Math.max(parseInt(window.startCell.getAttribute('data-col')), parseInt(window.endCell.getAttribute('data-col')));
+		const rs1 = parseInt(window.startCell.getAttribute('rowspan')) || 1;
+		const rs2 = parseInt(window.endCell.getAttribute('rowspan')) || 1;
+		const startRow = Math.min(startRowIdx, endRowIdx), endRow = Math.max(startRowIdx + rs1 - 1, endRowIdx + rs2 - 1);
+
+		const startColIdx = parseInt(window.startCell.getAttribute('data-col'));
+		const endColIdx = parseInt(window.endCell.getAttribute('data-col'));
+		const cs1 = parseInt(window.startCell.getAttribute('colspan')) || 1;
+		const cs2 = parseInt(window.endCell.getAttribute('colspan')) || 1;
+		const startCol = Math.min(startColIdx, endColIdx), endCol = Math.max(startColIdx + cs1 - 1, endColIdx + cs2 - 1);
 
 		const tableRows = document.querySelectorAll('.spreadsheet tr');
 		const topLeft = tableRows[startRow].querySelector('td[data-col="' + startCol + '"]');
-		const mergedContent = [];
+		const mergedContent =[];
 
 		for (let r = startRow; r <= endRow; r++) {
 			for (let c = startCol; c <= endCol; c++) {

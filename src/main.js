@@ -90,6 +90,21 @@ document.addEventListener('DOMContentLoaded', function () {
 		const sel = document.querySelector('.selected-cell');
 		if (sel && !document.querySelector('.area-selected-cell')) {
 			sel.querySelector('.content-cut').textContent = this.textContent;
+
+			// Sync to data model so clicking away and back retains the value
+			const r = sel.parentElement.rowIndex - 1;
+			const c = parseInt(sel.getAttribute('data-col'));
+			const sheet = SheetDataManager.data.sheets[SheetDataManager.data.activeSheetIndex];
+			const key = `${r}-${c}`;
+
+			if (!sheet.cells[key]) {
+				sheet.cells[key] = { rowspan: parseInt(sel.getAttribute('rowspan')) || 1, colspan: parseInt(sel.getAttribute('colspan')) || 1, style: {}, cellStyle: {} };
+			}
+
+			const val = this.textContent;
+			const isNum = typeof val === "number" ? Number.isFinite(val) : (typeof val === "string" && val.trim() !== "" && Number.isFinite(Number(val)));
+			sheet.cells[key].type = { name: isNum ? 'number' : 'text', details: { value: val } };
+
 			window.saveState();
 		}
 	});
@@ -160,17 +175,27 @@ document.addEventListener('DOMContentLoaded', function () {
 			if (window.startCell && window.endCell && window.startCell !== window.endCell) {
 				const r1 = window.startCell.parentElement.rowIndex - 1;
 				const c1 = parseInt(window.startCell.getAttribute('data-col'));
+				const rs1 = parseInt(window.startCell.getAttribute('rowspan')) || 1;
+				const cs1 = parseInt(window.startCell.getAttribute('colspan')) || 1;
+
 				const r2 = window.endCell.parentElement.rowIndex - 1;
 				const c2 = parseInt(window.endCell.getAttribute('data-col'));
-				sR = Math.min(r1, r2); eR = Math.max(r1, r2);
-				sC = Math.min(c1, c2); eC = Math.max(c1, c2);
+				const rs2 = parseInt(window.endCell.getAttribute('rowspan')) || 1;
+				const cs2 = parseInt(window.endCell.getAttribute('colspan')) || 1;
+
+				sR = Math.min(r1, r2);
+				eR = Math.max(r1 + rs1 - 1, r2 + rs2 - 1);
+				sC = Math.min(c1, c2);
+				eC = Math.max(c1 + cs1 - 1, c2 + cs2 - 1);
 			} else {
 				const selected = document.querySelector('.selected-cell');
 				if (!selected) return;
 				sR = selected.parentElement.rowIndex - 1;
-				eR = sR;
 				sC = parseInt(selected.getAttribute('data-col'));
-				eC = sC;
+				const rowspan = parseInt(selected.getAttribute('rowspan')) || 1;
+				const colspan = parseInt(selected.getAttribute('colspan')) || 1;
+				eR = sR + rowspan - 1;
+				eC = sC + colspan - 1;
 			}
 
 			selectionHelper.style.pointerEvents = 'none';
