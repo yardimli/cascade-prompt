@@ -142,26 +142,16 @@ example of button with llm formula->
 - improve the cell reference tag's editing part in the prompt input of the Insert LLM formula dialog.
 - create a generic property panel area. First step: moved the dropdown form to the property panel. The panel title is Formula Editor.
 - move LLM formula form dialog to the property panel(Formula Editor) like the doprdown form.
-- bug fixed:In llm insert form, the content of reference cell in the tooltip is not read live.
 - make the llm call support image inputs so user can reference images in the sheet when using llm formula. images should be added in a new input type(Image Attachments). User will add reference cell tag that contain images. The images are uploaded are added as base64 data urls to the llm request. Any reference cell tag doesn't contain image will be ignored. Image Attachments input accept maximum 5 images.
 - add checkbox (with its values configurable), Checkbox Label is optional.
-- bug fix: when resizing a selected area, the highlighted border is not following the border of the original cells.
-- selecting single cell is not working, also after making a selection making it smaller is not working correctly.
 
 TODO:
-
-moving cells is not working including moving single cell. once selection is made the mouse cursor should change to drag when over the selected area to indicate its draggable.
-
-
-
 - add =folderreader("folderpath") formula that reads all files in a folder and can feed them to the llm one file at a time
 - add =filereader("filepath") formula that reads a file content and feeds it to the llm one line at a time
 - =folerreader and =filereader should also work with full output
 
 
-
 - allow user to create =imagegen() formula that uses fal.ai to generate images based on a prompt from the sheet cell content.
-
 
 
 - update prompt dialog so cell references (#A17) is current sheet and allow user to select cell references from other sheets using sheetname!A17 format.
@@ -171,17 +161,30 @@ moving cells is not working including moving single cell. once selection is made
 
 
 --------- BUGS:
+- [v] In llm trigger form, the reference cell tag preview isn't updating if the cell content is changed.
 
-when merging cells row height resize acts weirdly for the rows that intersect with merged cells
-when unmerging cells the new cells are not editable until page refresh
-after mering cells, its highlihgted background is wrong(only at the size before it gets merged), and its border is still shown as the original size.
-new sheets row heights are different than the first sheet, should have some default height
-border tool is not working correctly with cells merged and unmerged.
-the editing from formula bar input for text cell and number cell is buggy.
+- [v] when resizing a selected area, the highlighted border is not following the border of the original cells.
+- [v] selecting single cell is not working, also after making a selection making it smaller is not working correctly.
+- [v] moving cells is not working including moving single cell. once selection is made the mouse cursor should change to drag when over the selected area to indicate its draggable.
+- [v] when unmerging cells the new cells are not editable until page refresh
+- [v] after mering cells, its highlihgted background is wrong(only at the size before it gets merged), and its border is still shown as the original size.
 
-Can’t change the cell texts or number from the formula input
-In llm trigger form, the prompt input can’t handle texts pasted into it
-In llm trigger form, the output cell can be the same as the target cell, it causes problem.
+
+- [] Create new file is not working correctly. It opened blank without grid at first, refresh it then the grid appears.
+- [] Open project -> delete current project -> cancel -> still see the currect project open -> yes I can save it
+
+- [] new sheets row heights are different than the first sheet, should have some default height. However the new sheets' single row hgiht is better because the default Sheet 1 row height cut of the bottom of the text and the cell-editor hight sticks out.
+
+- [] when merging cells row height resize acts weirdly for the rows that intersect with merged cells
+- [] When merging cells, only keep the top most left content.
+- [] The cursor on text and number cell should be the “point” until it becomes in editing mode.
+
+- [] border tool is not working correctly with cells merged and unmerged.
+- [] the editing from formula bar input for text cell and number cell is buggy.
+
+- [] Can’t change the cell texts or number from the formula input
+- [] In llm trigger form, the prompt input can’t handle texts pasted into it
+- [] In llm trigger form, the output cell can be the same as the target cell, it causes problem.
 
 -------- FEATURE QUESTIONS:
 when using llm button, can I control the output to be displayed by rows or by columns?
