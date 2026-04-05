@@ -110,7 +110,7 @@ export function initKeypressListeners() {
 					if (sheet.cells[key].llm) {
 						delete sheet.cells[key].llm;
 					}
-					// Clear the new type structure properly
+
 					sheet.cells[key].type = { name: 'text', details: { value: '' } };
 				}
 			};
@@ -126,7 +126,6 @@ export function initKeypressListeners() {
 			SheetDataManager.setModified(true);
 			if (typeof window.updateSelection === 'function') window.updateSelection();
 
-			// Re-highlight to update the formula bar correctly after deletion
 			const selected = document.querySelector('.selected-cell');
 			if (selected && typeof window.highlightCell === 'function') {
 				window.highlightCell(selected);

@@ -140,9 +140,8 @@ export const SheetDataManager = {
 	listProjects: function (cb) { SheetIO.listProjects(cb); },
 	deleteProject: function (fn, cb) { SheetIO.deleteProject(fn, cb); },
 
-	newProject: function () {
-		if (confirm('Create new project? Unsaved changes will be lost.')) {
-			// 1. Reset all data
+	newProject: function (force = false) {
+		const resetLogic = () => {
 			this.data = {
 				activeSheetIndex: 0,
 				sheets: [],
@@ -152,7 +151,6 @@ export const SheetDataManager = {
 			localStorage.removeItem('lastOpenedFile');
 			document.title = 'Cascade Prompt';
 
-			// 2. Manually create the first sheet object from defaults
 			const firstSheet = {
 				name: this.defaults.sheetNamePrefix + '1',
 				rowCount: this.defaults.rows,
@@ -164,12 +162,14 @@ export const SheetDataManager = {
 			};
 			this.data.sheets.push(firstSheet);
 
-			// 3. Render the new sheet and its tab
 			this.renderSheet(0);
 			this.renderTabs();
 
-			// 4. Set the state to unmodified and update the status bar
 			this.setModified(false);
+		};
+
+		if (force || confirm('Create new project? Unsaved changes will be lost.')) {
+			resetLogic();
 		}
 	},
 

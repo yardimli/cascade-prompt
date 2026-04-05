@@ -77,8 +77,15 @@ function loadProjectList (isSelectable) {
 				delBtn.innerHTML = '<i class="bi bi-trash"></i>';
 				delBtn.onclick = function (e) {
 					e.stopPropagation();
+					const isCurrentFile = file === SheetDataManager.currentFileName;
+
 					SheetDataManager.deleteProject(file, function () {
-						loadProjectList(isSelectable);
+						if (isCurrentFile) {
+							document.getElementById('projectModal').close();
+							SheetDataManager.newProject(true);
+						} else {
+							loadProjectList(isSelectable);
+						}
 					});
 				};
 				item.appendChild(delBtn);

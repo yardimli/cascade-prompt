@@ -171,7 +171,7 @@ TODO:
 
 
 - [v] Create new file is not working correctly. It opened blank without grid at first, refresh it then the grid appears.
-- [] Open project -> delete current project -> cancel -> still see the currect project open -> yes I can save it
+- [v] Open project -> delete current project -> cancel -> still see the currect project open -> yes I can save it
 
 - [] new sheets row heights are different than the first sheet, should have some default height. However the new sheets' single row hgiht is better because the default Sheet 1 row height cut of the bottom of the text and the cell-editor height sticks out.
 
@@ -181,7 +181,7 @@ TODO:
 
 - [] border tool is not working correctly with cells merged and unmerged.
 - [] the editing from formula bar input for text cell and number cell is buggy.
-- [] cell content missing when switching between sheets. start editing a cell A8 on sheet1->switch to sheet2->switch back to sheet1->either the Sheet1!A8 become empty or the content of sheet1A8 appear on sheet2!A8 instead
+- [] cell content become empty or replaced when switching between sheets when the cell is in the edit mode. start editing a cell A8 on sheet1 and leave it in the edit mode->switch to sheet2->switch back to sheet1->either the Sheet1!A8 become empty or the content of sheet1A8 appear on sheet2!A8 instead(whole content of columns can be affected)
 
 - [] Can’t change the cell texts or number from the formula input
 - [] In llm trigger form, the prompt input can’t handle texts pasted into it

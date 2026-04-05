@@ -91,7 +91,6 @@ document.addEventListener('DOMContentLoaded', function () {
 		if (sel && !document.querySelector('.area-selected-cell')) {
 			sel.querySelector('.content-cut').textContent = this.textContent;
 
-			// Sync to data model so clicking away and back retains the value
 			const r = sel.parentElement.rowIndex - 1;
 			const c = parseInt(sel.getAttribute('data-col'));
 			const sheet = SheetDataManager.data.sheets[SheetDataManager.data.activeSheetIndex];
