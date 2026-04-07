@@ -20,8 +20,8 @@ export const SheetDataManager = {
 	},
 
 	measureDefaults: function () {
-		// const sampleRowHeader = document.querySelector('.spreadsheet tbody tr:first-child th.counter-cell');
-		// this.defaults.defaultRowHeight = (sampleRowHeader && sampleRowHeader.offsetHeight > 10) ? sampleRowHeader.offsetHeight : 25;
+		/* const sampleRowHeader = document.querySelector('.spreadsheet tbody tr:first-child th.counter-cell');
+		this.defaults.defaultRowHeight = (sampleRowHeader && sampleRowHeader.offsetHeight > 10) ? sampleRowHeader.offsetHeight : 25;*/
 		const sampleColHeader = document.querySelector('.spreadsheet thead th.letter-cell');
 		this.defaults.defaultColWidth = (sampleColHeader && sampleColHeader.offsetWidth > 20) ? sampleColHeader.offsetWidth : 100;
 		console.log(`Defaults measured: RowHeight=${this.defaults.defaultRowHeight}, ColWidth=${this.defaults.defaultColWidth}`);
