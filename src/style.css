@@ -104,6 +104,7 @@ html[data-ui-size="large"] {
     border-bottom: 1px solid color-mix(in srgb, var(--color-base-content) 14%, transparent);
     width: 50px;
     min-width: 50px;
+    height: 25px;
     text-align: center;
     vertical-align: middle;
     font-size: 0.75rem;
