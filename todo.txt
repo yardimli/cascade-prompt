@@ -175,8 +175,8 @@ TODO:
 
 - [v] new sheets row heights are different than the first sheet, should have some default height. However the new sheets' single row height is better because the default Sheet 1 row height cut of the bottom of the text and the cell-editor height sticks out. -> the centralized default height is set by a single property "SheetDataManager.defaults.defaultRowHeight" now.
 
-- [] when merging cells row height resize acts weirdly for the rows that intersect with merged cells
-- [] When merging cells, if cells have content, it causes problems. ->only keep the top most left content.
+- [v] when merging cells row height resize acts weirdly for the rows that intersect with merged cells
+- [v] When merging cells, if more than one cells have values, it causes problems. ->only keep the value of the cell at most top left location.
 - [] The cursor on text and number cell should be the “point” until it becomes in editing mode.
 
 - [] border tool is not working correctly with cells merged and unmerged.

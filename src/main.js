@@ -71,6 +71,23 @@ window.updateRowHeight = (idx, h) => {
 window.showCustomAlert = (msg) => { document.getElementById('alert-modal-body').innerHTML = msg; document.getElementById('alertModal').showModal(); };
 window.showToast = (msg) => { const t = document.getElementById('toast-notification'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3000); };
 
+window.showMergeConfirmation = (onConfirm) => {
+	const modal = document.getElementById('mergeConfirmModal');
+	const proceedBtn = document.getElementById('merge-confirm-proceed-btn');
+
+	const proceedHandler = () => {
+		if (onConfirm) onConfirm();
+		modal.close();
+	};
+
+	// To prevent multiple listeners from stacking up, clone the button to remove old listeners
+	const newProceedBtn = proceedBtn.cloneNode(true);
+	proceedBtn.parentNode.replaceChild(newProceedBtn, proceedBtn);
+	newProceedBtn.addEventListener('click', proceedHandler, { once: true });
+
+	modal.showModal();
+};
+
 document.addEventListener('DOMContentLoaded', function () {
 	initTheme(); initUiSize(); initMenuHandlers();
 	document.addEventListener('sheetRendered', attachResizeHandlers);

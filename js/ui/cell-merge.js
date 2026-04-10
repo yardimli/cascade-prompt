@@ -1,83 +1,137 @@
+import { SheetDataManager } from '../cascade-prompt-data.js';
+
 export const CellMerge = {
-	mergeCells: function() {
+	mergeCells: function () {
 		if (!window.startCell || !window.endCell || window.startCell === window.endCell) return;
-		if (typeof window.HistoryManager !== 'undefined') window.HistoryManager.addState();
 
 		const startRowIdx = window.startCell.parentElement.rowIndex;
 		const endRowIdx = window.endCell.parentElement.rowIndex;
 		const rs1 = parseInt(window.startCell.getAttribute('rowspan')) || 1;
 		const rs2 = parseInt(window.endCell.getAttribute('rowspan')) || 1;
-		const startRow = Math.min(startRowIdx, endRowIdx), endRow = Math.max(startRowIdx + rs1 - 1, endRowIdx + rs2 - 1);
+		const startRow = Math.min(startRowIdx, endRowIdx);
+		const endRow = Math.max(startRowIdx + rs1 - 1, endRowIdx + rs2 - 1);
 
 		const startColIdx = parseInt(window.startCell.getAttribute('data-col'));
 		const endColIdx = parseInt(window.endCell.getAttribute('data-col'));
 		const cs1 = parseInt(window.startCell.getAttribute('colspan')) || 1;
 		const cs2 = parseInt(window.endCell.getAttribute('colspan')) || 1;
-		const startCol = Math.min(startColIdx, endColIdx), endCol = Math.max(startColIdx + cs1 - 1, endColIdx + cs2 - 1);
+		const startCol = Math.min(startColIdx, endColIdx);
+		const endCol = Math.max(startColIdx + cs1 - 1, endColIdx + cs2 - 1);
 
-		const tableRows = document.querySelectorAll('.spreadsheet tr');
-		const topLeft = tableRows[startRow].querySelector('td[data-col="' + startCol + '"]');
-		const mergedContent =[];
+		const sheet = SheetDataManager.data.sheets[SheetDataManager.data.activeSheetIndex];
+		const cellsWithContent = [];
 
-		for (let r = startRow; r <= endRow; r++) {
+		for (let r = startRow - 1; r <= endRow - 1; r++) {
 			for (let c = startCol; c <= endCol; c++) {
-				const cell = tableRows[r].querySelector('td[data-col="' + c + '"]');
-				if (cell) {
-					const text = cell.querySelector('.content-cut').textContent.trim();
-					if (text) mergedContent.push(text);
-					if (!(r === startRow && c === startCol)) cell.remove();
+				const key = r + '-' + c;
+				const cellData = sheet.cells[key];
+				let hasValue = false;
+				if (cellData && cellData.type) {
+					if (cellData.type.details && (cellData.type.details.value || cellData.type.details.value === 0)) {
+						hasValue = true;
+					} else if (cellData.type.name === 'dropdown' && cellData.type.details.selected) {
+						hasValue = true;
+					} else if (['image', 'checkbox', 'llm_formula'].includes(cellData.type.name)) {
+						hasValue = true;
+					}
+				}
+
+				if (hasValue) {
+					cellsWithContent.push({ r, c, data: JSON.parse(JSON.stringify(cellData)) });
 				}
 			}
 		}
 
-		topLeft.setAttribute('rowspan', endRow - startRow + 1);
-		topLeft.setAttribute('colspan', endCol - startCol + 1);
-		topLeft.querySelector('.content-cut').textContent = mergedContent.join(' ');
-		topLeft.querySelector('.content-cut').style.width = (window.getColumnWidthRange(startCol, endCol) - 3) + 'px';
+		const performMerge = (contentCellData) => {
+			if (typeof window.HistoryManager !== 'undefined') window.HistoryManager.addState();
 
-		window.startCell = null; window.endCell = null; window.isSelecting = false;
-		window.highlightCell(topLeft); window.updateSelection(); window.saveState();
+			for (let r = startRow - 1; r <= endRow - 1; r++) {
+				for (let c = startCol; c <= endCol; c++) {
+					const key = r + '-' + c;
+					delete sheet.cells[key];
+				}
+			}
+
+			const newRowspan = (endRow - startRow) + 1;
+			const newColspan = (endCol - startCol) + 1;
+			const topLeftKey = (startRow - 1) + '-' + startCol;
+
+			if (contentCellData) {
+				sheet.cells[topLeftKey] = contentCellData;
+				sheet.cells[topLeftKey].rowspan = newRowspan;
+				sheet.cells[topLeftKey].colspan = newColspan;
+			} else {
+				sheet.cells[topLeftKey] = {
+					type: { name: 'text', details: { value: '' } },
+					rowspan: newRowspan,
+					colspan: newColspan,
+					style: {},
+					cellStyle: {}
+				};
+			}
+
+			SheetDataManager.renderSheet(SheetDataManager.data.activeSheetIndex);
+			SheetDataManager.setModified(true);
+
+			setTimeout(() => {
+				const tableBody = document.querySelector('.spreadsheet tbody');
+				const topLeftCellDOM = tableBody.rows[startRow - 1]?.querySelector(`td[data-col="${startCol}"]`);
+				if (topLeftCellDOM) {
+					window.startCell = null;
+					window.endCell = null;
+					window.isSelecting = false;
+					window.highlightCell(topLeftCellDOM);
+					window.updateSelection();
+				}
+			}, 0);
+		};
+
+		if (cellsWithContent.length <= 1) {
+			performMerge(cellsWithContent.length === 1 ? cellsWithContent[0].data : null);
+		} else {
+			window.showMergeConfirmation(() => {
+				const topLeftContentCell = cellsWithContent.reduce((topLeft, current) => {
+					if (current.r < topLeft.r) return current;
+					if (current.r === topLeft.r && current.c < topLeft.c) return current;
+					return topLeft;
+				});
+				performMerge(topLeftContentCell.data);
+			});
+		}
 	},
 
-	unmergeCells: function() {
+	unmergeCells: function () {
 		const cell = document.querySelector('.selected-cell');
 		if (!cell) return;
+
 		const rowspan = parseInt(cell.getAttribute('rowspan')) || 1;
 		const colspan = parseInt(cell.getAttribute('colspan')) || 1;
 		if (rowspan === 1 && colspan === 1) return;
 
 		if (typeof window.HistoryManager !== 'undefined') window.HistoryManager.addState();
-		const startRow = cell.parentElement.rowIndex;
-		const startCol = parseInt(cell.getAttribute('data-col'));
-		const tableRows = document.querySelectorAll('.spreadsheet tr');
 
-		for (let r = startRow; r < startRow + rowspan; r++) {
-			for (let c = startCol; c < startCol + colspan; c++) {
-				if (r === startRow && c === startCol) continue;
-				const newCell = document.createElement('td');
-				newCell.className = 'text-cell'; newCell.setAttribute('data-col', c);
-				const contentDiv = document.createElement('div');
-				contentDiv.className = 'content-cut';
-				newCell.appendChild(contentDiv);
+		const startR = cell.parentElement.rowIndex - 1;
+		const startC = parseInt(cell.getAttribute('data-col'));
 
-				const colWidth = document.querySelector('.letter-cell[data-col="' + c + '"]')?.offsetWidth || 100;
-				contentDiv.style.width = (colWidth - 3) + 'px';
-				const rowHeight = tableRows[r].querySelector('.counter-cell')?.offsetHeight || 25;
-				contentDiv.style.height = (rowHeight - 3) + 'px';
+		const sheet = SheetDataManager.data.sheets[SheetDataManager.data.activeSheetIndex];
+		const key = startR + '-' + startC;
+		const cellData = sheet.cells[key];
 
-				const row = tableRows[r];
-				const cells = Array.from(row.querySelectorAll('td'));
-				let prev = null;
-				for (let i = cells.length - 1; i >= 0; i--) {
-					if (parseInt(cells[i].getAttribute('data-col')) < c) { prev = cells[i]; break; }
-				}
-				prev ? prev.insertAdjacentElement('afterend', newCell) : (row.querySelector('td') ? row.querySelector('td').insertAdjacentElement('beforebegin', newCell) : row.appendChild(newCell));
-			}
+		if (cellData) {
+			delete cellData.rowspan;
+			delete cellData.colspan;
 		}
 
-		cell.removeAttribute('rowspan'); cell.removeAttribute('colspan');
-		const singleColWidth = document.querySelector('.letter-cell[data-col="' + startCol + '"]')?.offsetWidth || 100;
-		cell.querySelector('.content-cut').style.width = (singleColWidth - 3) + 'px';
-		window.highlightCell(cell); window.saveState();
+		SheetDataManager.renderSheet(SheetDataManager.data.activeSheetIndex);
+		SheetDataManager.setModified(true);
+
+		setTimeout(() => {
+			const tableBody = document.querySelector('.spreadsheet tbody');
+			const topLeftCellDOM = tableBody.rows[startR]?.querySelector(`td[data-col="${startC}"]`);
+			if (topLeftCellDOM) {
+				window.highlightCell(topLeftCellDOM);
+				window.updateSelection();
+			}
+		}, 0);
 	}
 };
