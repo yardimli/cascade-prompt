@@ -176,12 +176,15 @@ TODO:
 - [v] new sheets row heights are different than the first sheet, should have some default height. However the new sheets' single row height is better because the default Sheet 1 row height cut of the bottom of the text and the cell-editor height sticks out. -> the centralized default height is set by a single property "SheetDataManager.defaults.defaultRowHeight" now.
 
 - [v] when merging cells row height resize acts weirdly for the rows that intersect with merged cells
-- [v] When merging cells, if more than one cells have values, it causes problems. ->only keep the value of the cell at most top left location.
-- [] The cursor on text and number cell should be the “point” until it becomes in editing mode.
+- [v] When merging cells, if more than one cell has value, it causes problems. ->only keep the value of the cell at most top left location.
+- [v] The cursor on text and number cell should be the “point” until it becomes in editing mode.
 
+- [] cell content become empty or replaced when switching between sheets when the cell is in the edit mode. start editing a cell A8 on sheet1 and leave it in the edit mode->switch to sheet2->switch back to sheet1->either the Sheet1!A8 become empty or the content of sheet1A8 appear on sheet2!A8 instead(whole content of columns can be affected)
+
+- [] the "text color" and "fill color" is buggy.
 - [] border tool is not working correctly with cells merged and unmerged.
 - [] the editing from formula bar input for text cell and number cell is buggy.
-- [] cell content become empty or replaced when switching between sheets when the cell is in the edit mode. start editing a cell A8 on sheet1 and leave it in the edit mode->switch to sheet2->switch back to sheet1->either the Sheet1!A8 become empty or the content of sheet1A8 appear on sheet2!A8 instead(whole content of columns can be affected)
+
 
 - [] Can’t change the cell texts or number from the formula input
 - [] In llm trigger form, the prompt input can’t handle texts pasted into it

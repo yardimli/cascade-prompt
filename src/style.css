@@ -123,6 +123,7 @@ html[data-ui-size="large"] {
     color: var(--color-base-content);
     background: var(--color-base-100);
     z-index: 1;
+    cursor: default;
 }
 
 .content-cut {
