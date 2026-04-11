@@ -179,6 +179,13 @@ TODO:
 - [v] When merging cells, if more than one cell has value, it causes problems. ->only keep the value of the cell at most top left location.
 - [v] The cursor on text and number cell should be the “point” until it becomes in editing mode.
 
+Found during merge feature QA(not finished yet, 16/30 items tested):
+- []cross merge "selection" behaviour is problematic. It gives the wrong idea of what can be merged and it breaks existing merged cell.
+- []cell style is not following the content merging rule.
+- []can only select cells are visible inside the screen area. When selecting cells, before mouse up, it doesn't make the page scroll like the standard behaviour.
+- []while the property panel is open, if that target cell is cleared, the panel still have the existing values.
+- []while the property panel is open, if that target cell is moved, the value of the "Target:" doesn't get update.
+
 - [] cell content become empty or replaced when switching between sheets when the cell is in the edit mode. start editing a cell A8 on sheet1 and leave it in the edit mode->switch to sheet2->switch back to sheet1->either the Sheet1!A8 become empty or the content of sheet1A8 appear on sheet2!A8 instead(whole content of columns can be affected)
 
 - [] the "text color" and "fill color" is buggy.
